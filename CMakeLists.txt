@@ -28,9 +28,12 @@ add_library(ck STATIC
 target_compile_definitions(ck PRIVATE CK_PLATFORM_MAC)
 
 # Include directories for ck
-target_include_directories(ck PUBLIC
-  "${SRC_DIR}/ck/include"
-  "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
+target_include_directories(ck
+  PUBLIC
+    "${SRC_DIR}/ck/include"
+  PRIVATE
+    "${SRC_DIR}/ck/"
+    "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
 )
 
 #---------------------------------------------------------------------3

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sstream>
-
 #include "events/event.h"
 
 namespace ck {

@@ -35,6 +35,9 @@ target_include_directories(ck
     "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
 )
 
+# Precompiled Headers
+target_precompile_headers(ck PUBLIC ${SRC_DIR}/ck/pch.h)
+
 #---------------------------------------------------------------------3
 #                               SandBox                               |
 #---------------------------------------------------------------------3

@@ -1,3 +1,0 @@
-CompileFlags:
-  Add: [-I${SRC_DIR}/ck/include]   # 只暴露公共 include
-  Remove: [-I${SRC_DIR}/ck]        # 去掉ck engine 内部路径

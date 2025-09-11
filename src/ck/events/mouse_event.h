@@ -1,8 +1,5 @@
 #pragma once
 
-#include <sstream>
-#include <string>
-
 #include "events/event.h"
 
 namespace ck {
@@ -32,9 +29,7 @@ public:
   inline float GetMouseYOffset() { return mouse_y_offset_; }
 
   std::string ToString() const override {
-    std::stringstream ss;
-    ss << "MouseScrollEvent: (" << mouse_x_offset_ << "," << mouse_y_offset_ << ")";
-    return ss.str();
+    return std::format("MouseScrollEvent: ({},{})", mouse_x_offset_, mouse_y_offset_);
   }
 
   EVENT_CLASS_TYPE(MouseScrolled)

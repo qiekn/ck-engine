@@ -1,10 +1,6 @@
 #pragma once
 
-#include <functional>
-#include <string>
-
 #include "core.h"
-#include "spdlog/fmt/bundled/base.h"
 
 namespace ck {
 // clang-format off
@@ -56,7 +52,7 @@ class Event {
   friend class EventDispatcher;
 
 public:
-  virtual EventType GetEventType() const = 0;
+  virtual auto GetEventType() const -> EventType = 0;
   virtual const char* GetName() const = 0;
   virtual int GetCategoryFlags() const = 0;
   virtual std::string ToString() const { return GetName(); }

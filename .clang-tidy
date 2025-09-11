@@ -1,0 +1,22 @@
+Checks: >
+  -*,
+  clang-diagnostic-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  bugprone-*,
+  cppcoreguidelines-*
+  google-*
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '^src/.*'
+
+CheckOptions:
+  - key:             clang-tidy-ignore-files
+    value:           '.*pch\.h'
+
+DisableChecks: >
+  modernize-use-nodiscard,
+  modernize-use-trailing-return-type,
+  readability-implicit-inline-functions

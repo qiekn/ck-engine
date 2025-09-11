@@ -1,8 +1,8 @@
 BasedOnStyle: Google
 ColumnLimit: 100
-IncludeBlocks: Merge
+IncludeBlocks: Regroup
 SortIncludes: CaseInsensitive
 
 AccessModifierOffset: -2
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true

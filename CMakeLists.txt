@@ -31,7 +31,6 @@ target_compile_definitions(ck PRIVATE CK_PLATFORM_MAC)
 target_include_directories(ck
   PUBLIC
     "${SRC_DIR}/ck/include"
-  PRIVATE
     "${SRC_DIR}/ck/"
     "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
 )

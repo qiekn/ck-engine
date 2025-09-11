@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spdlog/spdlog.h"
+#include "spdlog/spdlog.h"  // IWYU pragma: keep
 
 namespace ck {
 class Log {

@@ -38,6 +38,12 @@ target_include_directories(ck
 # Precompiled Headers
 target_precompile_headers(ck PUBLIC ${SRC_DIR}/ck/pch.h)
 
+# Dependencies
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
+target_link_libraries(ck PUBLIC
+  glfw
+)
+
 #---------------------------------------------------------------------3
 #                               SandBox                               |
 #---------------------------------------------------------------------3

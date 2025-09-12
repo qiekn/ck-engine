@@ -3,7 +3,6 @@
 #include "events/application_event.h"
 #include "events/key_event.h"
 #include "events/mouse_event.h"
-#include "GLFW/glfw3.h"
 #include "log.h"
 
 namespace ck {
@@ -28,14 +27,25 @@ void WindowsWindow::Init(const WindowProps& props) {
   if (!is_glfw_initialized) {
     // TODO: glfwTerminate on system shutdown <2025-09-12 06:59, @qiekn> //
     int success = glfwInit();
-    CK_ENGINE_ASSET(success, "Could not initialize GLFW");
+    CK_ENGINE_ASSERT(success, "Could not initialize GLFW");
     glfwSetErrorCallback(GLFWErrorCallback);
     is_glfw_initialized = true;
+    // Set all the required options for GLFW
+    // NOTE: OpenGL on MacOS has effectively been deprecated since 2011.
+    // It's stuck on an ancient version (4.1)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   }
 
   window_ =
       glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr, nullptr);
   glfwMakeContextCurrent(window_);
+
+  int version = gladLoadGL(glfwGetProcAddress);
+  CK_ENGINE_ASSERT(version, "Glad: Failed to initialize OpenGL context\n")
+  CK_ENGINE_INFO("Loaded OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+
   glfwSetWindowUserPointer(window_, &data_);
   SetVSync(true);
 

@@ -41,9 +41,11 @@ target_precompile_headers(ck PUBLIC ${SRC_DIR}/ck/pch.h)
 # Dependencies
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glad)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imgui)
 target_link_libraries(ck PUBLIC
   glfw
   glad
+  imgui
 )
 
 #---------------------------------------------------------------------3

@@ -4,3 +4,7 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = git@github.com:qiekn/imgui.git
+	branch = cmake

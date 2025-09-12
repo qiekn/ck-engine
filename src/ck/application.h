@@ -1,5 +1,6 @@
 #pragma once
 
+#include "events/application_event.h"
 #include "window.h"
 
 namespace ck {
@@ -9,6 +10,11 @@ public:
   virtual ~Application();
 
   void Run();
+
+  void OnEvent(Event& e);
+
+private:
+  bool OnWindowCloseEvent(WindowCloseEvent& e);
 
 private:
   std::unique_ptr<Window> window_;

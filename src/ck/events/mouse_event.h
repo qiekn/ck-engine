@@ -50,7 +50,7 @@ protected:
   int mouse_button_;
 };
 
-class MouseButtonPressedEvent : MouseButtonEvent {
+class MouseButtonPressedEvent : public MouseButtonEvent {
 public:
   MouseButtonPressedEvent(int button) : MouseButtonEvent(button) {}
 

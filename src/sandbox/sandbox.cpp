@@ -1,5 +1,7 @@
 #include <ck.h>
 
+#include "application.h"
+#include "imgui/imgui_layer.h"
 #include "log.h"
 
 class ExampleLayer : public ck::Layer {
@@ -11,7 +13,10 @@ public:
 
 class Sandbox : public ck::Application {
 public:
-  Sandbox() { PushLayer(std::make_unique<ExampleLayer>()); }
+  Sandbox() {
+    PushLayer(std::make_unique<ExampleLayer>());
+    PushOverlay(std::make_unique<ck::ImGuiLayer>());
+  }
   ~Sandbox() {}
 };
 

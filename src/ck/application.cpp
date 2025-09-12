@@ -2,6 +2,7 @@
 
 #include "events/application_event.h"
 #include "events/event.h"
+#include "log.h"
 
 namespace ck {
 #define CK_BIND_EVENT(fn)                                   \
@@ -9,7 +10,11 @@ namespace ck {
     return this->fn(std::forward<decltype(args)>(args)...); \
   }
 
+Application* Application::instance_ = nullptr;
+
 Application::Application() {
+  CK_ENGINE_ASSERT(Application::instance_ == nullptr, "application already exists");
+  instance_ = this;
   window_ = std::unique_ptr<Window>(Window::Create());
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 }
@@ -43,10 +48,12 @@ bool Application::OnWindowCloseEvent(WindowCloseEvent& e) {
 }
 
 void Application::PushLayer(std::unique_ptr<Layer> layer) {
+  layer->OnAttach();
   layer_stack_.push_layer(std::move(layer));
 }
 
 void Application::PushOverlay(std::unique_ptr<Layer> layer) {
+  layer->OnAttach();
   layer_stack_.push_overlay(std::move(layer));
 }
 }  // namespace ck

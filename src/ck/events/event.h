@@ -73,7 +73,7 @@ public:
   EventDispatcher(Event& event) : event_(event) {}
 
   template <typename T>
-  bool dispatchEvent(EventFunc<T> Func) {
+  bool DispatchEvent(EventFunc<T> Func) {
     if (event_.GetEventType() == T::GetStaticType()) {
       event_.handled_ = Func(*(T*)&event_);
       return true;

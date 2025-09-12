@@ -32,6 +32,7 @@ private:
 #define CK_CLIENT_FATAL(...) ::ck::Log::GetClientLogger()->fatal(__VA_ARGS__)
 // clang-format on
 
+#define CK_ENABLE_ASSERTS
 #ifdef CK_ENABLE_ASSERTS
 #define CK_ENGINE_ASSERT(x, ...) \
   if (!x) CK_ENGINE_ERROR("Assertion failed: {}", __VA_ARGS__);
@@ -39,6 +40,6 @@ private:
 #define CK_CLIENT_ASSERT(x, ...) \
   if (!x) CK_CLIENTCK_CLIENT_ERROR("Assertion failed: {}", __VA_ARGS__)
 #else
-#define CK_ENGINE_ASSET(x, ...)
-#define CK_CLIENT_ASSET(x, ...)
+#define CK_ENGINE_ASSERT(x, ...)
+#define CK_CLIENT_ASSERT(x, ...)
 #endif

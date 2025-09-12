@@ -11,7 +11,7 @@ public:
 
 class Sandbox : public ck::Application {
 public:
-  Sandbox() { PushLayer(new ExampleLayer()); }
+  Sandbox() { PushLayer(std::make_unique<ExampleLayer>()); }
   ~Sandbox() {}
 };
 

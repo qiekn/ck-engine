@@ -18,7 +18,7 @@ Application::~Application() {}
 
 void Application::Run() {
   while (running_) {
-    for (auto* layer : layer_stack_) {
+    for (auto& layer : layer_stack_) {
       layer->OnUpdate();
     }
     window_->OnUpdate();
@@ -42,7 +42,11 @@ bool Application::OnWindowCloseEvent(WindowCloseEvent& e) {
   return true;
 }
 
-void Application::PushLayer(Layer* layer) { layer_stack_.push_layer(layer); }
+void Application::PushLayer(std::unique_ptr<Layer> layer) {
+  layer_stack_.push_layer(std::move(layer));
+}
 
-void Application::PushOverlay(Layer* layer) { layer_stack_.push_overlay(layer); }
+void Application::PushOverlay(std::unique_ptr<Layer> layer) {
+  layer_stack_.push_overlay(std::move(layer));
+}
 }  // namespace ck

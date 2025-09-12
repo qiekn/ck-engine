@@ -1,6 +1,8 @@
 #pragma once
 
 #include "events/application_event.h"
+#include "layer.h"
+#include "layer_stack.h"
 #include "window.h"
 
 namespace ck {
@@ -13,12 +15,16 @@ public:
 
   void OnEvent(Event& e);
 
+  void PushLayer(Layer* layer);
+  void PushOverlay(Layer* layer);
+
 private:
   bool OnWindowCloseEvent(WindowCloseEvent& e);
 
 private:
   std::unique_ptr<Window> window_;
   bool running_ = true;
+  LayerStack layer_stack_;
 };
 
 // To be defined in CLIENT

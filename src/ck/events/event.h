@@ -60,6 +60,7 @@ public:
   inline virtual bool IsInCategorpy(EventCategory category) {
     return GetCategoryFlags() & category;
   }
+  inline bool Handled() const { return handled_; }
 
 protected:
   bool handled_{false};

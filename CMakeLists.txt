@@ -61,3 +61,7 @@ target_include_directories(sandbox PUBLIC "${SRC_DIR}/sandbox")
 
 # Link sandbox with the ck library
 target_link_libraries(sandbox PUBLIC ck)
+
+if (APPLE)
+  target_link_libraries(sandbox PRIVATE "-framework OpenGL")
+endif()

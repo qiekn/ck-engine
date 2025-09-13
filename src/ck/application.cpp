@@ -5,10 +5,6 @@
 #include "log.h"
 
 namespace ck {
-#define CK_BIND_EVENT(fn)                                   \
-  [this](auto&&... args) -> decltype(auto) {                \
-    return this->fn(std::forward<decltype(args)>(args)...); \
-  }
 
 Application* Application::instance_ = nullptr;
 
@@ -36,7 +32,7 @@ void Application::OnEvent(Event& e) {
 
   for (auto it = layer_stack_.end(); it != layer_stack_.begin();) {
     (*--it)->OnEvent(e);
-    if (e.Handled()) {
+    if (e.IsHandled()) {
       break;
     }
   }

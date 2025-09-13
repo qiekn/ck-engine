@@ -48,6 +48,11 @@ enum EventCategory {
 #define EVENT_CLASS_CATEGORY(category) \
   virtual int GetCategoryFlags() const override { return category; }
 
+#define CK_BIND_EVENT(fn)                                   \
+  [this](auto&&... args) -> decltype(auto) {                \
+    return this->fn(std::forward<decltype(args)>(args)...); \
+  }
+
 class Event {
   friend class EventDispatcher;
 
@@ -60,7 +65,7 @@ public:
   inline virtual bool IsInCategorpy(EventCategory category) {
     return GetCategoryFlags() & category;
   }
-  inline bool Handled() const { return handled_; }
+  inline bool IsHandled() const { return handled_; }
 
 protected:
   bool handled_{false};

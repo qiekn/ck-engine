@@ -14,6 +14,8 @@ public:
 
   unsigned int GetWidth() const override { return data_.width; }
   unsigned int GetHeight() const override { return data_.height; }
+  float GetScaleX() const override { return data_.content_scale_x; }
+  float GetScaleY() const override { return data_.content_scale_y; }
 
   void SetEventCallback(const EventCallback& callback) override { data_.event_callback = callback; }
   void SetVSync(bool enabled) override;
@@ -28,6 +30,7 @@ private:
   struct WindowData {
     std::string title;
     unsigned int width, height;
+    float content_scale_x, content_scale_y;
     bool vsync;
     EventCallback event_callback;
   };

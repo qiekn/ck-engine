@@ -59,6 +59,8 @@ void WindowsWindow::Init(const WindowProps& props) {
     data.event_callback(event);
   });
 
+  glfwGetWindowContentScale(window_, &data_.content_scale_x, &data_.content_scale_y);
+
   glfwSetWindowCloseCallback(window_, [](GLFWwindow* window) {
     WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
     WindowCloseEvent event;

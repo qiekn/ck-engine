@@ -88,19 +88,16 @@ bool ImGuiLayer::OnMouseScrollEvent(MouseScrollEvent& e) {
   return false;
 }
 bool ImGuiLayer::OnKeyPressedEvent(KeyPressedEvent& e) {
-  // ImGuiIO& io = ImGui::GetIO();
-  // io.KeysDown[e.GetKeyCode()] = true;
-
-  // io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-  // io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-  // io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-  // io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-
+  ImGuiIO& io = ImGui::GetIO();
+  // 这里显然需要 IMGuiKey 和 CK_KEY_?? 之间的对应
+  // 这里只是暂时的处理, imgui 移除了 io.KeyMap，改为了 enum ImGuiKey
+  // 所以暂时不处理按键输入的对应
+  io.AddKeyEvent(ImGuiKey::ImGuiKey_A, true);
   return false;
 }
 bool ImGuiLayer::OnKeyReleasedEvent(KeyReleasedEvent& e) {
-  // ImGuiIO& io = ImGui::GetIO();
-  // io.KeysDown[e.GetKeyCode()] = false;
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddKeyEvent(ImGuiKey_A, false);
   return false;
 }
 bool ImGuiLayer::OnKeyEvent(KeyEvent& e) {

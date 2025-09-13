@@ -1,22 +1,23 @@
 #include <ck.h>
 
 #include "application.h"
-#include "imgui/imgui_layer.h"
+#include "imgui.h"
 #include "log.h"
 
 class ExampleLayer : public ck::Layer {
 public:
   ExampleLayer() : Layer("Example") {}
-
-  void OnEvent(ck::Event& event) override { CK_CLIENT_INFO(event.ToString()); }
+  // void OnEvent(ck::Event& e) override { CK_ENGINE_INFO(e.ToString()); }
+  void OnImGuiRender() override {
+    ImGui::Begin("Test");
+    ImGui::TextUnformatted("Hello");
+    ImGui::End();
+  }
 };
 
 class Sandbox : public ck::Application {
 public:
-  Sandbox() {
-    PushLayer(std::make_unique<ExampleLayer>());
-    PushOverlay(std::make_unique<ck::ImGuiLayer>());
-  }
+  Sandbox() { PushLayer(std::make_unique<ExampleLayer>()); }
   ~Sandbox() {}
 };
 

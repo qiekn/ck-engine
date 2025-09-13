@@ -1,19 +1,20 @@
 #include "layer_stack.h"
 
 namespace ck {
-LayerStack::LayerStack() { layer_insert_ = layers_.begin(); }
+LayerStack::LayerStack() {}
 
 LayerStack::~LayerStack() {}
 
 void LayerStack::push_layer(std::unique_ptr<Layer> layer) {
-  layer_insert_ = layers_.emplace(layer_insert_, std::move(layer));
+  layers_.emplace(layers_.begin() + layer_insert_index_, std::move(layer));
+  layer_insert_index_++;
 }
 
 void LayerStack::pop_layer(std::unique_ptr<Layer> layer) {
   auto it = std::find(layers_.begin(), layers_.end(), layer);
   if (it != layers_.end()) {
     layers_.erase(it);
-    layer_insert_--;
+    layer_insert_index_--;
   }
 }
 

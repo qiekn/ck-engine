@@ -1,6 +1,7 @@
 #pragma once
 
 #include "events/application_event.h"
+#include "imgui/imgui_layer.h"
 #include "layer.h"
 #include "layer_stack.h"
 #include "window.h"
@@ -26,8 +27,9 @@ private:
   bool OnWindowCloseEvent(WindowCloseEvent& e);
 
 private:
-  std::unique_ptr<Window> window_;
   bool running_ = true;
+  std::unique_ptr<Window> window_;
+  ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
 
   static Application* instance_;

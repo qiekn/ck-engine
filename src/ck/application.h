@@ -32,6 +32,8 @@ private:
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
 
+  unsigned int vertex_array_, vertex_bufer_, index_buffer_;
+
   static Application* instance_;
 };
 

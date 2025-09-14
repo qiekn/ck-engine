@@ -4,6 +4,7 @@
 
 #include "events/application_event.h"
 #include "events/event.h"
+#include "glad/gl.h"
 #include "imgui/imgui_layer.h"
 #include "log.h"
 
@@ -26,6 +27,9 @@ Application::~Application() {}
 
 void Application::Run() {
   while (running_) {
+    glClearColor(0.7f, 0.9f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     for (auto& layer : layer_stack_) {
       layer->OnUpdate();
     }

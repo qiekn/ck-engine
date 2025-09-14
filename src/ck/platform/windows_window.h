@@ -2,6 +2,7 @@
 
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
+#include "renderer/graphics_context.h"
 #include "window.h"
 
 namespace ck {
@@ -28,6 +29,7 @@ private:
   virtual void Shutdown();
 
   GLFWwindow* window_;
+  std::unique_ptr<GraphicContext> context_;
 
   struct WindowData {
     std::string title;

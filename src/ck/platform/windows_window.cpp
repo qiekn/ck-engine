@@ -4,6 +4,7 @@
 #include "events/key_event.h"
 #include "events/mouse_event.h"
 #include "log.h"
+#include "platform/opengl/opengl_context.h"
 
 namespace ck {
 static bool is_glfw_initialized = false;
@@ -43,11 +44,8 @@ void WindowsWindow::Init(const WindowProps& props) {
 
   window_ =
       glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr, nullptr);
-  glfwMakeContextCurrent(window_);
-
-  int version = gladLoadGL(glfwGetProcAddress);
-  CK_ENGINE_ASSERT(version, "Glad: Failed to initialize OpenGL context\n")
-  CK_ENGINE_INFO("Loaded OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+  context_ = std::make_unique<OpenGlContext>(window_);
+  context_->Init();
 
   glfwSetWindowUserPointer(window_, &data_);
   SetVSync(true);

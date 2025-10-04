@@ -32,6 +32,8 @@ void ImGuiLayer::OnAttach() {
   ImGui::StyleColorsDark();
 
   ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 8.0f;
+  style.FrameRounding = 8.0f;
 
   // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look
   // identical to regular ones.

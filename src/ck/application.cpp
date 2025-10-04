@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include <memory>
+#include <string>
 
 #include "events/application_event.h"
 #include "events/event.h"
@@ -51,6 +52,33 @@ Application::Application() {
 
   unsigned int indices[3] = {0, 1, 2};
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  std::string vertex_source = R"(
+    #version 330 core
+
+    layout(location = 0) in vec3 a_position;
+
+    out vec3 v_position;
+
+    void main() {
+      v_position = a_position;
+      gl_Position = vec4(a_position, 1.0);
+    }
+  )";
+
+  std::string fragment_source = R"(
+    #version 330 core
+
+    layout(location = 0) out vec4 color;
+
+    in vec3 v_position;
+
+    void main() {
+      color = vec4(v_position * 0.5 + 0.5, 1.0);
+    }
+  )";
+
+  shader_ = std::make_unique<Shader>(vertex_source, fragment_source);
 }
 
 Application::~Application() {}

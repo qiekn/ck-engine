@@ -4,6 +4,7 @@
 #include "imgui/imgui_layer.h"
 #include "layer.h"
 #include "layer_stack.h"
+#include "renderer/shader.h"
 #include "window.h"
 
 namespace ck {
@@ -33,6 +34,7 @@ private:
   LayerStack layer_stack_;
 
   unsigned int vertex_array_, vertex_bufer_, index_buffer_;
+  std::unique_ptr<Shader> shader_;
 
   static Application* instance_;
 };

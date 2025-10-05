@@ -71,6 +71,7 @@ Shader::Shader(const std::string& vertex_source, const std::string& fragment_sou
   // Now time to link them together into a program.
   // Get a program object.
   GLuint program = glCreateProgram();
+  renderer_id_ = program;
 
   // Attach our shaders to our program
   glAttachShader(program, vertex_shader);
@@ -80,15 +81,15 @@ Shader::Shader(const std::string& vertex_source, const std::string& fragment_sou
   glLinkProgram(program);
 
   // Note the different functions here: glGetProgram* instead of glGetShader*.
-  GLint isLinked = 0;
-  glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
-  if (isLinked == GL_FALSE) {
-    GLint maxLength = 0;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+  GLint is_linked = 0;
+  glGetProgramiv(program, GL_LINK_STATUS, (int*)&is_linked);
+  if (is_linked == GL_FALSE) {
+    GLint max_length = 0;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
 
     // The maxLength includes the NULL character
-    std::vector<GLchar> infoLog(maxLength);
-    glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+    std::vector<GLchar> info_log(max_length);
+    glGetProgramInfoLog(program, max_length, &max_length, &info_log[0]);
 
     // We don't need the program anymore.
     glDeleteProgram(program);
@@ -96,9 +97,8 @@ Shader::Shader(const std::string& vertex_source, const std::string& fragment_sou
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
-    // Use the infoLog as you see fit.
-
-    // In this simple program, we'll just leave
+    CK_ENGINE_ERROR("Failed to link shader");
+    CK_ENGINE_ERROR("{}", info_log.data());
     return;
   }
 

@@ -33,7 +33,7 @@ private:
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
 
-  unsigned int vertex_array_, vertex_bufer_, index_buffer_;
+  unsigned int vertex_array_, vertex_buffer_, index_buffer_;
   std::unique_ptr<Shader> shader_;
 
   static Application* instance_;

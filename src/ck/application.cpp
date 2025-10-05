@@ -24,14 +24,6 @@ Application::Application() {
   PushOverlay(std::move(imgui_layer));
 
   // Triangle
-  //
-  // No triangle visible because it appears that this OpenGL implementation
-  // (macOS 10.15, Intel Iris Graphics 550) does not have a default shader.
-  glGenVertexArrays(1, &vertex_array_);
-  glBindVertexArray(vertex_array_);
-
-  glGenBuffers(1, &vertex_bufer_);
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_bufer_);
 
   // clang-format off
   float vertices[3 * 3] = {
@@ -41,12 +33,19 @@ Application::Application() {
   };
   // clangd-formata on
 
+  // VAO
+  glGenVertexArrays(1, &vertex_array_);
+  glBindVertexArray(vertex_array_);
+
+  // VBO
+  glGenBuffers(1, &vertex_buffer_);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-  // Index buffer
+  // IBO - Index buffer
   glGenBuffers(1, &index_buffer_);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_);
 
@@ -88,6 +87,7 @@ void Application::Run() {
     glClearColor(0.19f, 0.21f, 0.24f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    shader_->Bind();
     glBindVertexArray(vertex_array_);
     glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
 
@@ -95,7 +95,7 @@ void Application::Run() {
       layer->OnUpdate();
     }
 
-    imgui_layer_->Begin();
+    imgui_layer_->Begin(); // this is dirty, but it works
     for (auto& layer : layer_stack_) {
       layer->OnImGuiRender();
     }

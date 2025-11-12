@@ -1,15 +1,24 @@
 #pragma once
 
+#include "glm/ext/matrix_float4x4.hpp"
+#include "renderer/orthographic_camera.h"
 #include "renderer/renderer_api.h"
+#include "renderer/shader.h"
 namespace ck {
 
 class Renderer {
 public:
-  static void BeginScene();
+  static void BeginScene(OrthographicCamera& camera);
   static void EndScene();
-  static void Submit(VertexArray*);
+  static void Submit(const Shader*, const VertexArray*);
+
+  static inline RendererAPI::ApiType API() { return RendererAPI::ApiType(); }
 
 private:
-  static inline RendererAPI::ApiType API() { return RendererAPI::ApiType(); }
+  struct SceneData {
+    glm::mat4 view_projection_;
+  };
+
+  static SceneData* scene_data_;
 };
 }  // namespace ck

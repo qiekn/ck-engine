@@ -7,10 +7,10 @@
 #include "events/application_event.h"
 #include "events/event.h"
 #include "glad/gl.h"
-#include "glm/glm.hpp"
 #include "imgui/imgui_layer.h"
 #include "log.h"
 #include "renderer/buffer.h"
+#include "renderer/orthographic_camera.h"
 #include "renderer/render_command.h"
 #include "renderer/renderer.h"
 #include "renderer/vertex_array.h"
@@ -19,7 +19,7 @@ namespace ck {
 
 Application* Application::instance_ = nullptr;
 
-Application::Application() {
+Application::Application() : camera_(-1.6f, 1.6f, -0.9f, 0.9f) {
   CK_ENGINE_ASSERT(Application::instance_ == nullptr, "application already exists");
   instance_ = this;
   window_ = Window::Create();
@@ -61,13 +61,15 @@ Application::Application() {
     layout(location = 0) in vec3 a_position;
     layout(location = 1) in vec4 a_color;
 
+    uniform mat4 u_view_projection;
+
     out vec3 v_position;
     out vec4 v_color;
 
     void main() {
       v_position = a_position;
       v_color = a_color;
-      gl_Position = vec4(a_position, 1.0);
+      gl_Position = u_view_projection * vec4(a_position, 1.0);
     }
   )";
 
@@ -117,11 +119,13 @@ Application::Application() {
 
     layout(location = 0) in vec3 a_position;
 
+    uniform mat4 u_view_projection;
+
     out vec3 v_position;
 
     void main() {
       v_position = a_position;
-      gl_Position = vec4(a_position, 1.0);
+      gl_Position = u_view_projection * vec4(a_position, 1.0);
     }
   )";
 
@@ -147,13 +151,13 @@ void Application::Run() {
     RenderCommand::SetClearColor({0.25f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
 
-    Renderer::BeginScene();
+    camera_.SetPosition({0.0f, 0.0f, 0.0f});
+    camera_.SetRotation(45.0f);
 
-    blue_shader_->Bind();
-    Renderer::Submit(square_va_.get());
+    Renderer::BeginScene(camera_);
 
-    shader_->Bind();
-    Renderer::Submit(vertex_array_.get());
+    Renderer::Submit(blue_shader_.get(), square_va_.get());
+    Renderer::Submit(shader_.get(), vertex_array_.get());
 
     Renderer::EndScene();
 

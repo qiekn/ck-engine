@@ -9,7 +9,7 @@ struct WindowProps {  // Props -> properties
   unsigned int width;
   unsigned int height;
 
-  WindowProps(const std::string& _title = "Ck Engine", unsigned int _width = 1280,
+  WindowProps(const std::string& _title = "ck: Engine", unsigned int _width = 1280,
               unsigned int _height = 720)
       : title(_title), width(_width), height(_height) {}
 };

@@ -8,6 +8,7 @@
 #include "glad/gl.h"
 #include "imgui/imgui_layer.h"
 #include "log.h"
+#include "renderer/buffer.h"
 
 namespace ck {
 
@@ -37,20 +38,14 @@ Application::Application() {
   glGenVertexArrays(1, &vertex_array_);
   glBindVertexArray(vertex_array_);
 
-  // VBO
-  glGenBuffers(1, &vertex_buffer_);
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  vertex_buffer_ = VertexBuffer::Create(vertices, sizeof(vertices));
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
   // IBO - Index buffer
-  glGenBuffers(1, &index_buffer_);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_);
-
-  unsigned int indices[3] = {0, 1, 2};
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  uint32_t indices[3] = {0, 1, 2};
+  index_buffer_ = IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 
   std::string vertex_source = R"(
     #version 330 core
@@ -89,7 +84,7 @@ void Application::Run() {
 
     shader_->Bind();
     glBindVertexArray(vertex_array_);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, index_buffer_->Count(), GL_UNSIGNED_INT, nullptr);
 
     for (auto& layer : layer_stack_) {
       layer->OnUpdate();

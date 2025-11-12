@@ -5,6 +5,8 @@
 namespace ck {
 class Input {
 public:
+  virtual ~Input() = default;
+
   static bool IsKeyPressed(int key_code) { return instance_->IsKeyPressedImpl(key_code); }
   static bool IsMouseButtonPressed(int button) {
     return instance_->IsMouseButtonPressedImpl(button);

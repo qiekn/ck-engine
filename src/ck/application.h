@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 
+#include "core/deltatime.h"
 #include "events/application_event.h"
 #include "imgui/imgui_layer.h"
 #include "layer.h"
@@ -33,6 +35,9 @@ private:
   std::unique_ptr<Window> window_;
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
+  DeltaTime timestep_;
+  std::chrono::time_point<std::chrono::steady_clock> last_frame_time_ =
+      std::chrono::steady_clock::now();
 
   static Application* instance_;
 };

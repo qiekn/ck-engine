@@ -1,6 +1,7 @@
 #include <ck.h>
 
 #include "application.h"
+#include "core/deltatime.h"
 #include "events/event.h"
 #include "glm/ext/vector_float3.hpp"
 #include "imgui.h"
@@ -131,23 +132,23 @@ public:
         std::make_unique<ck::Shader>(blue_shader_vertex_source, blue_shader_fragment_source);
   }
 
-  void OnUpdate() override {
+  void OnUpdate(ck::DeltaTime dt) override {
     if (ck::Input::IsKeyPressed(CK_KEY_LEFT)) {
-      camera_position_.x += camera_speed_;
+      camera_position_.x += camera_speed_ * dt;
     } else if (ck::Input::IsKeyPressed(CK_KEY_RIGHT)) {
-      camera_position_.x -= camera_speed_;
+      camera_position_.x -= camera_speed_ * dt;
     }
 
     if (ck::Input::IsKeyPressed(CK_KEY_UP)) {
-      camera_position_.y -= camera_speed_;
+      camera_position_.y -= camera_speed_ * dt;
     } else if (ck::Input::IsKeyPressed(CK_KEY_DOWN)) {
-      camera_position_.y += camera_speed_;
+      camera_position_.y += camera_speed_ * dt;
     }
 
     if (ck::Input::IsKeyPressed(CK_KEY_A)) {
-      camera_rotation_ += camera_rotation_speed_;
+      camera_rotation_ += camera_rotation_speed_ * dt;
     } else if (ck::Input::IsKeyPressed(CK_KEY_D)) {
-      camera_rotation_ -= camera_rotation_speed_;
+      camera_rotation_ -= camera_rotation_speed_ * dt;
     }
 
     ck::RenderCommand::SetClearColor({0.25f, 0.2f, 0.2f, 1.0f});

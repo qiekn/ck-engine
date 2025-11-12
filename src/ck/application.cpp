@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "core/deltatime.h"
 #include "events/application_event.h"
 #include "events/event.h"
 #include "glad/gl.h"
@@ -27,8 +28,11 @@ Application::~Application() {}
 
 void Application::Run() {
   while (running_) {
+    auto time = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration<float>(time - last_frame_time_).count();
+    auto timestep = DeltaTime(diff);
     for (auto& layer : layer_stack_) {
-      layer->OnUpdate();
+      layer->OnUpdate(timestep);
     }
 
     imgui_layer_->Begin();  // this is dirty, but it works
@@ -38,6 +42,7 @@ void Application::Run() {
     imgui_layer_->End();
 
     window_->OnUpdate();
+    last_frame_time_ = time;
   }
 }
 

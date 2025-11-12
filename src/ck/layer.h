@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/deltatime.h"
 #include "events/event.h"
 #include "pch.h"
 
@@ -11,7 +12,7 @@ public:
 
   virtual void OnAttach() {}
   virtual void OnDetach() {}
-  virtual void OnUpdate() {}
+  virtual void OnUpdate(DeltaTime) {}
   virtual void OnEvent(Event& e) {}
   virtual void OnImGuiRender() {}
 

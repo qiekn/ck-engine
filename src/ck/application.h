@@ -6,8 +6,8 @@
 #include "imgui/imgui_layer.h"
 #include "layer.h"
 #include "layer_stack.h"
-#include "renderer/buffer.h"
 #include "renderer/shader.h"
+#include "renderer/vertex_array.h"
 #include "window.h"
 
 namespace ck {
@@ -36,10 +36,11 @@ private:
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
 
-  unsigned int vertex_array_;
-  std::unique_ptr<VertexBuffer> vertex_buffer_;
-  std::unique_ptr<IndexBuffer> index_buffer_;
+  std::shared_ptr<VertexArray> vertex_array_;
   std::unique_ptr<Shader> shader_;
+
+  std::shared_ptr<VertexArray> square_va_;
+  std::unique_ptr<Shader> blue_shader_;
 
   static Application* instance_;
 };

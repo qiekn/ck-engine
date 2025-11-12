@@ -3,16 +3,16 @@
 #include <memory>
 
 #include "platform/opengl/opengl_vertex_array.h"
-#include "renderer/renderer.h"
+#include "renderer/renderer_api.h"
 
 namespace ck {
 
 std::unique_ptr<VertexArray> VertexArray::Create() {
-  switch (Renderer::API()) {
-    case RendererAPI::kNone:
+  switch (RendererAPI::API()) {
+    case RendererAPI::ApiType::kNone:
       return nullptr;
 
-    case RendererAPI::kOpenGL:
+    case RendererAPI::ApiType::kOpenGL:
       return std::make_unique<OpenglVertexArray>();
   }
 

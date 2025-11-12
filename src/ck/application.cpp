@@ -7,9 +7,12 @@
 #include "events/application_event.h"
 #include "events/event.h"
 #include "glad/gl.h"
+#include "glm/glm.hpp"
 #include "imgui/imgui_layer.h"
 #include "log.h"
 #include "renderer/buffer.h"
+#include "renderer/render_command.h"
+#include "renderer/renderer.h"
 #include "renderer/vertex_array.h"
 
 namespace ck {
@@ -141,17 +144,18 @@ Application::~Application() {}
 
 void Application::Run() {
   while (running_) {
-    glClearColor(0.19f, 0.21f, 0.24f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    RenderCommand::SetClearColor({0.25f, 0.2f, 0.2f, 1.0f});
+    RenderCommand::Clear();
+
+    Renderer::BeginScene();
 
     blue_shader_->Bind();
-    square_va_->Bind();
-    glDrawElements(GL_TRIANGLES, square_va_->GetIndexBuffer()->Count(), GL_UNSIGNED_INT, nullptr);
+    Renderer::Submit(square_va_.get());
 
     shader_->Bind();
-    vertex_array_->Bind();
-    glDrawElements(GL_TRIANGLES, vertex_array_->GetIndexBuffer()->Count(), GL_UNSIGNED_INT,
-                   nullptr);
+    Renderer::Submit(vertex_array_.get());
+
+    Renderer::EndScene();
 
     for (auto& layer : layer_stack_) {
       layer->OnUpdate();

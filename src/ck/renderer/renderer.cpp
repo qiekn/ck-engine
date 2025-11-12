@@ -1,5 +1,14 @@
 #include "renderer.h"
 
+#include "renderer/render_command.h"
+
 namespace ck {
-RendererAPI Renderer::renderer_api_ = RendererAPI::kOpenGL;
+void Renderer::BeginScene() {}
+
+void Renderer::EndScene() {}
+
+void Renderer::Submit(VertexArray* vertex_array) {
+  vertex_array->Bind();
+  RenderCommand::DrawIndexed(vertex_array);
 }
+}  // namespace ck

@@ -1,18 +1,193 @@
 #include <ck.h>
 
 #include "application.h"
+#include "events/event.h"
+#include "glm/ext/vector_float3.hpp"
 #include "imgui.h"
+#include "input.h"
+#include "key_code.h"
 #include "log.h"
+#include "renderer/buffer.h"
+#include "renderer/render_command.h"
+#include "renderer/renderer.h"
 
 class ExampleLayer : public ck::Layer {
 public:
-  ExampleLayer() : Layer("Example") {}
-  // void OnEvent(ck::Event& e) override { CK_ENGINE_INFO(e.ToString()); }
+  ExampleLayer() : Layer("Example"), camera_(-1.6f, 1.6f, -0.9f, 0.9f) {
+    // clang-format off
+  float vertices[] = {
+    // Position         // Color
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+  };
+    // clang-format on
+
+    /*─────────────────────────────────────┐
+    │              Triangles               │
+    └──────────────────────────────────────*/
+
+    std::shared_ptr<ck::VertexBuffer> vertex_buffer =
+        ck::VertexBuffer::Create(vertices, sizeof(vertices));
+    ck::BufferLayout layout = {{ck::ShaderDataType::kFloat3, "a_position"},
+                               {ck::ShaderDataType::kFloat4, "a_color"}};
+    vertex_buffer->SetLayout(layout);
+
+    uint32_t indices[3] = {0, 1, 2};
+    std::shared_ptr<ck::IndexBuffer> index_buffer =
+        ck::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
+
+    vertex_array_ = ck::VertexArray::Create();
+    vertex_array_->AddVertexBuffer(vertex_buffer);
+    vertex_array_->SetIndexBuffer(index_buffer);
+
+    std::string vertex_source = R"(
+    #version 330 core
+
+    layout(location = 0) in vec3 a_position;
+    layout(location = 1) in vec4 a_color;
+
+    uniform mat4 u_view_projection;
+
+    out vec3 v_position;
+    out vec4 v_color;
+
+    void main() {
+      v_position = a_position;
+      v_color = a_color;
+      gl_Position = u_view_projection * vec4(a_position, 1.0);
+    }
+  )";
+
+    std::string fragment_source = R"(
+    #version 330 core
+
+    layout(location = 0) out vec4 color;
+
+    in vec3 v_position;
+    in vec4 v_color;
+
+    void main() {
+      color = vec4(v_position * 0.5 + 0.5, 1.0);
+      color = v_color;
+    }
+  )";
+
+    shader_ = std::make_unique<ck::Shader>(vertex_source, fragment_source);
+
+    /*─────────────────────────────────────┐
+    │                Square                │
+    └──────────────────────────────────────*/
+
+    // clang-format off
+  float square_vertices[] = {
+    -0.75f, -0.75f, 0.0f, 
+     0.75f, -0.75f, 0.0f, 
+     0.75f,  0.75f, 0.0f, 
+    -0.75f,  0.75f, 0.0f, 
+  };
+    // clang-format on
+
+    std::shared_ptr<ck::VertexBuffer> square_vb =
+        ck::VertexBuffer::Create(square_vertices, sizeof(square_vertices));
+    square_vb->SetLayout({{ck::ShaderDataType::kFloat3, "a_position"}});
+
+    uint32_t square_indices[] = {0, 1, 2, 2, 3, 0};
+    std::shared_ptr<ck::IndexBuffer> square_ib =
+        ck::IndexBuffer::Create(square_indices, sizeof(square_indices) / sizeof(uint32_t));
+
+    square_va_ = ck::VertexArray::Create();
+    square_va_->AddVertexBuffer(square_vb);
+    square_va_->SetIndexBuffer(square_ib);
+
+    std::string blue_shader_vertex_source = R"(
+    #version 330 core
+
+    layout(location = 0) in vec3 a_position;
+
+    uniform mat4 u_view_projection;
+
+    out vec3 v_position;
+
+    void main() {
+      v_position = a_position;
+      gl_Position = u_view_projection * vec4(a_position, 1.0);
+    }
+  )";
+
+    std::string blue_shader_fragment_source = R"(
+    #version 330 core
+
+    layout(location = 0) out vec4 color;
+
+    in vec3 v_position;
+
+    void main() {
+      color = vec4(0.2, 0.3, 0.8, 1.0);
+    }
+  )";
+
+    blue_shader_ =
+        std::make_unique<ck::Shader>(blue_shader_vertex_source, blue_shader_fragment_source);
+  }
+
+  void OnUpdate() override {
+    if (ck::Input::IsKeyPressed(CK_KEY_LEFT)) {
+      camera_position_.x += camera_speed_;
+    } else if (ck::Input::IsKeyPressed(CK_KEY_RIGHT)) {
+      camera_position_.x -= camera_speed_;
+    }
+
+    if (ck::Input::IsKeyPressed(CK_KEY_UP)) {
+      camera_position_.y -= camera_speed_;
+    } else if (ck::Input::IsKeyPressed(CK_KEY_DOWN)) {
+      camera_position_.y += camera_speed_;
+    }
+
+    if (ck::Input::IsKeyPressed(CK_KEY_A)) {
+      camera_rotation_ += camera_rotation_speed_;
+    } else if (ck::Input::IsKeyPressed(CK_KEY_D)) {
+      camera_rotation_ -= camera_rotation_speed_;
+    }
+
+    ck::RenderCommand::SetClearColor({0.25f, 0.2f, 0.2f, 1.0f});
+    ck::RenderCommand::Clear();
+
+    camera_.SetPosition(camera_position_);
+    camera_.SetRotation(camera_rotation_);
+
+    ck::Renderer::BeginScene(camera_);
+
+    ck::Renderer::Submit(blue_shader_.get(), square_va_.get());
+    ck::Renderer::Submit(shader_.get(), vertex_array_.get());
+
+    ck::Renderer::EndScene();
+  }
+
   void OnImGuiRender() override {
-    ImGui::Begin("Test");
-    ImGui::TextUnformatted("Hello");
+    ImGui::Begin("Camera Control");
+    ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera_position_.x, camera_position_.y,
+                camera_position_.z);
+    ImGui::Text("Rotation: %.2f", camera_rotation_);
     ImGui::End();
   }
+
+  void OnEvent(ck::Event& event) override {}
+
+private:
+  std::shared_ptr<ck::VertexArray> vertex_array_;
+  std::unique_ptr<ck::Shader> shader_;
+
+  std::shared_ptr<ck::VertexArray> square_va_;
+  std::unique_ptr<ck::Shader> blue_shader_;
+
+  ck::OrthographicCamera camera_;
+
+  glm::vec3 camera_position_{0.0f};
+
+  float camera_speed_ = 0.1f;
+  float camera_rotation_ = 0.0f;
+  float camera_rotation_speed_ = 1.0f;
 };
 
 class Sandbox : public ck::Application {

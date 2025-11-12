@@ -6,9 +6,6 @@
 #include "imgui/imgui_layer.h"
 #include "layer.h"
 #include "layer_stack.h"
-#include "renderer/orthographic_camera.h"
-#include "renderer/shader.h"
-#include "renderer/vertex_array.h"
 #include "window.h"
 
 namespace ck {
@@ -36,14 +33,6 @@ private:
   std::unique_ptr<Window> window_;
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
-
-  std::shared_ptr<VertexArray> vertex_array_;
-  std::unique_ptr<Shader> shader_;
-
-  std::shared_ptr<VertexArray> square_va_;
-  std::unique_ptr<Shader> blue_shader_;
-
-  OrthographicCamera camera_;
 
   static Application* instance_;
 };

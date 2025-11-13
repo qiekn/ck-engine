@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <memory>
 
 #include "core/deltatime.h"
 #include "events/application_event.h"

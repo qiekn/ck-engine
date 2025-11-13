@@ -1,8 +1,5 @@
 #include "opengl_vertex_array.h"
 
-#include <algorithm>
-#include <filesystem>
-
 #include "glad/gl.h"
 
 namespace ck {

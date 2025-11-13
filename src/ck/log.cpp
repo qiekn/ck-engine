@@ -1,7 +1,7 @@
 #include "log.h"
 
 #include "pch.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/stdout_color_sinks.h"  // IWYU pragma: keep
 #include "spdlog/spdlog.h"
 
 namespace ck {

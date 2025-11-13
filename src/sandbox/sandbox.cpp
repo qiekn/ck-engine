@@ -13,7 +13,6 @@
 #include "imgui.h"
 #include "input.h"
 #include "key_code.h"
-#include "log.h"
 #include "platform/opengl/opengl_shader.h"
 #include "renderer/buffer.h"
 #include "renderer/render_command.h"

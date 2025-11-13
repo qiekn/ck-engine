@@ -5,8 +5,8 @@
 #include "spdlog/spdlog.h"
 
 namespace ck {
-std::shared_ptr<spdlog::logger> Log::engine_logger_;
-std::shared_ptr<spdlog::logger> Log::client_logger_;
+Ref<spdlog::logger> Log::engine_logger_;
+Ref<spdlog::logger> Log::client_logger_;
 
 void Log::Init() {
   // Docs: https://github.com/gabime/spdlog/wiki/Custom-formatting#pattern-flags

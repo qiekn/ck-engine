@@ -8,7 +8,7 @@
 
 namespace ck {
 
-std::unique_ptr<Input> Input::instance_ = std::make_unique<WindowsInput>();
+Scope<Input> Input::instance_ = std::make_unique<WindowsInput>();
 
 bool WindowsInput::IsKeyPressedImpl(int key_code) const {
   auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());

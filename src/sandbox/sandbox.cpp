@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "application.h"
+#include "core.h"
 #include "core/deltatime.h"
 #include "events/event.h"
 #include "glm/ext/matrix_float4x4.hpp"
@@ -35,14 +36,13 @@ public:
     │              Triangles               │
     └──────────────────────────────────────*/
 
-    std::shared_ptr<ck::VertexBuffer> vertex_buffer =
-        ck::VertexBuffer::Create(vertices, sizeof(vertices));
+    ck::Ref<ck::VertexBuffer> vertex_buffer = ck::VertexBuffer::Create(vertices, sizeof(vertices));
     ck::BufferLayout layout = {{ck::ShaderDataType::kFloat3, "a_position"},
                                {ck::ShaderDataType::kFloat4, "a_color"}};
     vertex_buffer->SetLayout(layout);
 
     uint32_t indices[3] = {0, 1, 2};
-    std::shared_ptr<ck::IndexBuffer> index_buffer =
+    ck::Ref<ck::IndexBuffer> index_buffer =
         ck::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 
     vertex_array_ = ck::VertexArray::Create();
@@ -97,12 +97,12 @@ public:
   };
     // clang-format on
 
-    std::shared_ptr<ck::VertexBuffer> square_vb =
+    ck::Ref<ck::VertexBuffer> square_vb =
         ck::VertexBuffer::Create(square_vertices, sizeof(square_vertices));
     square_vb->SetLayout({{ck::ShaderDataType::kFloat3, "a_position"}});
 
     uint32_t square_indices[] = {0, 1, 2, 2, 3, 0};
-    std::shared_ptr<ck::IndexBuffer> square_ib =
+    ck::Ref<ck::IndexBuffer> square_ib =
         ck::IndexBuffer::Create(square_indices, sizeof(square_indices) / sizeof(uint32_t));
 
     square_va_ = ck::VertexArray::Create();
@@ -201,11 +201,11 @@ public:
   void OnEvent(ck::Event& event) override {}
 
 private:
-  std::shared_ptr<ck::VertexArray> vertex_array_;
-  std::unique_ptr<ck::Shader> shader_;
+  ck::Ref<ck::VertexArray> vertex_array_;
+  ck::Ref<ck::Shader> shader_;
 
-  std::shared_ptr<ck::VertexArray> square_va_;
-  std::shared_ptr<ck::Shader> flat_color_shader_;
+  ck::Ref<ck::VertexArray> square_va_;
+  ck::Ref<ck::Shader> flat_color_shader_;
 
   ck::OrthographicCamera camera_;
 

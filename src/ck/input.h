@@ -1,6 +1,7 @@
 #pragma once
 
 // #include "pch.h"
+#include "core.h"
 
 namespace ck {
 class Input {
@@ -24,6 +25,6 @@ protected:
   virtual float GetMouseYImpl() const = 0;
 
 private:
-  static std::unique_ptr<Input> instance_;
+  static Scope<Input> instance_;
 };
 }  // namespace ck

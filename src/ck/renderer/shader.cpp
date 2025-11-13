@@ -6,8 +6,7 @@
 
 namespace ck {
 
-std::unique_ptr<Shader> Shader::Create(const std::string& vertex_source,
-                                       const std::string& fragment_source) {
+Scope<Shader> Shader::Create(const std::string& vertex_source, const std::string& fragment_source) {
   switch (Renderer::API()) {
     case RendererAPI::Type::kOpenGL:
       return std::make_unique<OpenglShader>(vertex_source, fragment_source);

@@ -10,7 +10,7 @@ namespace ck {
 │             Index Buffer             │
 └──────────────────────────────────────*/
 
-std::unique_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t count) {
+Scope<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t count) {
   switch (RendererAPI::GetAPI()) {
     case RendererAPI::Type::kNone:
       CK_ENGINE_ERROR("RendererAPI::kNone is currently not supported!");
@@ -28,7 +28,7 @@ std::unique_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t co
 │            Vertex Buffer             │
 └──────────────────────────────────────*/
 
-std::unique_ptr<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size) {
+Scope<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size) {
   switch (RendererAPI::GetAPI()) {
     case RendererAPI::Type::kNone:
       CK_ENGINE_ERROR("RendererAPI::kNone is currently not supported!");

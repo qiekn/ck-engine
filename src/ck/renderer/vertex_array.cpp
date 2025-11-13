@@ -7,7 +7,7 @@
 
 namespace ck {
 
-std::unique_ptr<VertexArray> VertexArray::Create() {
+Scope<VertexArray> VertexArray::Create() {
   switch (RendererAPI::GetAPI()) {
     case RendererAPI::Type::kNone:
       return nullptr;

@@ -34,6 +34,6 @@ public:
 
   virtual void* GetNativeWindow() const = 0;
 
-  static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
+  static Scope<Window> Create(const WindowProps& props = WindowProps());
 };
 }  // namespace ck

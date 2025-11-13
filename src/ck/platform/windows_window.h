@@ -29,7 +29,7 @@ private:
   virtual void Shutdown();
 
   GLFWwindow* window_;
-  std::unique_ptr<GraphicContext> context_;
+  Scope<GraphicContext> context_;
 
   struct WindowData {
     std::string title;

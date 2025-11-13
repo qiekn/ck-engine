@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core.h"
 #include "spdlog/spdlog.h"  // IWYU pragma: keep
 
 namespace ck {
@@ -9,12 +10,12 @@ public:
   virtual ~Log() = default;
 
   static void Init();
-  inline static std::shared_ptr<spdlog::logger>& GetEngineLogger() { return engine_logger_; }
-  inline static std::shared_ptr<spdlog::logger>& GetClientLogger() { return client_logger_; }
+  inline static Ref<spdlog::logger>& GetEngineLogger() { return engine_logger_; }
+  inline static Ref<spdlog::logger>& GetClientLogger() { return client_logger_; }
 
 private:
-  static std::shared_ptr<spdlog::logger> engine_logger_;
-  static std::shared_ptr<spdlog::logger> client_logger_;
+  static Ref<spdlog::logger> engine_logger_;
+  static Ref<spdlog::logger> client_logger_;
 };
 }  // namespace ck
 

@@ -63,12 +63,12 @@ bool Application::OnWindowCloseEvent(WindowCloseEvent& e) {
   return true;
 }
 
-void Application::PushLayer(std::unique_ptr<Layer> layer) {
+void Application::PushLayer(Scope<Layer> layer) {
   layer->OnAttach();
   layer_stack_.push_layer(std::move(layer));
 }
 
-void Application::PushOverlay(std::unique_ptr<Layer> layer) {
+void Application::PushOverlay(Scope<Layer> layer) {
   layer->OnAttach();
   layer_stack_.push_overlay(std::move(layer));
 }

@@ -46,7 +46,7 @@ void OpenglVertexArray::Bind() const { glBindVertexArray(renderer_id_); }
 
 void OpenglVertexArray::Unbind() const { glBindVertexArray(0); }
 
-void OpenglVertexArray::AddVertexBuffer(std::shared_ptr<VertexBuffer> vertex_buffer) {
+void OpenglVertexArray::AddVertexBuffer(Ref<VertexBuffer> vertex_buffer) {
   CK_ENGINE_ASSERT(vertex_buffer->Layout().elements().size(), "vertex buffer ahs no layout");
   glBindVertexArray(renderer_id_);
   vertex_buffer->Bind();
@@ -64,7 +64,7 @@ void OpenglVertexArray::AddVertexBuffer(std::shared_ptr<VertexBuffer> vertex_buf
   vertex_buffers_.push_back(std::move(vertex_buffer));
 }
 
-void OpenglVertexArray::SetIndexBuffer(std::shared_ptr<IndexBuffer> index_buffer) {
+void OpenglVertexArray::SetIndexBuffer(Ref<IndexBuffer> index_buffer) {
   glBindVertexArray(renderer_id_);
   index_buffer->Bind();
 

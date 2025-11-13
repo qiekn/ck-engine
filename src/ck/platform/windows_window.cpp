@@ -13,7 +13,7 @@ static void GLFWErrorCallback(int error, const char* description) {
   CK_CLIENT_ERROR("GLFW ERROR ({}) {}", error, description);
 }
 
-std::unique_ptr<Window> Window::Create(const WindowProps& props) {
+Scope<Window> Window::Create(const WindowProps& props) {
   return std::make_unique<WindowsWindow>(props);
 }
 

@@ -20,8 +20,8 @@ public:
 
   void OnEvent(Event& e);
 
-  void PushLayer(std::unique_ptr<Layer> layer);
-  void PushOverlay(std::unique_ptr<Layer> layer);
+  void PushLayer(Scope<Layer> layer);
+  void PushOverlay(Scope<Layer> layer);
 
   inline auto& GetWindow() { return window_; }
 
@@ -32,7 +32,7 @@ private:
 
 private:
   bool running_ = true;
-  std::unique_ptr<Window> window_;
+  Scope<Window> window_;
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
   DeltaTime timestep_;

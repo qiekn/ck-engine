@@ -142,7 +142,7 @@ public:
   virtual const BufferLayout& Layout() const = 0;
   virtual void SetLayout(const BufferLayout& layout) = 0;
 
-  static std::unique_ptr<VertexBuffer> Create(float* vertices, uint32_t size);
+  static Scope<VertexBuffer> Create(float* vertices, uint32_t size);
 };
 
 class IndexBuffer {
@@ -154,6 +154,6 @@ public:
 
   virtual uint32_t Count() const = 0;
 
-  static std::unique_ptr<IndexBuffer> Create(uint32_t* indices, uint32_t count);
+  static Scope<IndexBuffer> Create(uint32_t* indices, uint32_t count);
 };
 }  // namespace ck

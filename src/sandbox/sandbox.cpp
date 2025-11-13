@@ -6,6 +6,7 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "glm/ext/vector_float4.hpp"
 #include "imgui.h"
 #include "input.h"
 #include "key_code.h"
@@ -104,7 +105,7 @@ public:
     square_va_->AddVertexBuffer(square_vb);
     square_va_->SetIndexBuffer(square_ib);
 
-    std::string blue_shader_vertex_source = R"(
+    std::string flat_color_shader_vertex_source = R"(
     #version 330 core
 
     layout(location = 0) in vec3 a_position;
@@ -120,33 +121,35 @@ public:
     }
   )";
 
-    std::string blue_shader_fragment_source = R"(
+    std::string flat_color_shader_fragment_source = R"(
     #version 330 core
 
     layout(location = 0) out vec4 color;
 
     in vec3 v_position;
 
+    uniform vec4 u_color;
+
     void main() {
-      color = vec4(0.2, 0.3, 0.8, 1.0);
+      color = u_color;
     }
   )";
 
-    blue_shader_ =
-        std::make_unique<ck::Shader>(blue_shader_vertex_source, blue_shader_fragment_source);
+    flat_color_shader_ = std::make_unique<ck::Shader>(flat_color_shader_vertex_source,
+                                                      flat_color_shader_fragment_source);
   }
 
   void OnUpdate(ck::DeltaTime dt) override {
     if (ck::Input::IsKeyPressed(CK_KEY_LEFT)) {
-      camera_position_.x += camera_speed_ * dt;
-    } else if (ck::Input::IsKeyPressed(CK_KEY_RIGHT)) {
       camera_position_.x -= camera_speed_ * dt;
+    } else if (ck::Input::IsKeyPressed(CK_KEY_RIGHT)) {
+      camera_position_.x += camera_speed_ * dt;
     }
 
     if (ck::Input::IsKeyPressed(CK_KEY_UP)) {
-      camera_position_.y -= camera_speed_ * dt;
-    } else if (ck::Input::IsKeyPressed(CK_KEY_DOWN)) {
       camera_position_.y += camera_speed_ * dt;
+    } else if (ck::Input::IsKeyPressed(CK_KEY_DOWN)) {
+      camera_position_.y -= camera_speed_ * dt;
     }
 
     if (ck::Input::IsKeyPressed(CK_KEY_A)) {
@@ -164,12 +167,19 @@ public:
     ck::Renderer::BeginScene(camera_);
 
     auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+    auto blue_color = glm::vec4(0.2f, 0.3f, 0.8f, 1.0f);
+    auto red_color = glm::vec4(0.8f, 0.2f, 0.3f, 1.0f);
 
     for (int y = 0; y < 20; y++) {
       for (int x = 0; x < 20; x++) {
         auto position = glm::vec3(x * 0.11f, y * 0.11f, 0.0f);
         auto transform = glm::translate(glm::mat4(1.0f), position) * scale;
-        ck::Renderer::Submit(blue_shader_.get(), square_va_.get(), transform);
+        if (x % 2 == 0) {
+          flat_color_shader_->UploadUniformFloat4("u_color", red_color);
+        } else {
+          flat_color_shader_->UploadUniformFloat4("u_color", blue_color);
+        }
+        ck::Renderer::Submit(flat_color_shader_.get(), square_va_.get(), transform);
       }
     }
 
@@ -183,6 +193,8 @@ public:
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera_position_.x, camera_position_.y,
                 camera_position_.z);
     ImGui::Text("Rotation: %.2f", camera_rotation_);
+
+    ImGui::SliderFloat("Camera Speed", &camera_speed_, 0.1f, 5.0f);
     ImGui::End();
   }
 
@@ -193,13 +205,13 @@ private:
   std::unique_ptr<ck::Shader> shader_;
 
   std::shared_ptr<ck::VertexArray> square_va_;
-  std::unique_ptr<ck::Shader> blue_shader_;
+  std::unique_ptr<ck::Shader> flat_color_shader_;
 
   ck::OrthographicCamera camera_;
 
   glm::vec3 camera_position_{0.0f};
 
-  float camera_speed_ = 0.1f;
+  float camera_speed_ = 0.3f;
   float camera_rotation_ = 0.0f;
   float camera_rotation_speed_ = 1.0f;
 };

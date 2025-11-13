@@ -8,11 +8,11 @@
 namespace ck {
 
 std::unique_ptr<VertexArray> VertexArray::Create() {
-  switch (RendererAPI::API()) {
-    case RendererAPI::ApiType::kNone:
+  switch (RendererAPI::GetAPI()) {
+    case RendererAPI::Type::kNone:
       return nullptr;
 
-    case RendererAPI::ApiType::kOpenGL:
+    case RendererAPI::Type::kOpenGL:
       return std::make_unique<OpenglVertexArray>();
   }
 

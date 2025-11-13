@@ -13,7 +13,7 @@ public:
   static void Submit(const Shader*, const VertexArray*,
                      const glm::mat4& transform = glm::mat4(1.0f));
 
-  static inline RendererAPI::ApiType API() { return RendererAPI::ApiType(); }
+  static inline RendererAPI::Type API() { return RendererAPI::GetAPI(); }
 
 private:
   struct SceneData {

@@ -1,21 +1,16 @@
 #pragma once
 
+#include <memory>
 #include <string>
-
-#include "glm/ext/matrix_float4x4.hpp"
-#include "glm/ext/vector_float4.hpp"
 
 namespace ck {
 class Shader {
 public:
-  Shader(const std::string& vertex_source, const std::string& fragment_source);
-  virtual ~Shader();
+  virtual void Bind() const = 0;
+  virtual void Unbind() const = 0;
 
-  void Bind() const;
-  void Unbind() const;
-
-  void UploadUniformFloat4(const std::string& name, const glm::vec4&) const;
-  void UploadUniformMat4(const std::string& name, const glm::mat4&) const;
+  static std::unique_ptr<Shader> Create(const std::string& vertex_source,
+                                        const std::string& fragment_source);
 
 private:
   uint32_t renderer_id_;

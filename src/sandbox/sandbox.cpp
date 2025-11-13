@@ -1,5 +1,7 @@
 #include <ck.h>
 
+#include <memory>
+
 #include "application.h"
 #include "core/deltatime.h"
 #include "events/event.h"
@@ -11,9 +13,11 @@
 #include "input.h"
 #include "key_code.h"
 #include "log.h"
+#include "platform/opengl/opengl_shader.h"
 #include "renderer/buffer.h"
 #include "renderer/render_command.h"
 #include "renderer/renderer.h"
+#include "renderer/shader.h"
 
 class ExampleLayer : public ck::Layer {
 public:
@@ -78,7 +82,7 @@ public:
     }
   )";
 
-    shader_ = std::make_unique<ck::Shader>(vertex_source, fragment_source);
+    shader_ = ck::Shader::Create(vertex_source, fragment_source);
 
     /*─────────────────────────────────────┐
     │                Square                │
@@ -128,15 +132,15 @@ public:
 
     in vec3 v_position;
 
-    uniform vec4 u_color;
+    uniform vec3 u_color;
 
     void main() {
-      color = u_color;
+      color = vec4(u_color, 1.0);
     }
   )";
 
-    flat_color_shader_ = std::make_unique<ck::Shader>(flat_color_shader_vertex_source,
-                                                      flat_color_shader_fragment_source);
+    flat_color_shader_ =
+        ck::Shader::Create(flat_color_shader_vertex_source, flat_color_shader_fragment_source);
   }
 
   void OnUpdate(ck::DeltaTime dt) override {
@@ -167,18 +171,14 @@ public:
     ck::Renderer::BeginScene(camera_);
 
     auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-    auto blue_color = glm::vec4(0.2f, 0.3f, 0.8f, 1.0f);
-    auto red_color = glm::vec4(0.8f, 0.2f, 0.3f, 1.0f);
+    // auto blue_color = glm::vec4(0.2f, 0.3f, 0.8f, 1.0f);
+    // auto red_color = glm::vec4(0.8f, 0.2f, 0.3f, 1.0f);
+    std::dynamic_pointer_cast<ck::OpenglShader>(flat_color_shader_)->Bind();
 
     for (int y = 0; y < 20; y++) {
       for (int x = 0; x < 20; x++) {
         auto position = glm::vec3(x * 0.11f, y * 0.11f, 0.0f);
         auto transform = glm::translate(glm::mat4(1.0f), position) * scale;
-        if (x % 2 == 0) {
-          flat_color_shader_->UploadUniformFloat4("u_color", red_color);
-        } else {
-          flat_color_shader_->UploadUniformFloat4("u_color", blue_color);
-        }
         ck::Renderer::Submit(flat_color_shader_.get(), square_va_.get(), transform);
       }
     }
@@ -205,7 +205,7 @@ private:
   std::unique_ptr<ck::Shader> shader_;
 
   std::shared_ptr<ck::VertexArray> square_va_;
-  std::unique_ptr<ck::Shader> flat_color_shader_;
+  std::shared_ptr<ck::Shader> flat_color_shader_;
 
   ck::OrthographicCamera camera_;
 

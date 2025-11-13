@@ -6,15 +6,15 @@ namespace ck {
 
 class RendererAPI {
 public:
-  enum class ApiType { kNone = 0, kOpenGL = 1 };
+  enum class Type { kNone = 0, kOpenGL = 1 };  // API type
 
   virtual void Clear() = 0;
   virtual void SetClearColor(const glm::vec4&) = 0;
   virtual void DrawIndexed(const VertexArray*) = 0;
 
-  static ApiType API() { return api_; }
+  static Type GetAPI() { return api_; }
 
 private:
-  static ApiType api_;
+  static Type api_;
 };
 }  // namespace ck

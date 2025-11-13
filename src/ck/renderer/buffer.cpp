@@ -11,12 +11,12 @@ namespace ck {
 └──────────────────────────────────────*/
 
 std::unique_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t count) {
-  switch (RendererAPI::API()) {
-    case RendererAPI::ApiType::kNone:
+  switch (RendererAPI::GetAPI()) {
+    case RendererAPI::Type::kNone:
       CK_ENGINE_ERROR("RendererAPI::kNone is currently not supported!");
       return nullptr;
 
-    case RendererAPI::ApiType::kOpenGL:
+    case RendererAPI::Type::kOpenGL:
       return std::make_unique<OpenGLIndexBuffer>(vertices, count);
   }
 
@@ -29,12 +29,12 @@ std::unique_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t co
 └──────────────────────────────────────*/
 
 std::unique_ptr<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size) {
-  switch (RendererAPI::API()) {
-    case RendererAPI::ApiType::kNone:
+  switch (RendererAPI::GetAPI()) {
+    case RendererAPI::Type::kNone:
       CK_ENGINE_ERROR("RendererAPI::kNone is currently not supported!");
       return nullptr;
 
-    case RendererAPI::ApiType::kOpenGL:
+    case RendererAPI::Type::kOpenGL:
       return std::make_unique<OpenGLVertexBuffer>(vertices, size);
   }
 

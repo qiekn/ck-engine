@@ -9,7 +9,7 @@ namespace ck {
 Scope<Shader> Shader::Create(const std::string& vertex_source, const std::string& fragment_source) {
   switch (Renderer::API()) {
     case RendererAPI::Type::kOpenGL:
-      return std::make_unique<OpenglShader>(vertex_source, fragment_source);
+      return std::make_unique<OpenGLShader>(vertex_source, fragment_source);
 
     default:
       CK_ENGINE_ASSERT(false, "Unknown RendererAPI!");

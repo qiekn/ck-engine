@@ -43,11 +43,13 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glad)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imgui)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/stb_image)
 target_link_libraries(ck PUBLIC
   glfw
   glad
   glm
   imgui
+  stb_image
 )
 
 #---------------------------------------------------------------------3

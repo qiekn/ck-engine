@@ -18,6 +18,7 @@
 #include "renderer/render_command.h"
 #include "renderer/renderer.h"
 #include "renderer/shader.h"
+#include "renderer/texture.h"
 
 class ExampleLayer : public ck::Layer {
 public:
@@ -88,17 +89,18 @@ public:
     └──────────────────────────────────────*/
 
     // clang-format off
-  float square_vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.5f,  0.5f, 0.0f,
-    -0.5f,  0.5f, 0.0f,
-  };
+    float square_vertices[] = {
+      -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+      0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+      0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+      -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+    };
     // clang-format on
 
     ck::Ref<ck::VertexBuffer> square_vb =
         ck::VertexBuffer::Create(square_vertices, sizeof(square_vertices));
-    square_vb->SetLayout({{ck::ShaderDataType::kFloat3, "a_position"}});
+    square_vb->SetLayout({{ck::ShaderDataType::kFloat3, "a_position"},
+                          {ck::ShaderDataType::kFloat2, "a_tex_coord"}});
 
     uint32_t square_indices[] = {0, 1, 2, 2, 3, 0};
     ck::Ref<ck::IndexBuffer> square_ib =
@@ -108,6 +110,7 @@ public:
     square_va_->AddVertexBuffer(square_vb);
     square_va_->SetIndexBuffer(square_ib);
 
+    // Flat Color Shader
     std::string flat_color_shader_vertex_source = R"(
     #version 330 core
 
@@ -140,6 +143,44 @@ public:
 
     flat_color_shader_ =
         ck::Shader::Create(flat_color_shader_vertex_source, flat_color_shader_fragment_source);
+
+    // Texture Shader
+    std::string texture_shader_vertex_source = R"(
+      #version 330 core
+
+      layout (location = 0) in vec3 a_position;
+      layout (location = 1) in vec2 a_tex_coord;
+
+      uniform mat4 u_view_projection;
+      uniform mat4 u_transform;
+
+      out vec2 v_tex_coord;
+
+      void main() {
+        v_tex_coord = a_tex_coord;
+        gl_Position = u_view_projection * u_transform * vec4(a_position, 1.0);
+      }
+    )";
+
+    std::string texture_shader_fragment_source = R"(
+      #version 330 core
+
+      layout(location = 0) out vec4 color;
+
+      in vec2 v_tex_coord;
+
+      uniform sampler2D u_texture;
+
+      void main() {
+        color = texture(u_texture, v_tex_coord);
+      }
+    )";
+
+    texture_shader_ =
+        ck::Shader::Create(texture_shader_vertex_source, texture_shader_fragment_source);
+    texture_ = ck::Texture2D::Create("assets/textures/cat.png");
+    std::dynamic_pointer_cast<ck::OpenGLShader>(texture_shader_)->Bind();
+    std::dynamic_pointer_cast<ck::OpenGLShader>(texture_shader_)->UploadUniformInt("u_texture", 0);
   }
 
   void OnUpdate(ck::DeltaTime dt) override {
@@ -172,7 +213,7 @@ public:
     auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
     // auto blue_color = glm::vec4(0.2f, 0.3f, 0.8f, 1.0f);
     // auto red_color = glm::vec4(0.8f, 0.2f, 0.3f, 1.0f);
-    std::dynamic_pointer_cast<ck::OpenglShader>(flat_color_shader_)->Bind();
+    std::dynamic_pointer_cast<ck::OpenGLShader>(flat_color_shader_)->Bind();
 
     for (int y = 0; y < 20; y++) {
       for (int x = 0; x < 20; x++) {
@@ -182,7 +223,12 @@ public:
       }
     }
 
-    ck::Renderer::Submit(shader_.get(), vertex_array_.get());
+    texture_->Bind();
+    ck::Renderer::Submit(texture_shader_.get(), square_va_.get(),
+                         glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+    // Triangle
+    // ck::Renderer::Submit(shader_.get(), vertex_array_.get());
 
     ck::Renderer::EndScene();
   }
@@ -206,6 +252,8 @@ private:
   ck::Ref<ck::VertexArray> square_va_;
   ck::Ref<ck::Shader> flat_color_shader_;
 
+  ck::Ref<ck::Shader> texture_shader_;
+
   ck::OrthographicCamera camera_;
 
   glm::vec3 camera_position_{0.0f};
@@ -213,6 +261,8 @@ private:
   float camera_speed_ = 0.3f;
   float camera_rotation_ = 0.0f;
   float camera_rotation_speed_ = 1.0f;
+
+  ck::Ref<ck::Texture2D> texture_;
 };
 
 class Sandbox : public ck::Application {

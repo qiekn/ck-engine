@@ -6,7 +6,7 @@
 
 namespace ck {
 
-OpenglShader::OpenglShader(const std::string& vertex_source, const std::string& fragment_source) {
+OpenGLShader::OpenGLShader(const std::string& vertex_source, const std::string& fragment_source) {
   // https://wikis.khronos.org/opengl/Shader_Compilation#Example
 
   // Create an empty vertex shader handle
@@ -108,43 +108,43 @@ OpenglShader::OpenglShader(const std::string& vertex_source, const std::string& 
   glDetachShader(program, fragment_shader);
 }
 
-OpenglShader::~OpenglShader() { glDeleteProgram(renderer_id_); }
+OpenGLShader::~OpenGLShader() { glDeleteProgram(renderer_id_); }
 
-void OpenglShader::Bind() const { glUseProgram(renderer_id_); }
+void OpenGLShader::Bind() const { glUseProgram(renderer_id_); }
 
-void OpenglShader::Unbind() const { glUseProgram(0); }
+void OpenGLShader::Unbind() const { glUseProgram(0); }
 
-void OpenglShader::UploadUniformInt(const std::string& name, int value) const {
+void OpenGLShader::UploadUniformInt(const std::string& name, int value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniform1i(location, value);
 }
 
-void OpenglShader::UploadUniformFloat(const std::string& name, float value) const {
+void OpenGLShader::UploadUniformFloat(const std::string& name, float value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniform1f(location, value);
 }
 
-void OpenglShader::UploadUniformFlaot2(const std::string& name, const glm::vec2& value) const {
+void OpenGLShader::UploadUniformFlaot2(const std::string& name, const glm::vec2& value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniform2f(location, value.x, value.y);
 }
 
-void OpenglShader::UploadUniformFlaot3(const std::string& name, const glm::vec3& value) const {
+void OpenGLShader::UploadUniformFlaot3(const std::string& name, const glm::vec3& value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniform3f(location, value.x, value.y, value.z);
 }
 
-void OpenglShader::UploadUniformFlaot4(const std::string& name, const glm::vec4& value) const {
+void OpenGLShader::UploadUniformFlaot4(const std::string& name, const glm::vec4& value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
-void OpenglShader::UploadUniformMat3(const std::string& name, const glm::mat3& value) const {
+void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void OpenglShader::UploadUniformMat4(const std::string& name, const glm::mat4& value) const {
+void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& value) const {
   const GLint location = glGetUniformLocation(renderer_id_, name.c_str());
   glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }

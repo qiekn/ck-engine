@@ -9,10 +9,10 @@
 #include "renderer/shader.h"
 
 namespace ck {
-class OpenglShader : public Shader {
+class OpenGLShader : public Shader {
 public:
-  OpenglShader(const std::string& vertex_source, const std::string& fragment_source);
-  virtual ~OpenglShader();
+  OpenGLShader(const std::string& vertex_source, const std::string& fragment_source);
+  virtual ~OpenGLShader();
 
   void Bind() const override;
   void Unbind() const override;

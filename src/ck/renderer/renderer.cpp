@@ -11,7 +11,7 @@ void Renderer::BeginScene(OrthographicCamera& camera) {
 
 void Renderer::Submit(const Shader* shader, const VertexArray* vertex_array,
                       const glm::mat4& transform) {
-  auto opengl_shader = static_cast<const OpenglShader*>(shader);
+  auto opengl_shader = static_cast<const OpenGLShader*>(shader);
   opengl_shader->Bind();
   opengl_shader->UploadUniformMat4("u_view_projection", scene_data_->view_projection_);
   opengl_shader->UploadUniformMat4("u_transform", transform);

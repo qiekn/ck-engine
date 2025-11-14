@@ -13,6 +13,7 @@ public:
   virtual void Unbind() const = 0;
 
   static Scope<Shader> Create(const std::string& vertex_source, const std::string& fragment_source);
+  static Scope<Shader> Create(const std::string& filepath);
 
 private:
   uint32_t renderer_id_;

@@ -145,39 +145,8 @@ public:
         ck::Shader::Create(flat_color_shader_vertex_source, flat_color_shader_fragment_source);
 
     // Texture Shader
-    std::string texture_shader_vertex_source = R"(
-      #version 330 core
+    texture_shader_ = ck::Shader::Create("assets/shaders/texture.glsl");
 
-      layout (location = 0) in vec3 a_position;
-      layout (location = 1) in vec2 a_tex_coord;
-
-      uniform mat4 u_view_projection;
-      uniform mat4 u_transform;
-
-      out vec2 v_tex_coord;
-
-      void main() {
-        v_tex_coord = a_tex_coord;
-        gl_Position = u_view_projection * u_transform * vec4(a_position, 1.0);
-      }
-    )";
-
-    std::string texture_shader_fragment_source = R"(
-      #version 330 core
-
-      layout(location = 0) out vec4 color;
-
-      in vec2 v_tex_coord;
-
-      uniform sampler2D u_texture;
-
-      void main() {
-        color = texture(u_texture, v_tex_coord);
-      }
-    )";
-
-    texture_shader_ =
-        ck::Shader::Create(texture_shader_vertex_source, texture_shader_fragment_source);
     cat_texture_ = ck::Texture2D::Create("assets/textures/cat.jpg");
     apple_texture_ = ck::Texture2D::Create("assets/textures/apple.png");
     std::dynamic_pointer_cast<ck::OpenGLShader>(texture_shader_)->Bind();

@@ -8,6 +8,7 @@
 #include "glad/gl.h"
 #include "imgui/imgui_layer.h"
 #include "log.h"
+#include "renderer/renderer.h"
 
 namespace ck {
 
@@ -18,6 +19,8 @@ Application::Application() {
   instance_ = this;
   window_ = Window::Create();
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
+
+  Renderer::Init();
 
   auto imgui_layer = std::make_unique<ImGuiLayer>();
   imgui_layer_ = imgui_layer.get();  // 只要我们不 PopOverlay, imgui_layer_ 就不会悬空

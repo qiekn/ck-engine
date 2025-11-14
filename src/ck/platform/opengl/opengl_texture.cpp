@@ -10,11 +10,25 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
 
   int width, height, channels;
 
-  auto* data = stbi_load(path.c_str(), &width, &height, &channels, 4);
+  stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
   CK_ENGINE_ASSERT(data, "Failed to load image: {}", path);
+  CK_ENGINE_WARN("Loaded image: {} ({}x{}, {} channels)", path, width, height, channels);
 
   width_ = width;
   height_ = height;
+
+  GLenum internal_format = 0, data_format = 0;
+  if (channels == 4) {
+    internal_format = GL_RGBA8;
+    data_format = GL_RGBA;
+  } else if (channels == 3) {
+    internal_format = GL_RGB8;
+    data_format = GL_RGB;
+  }
+
+  CK_ENGINE_ASSERT(internal_format && data_format,
+                   "Unsupported image format! Channels: {} (only RGB and RGBA are supported)",
+                   channels);
 
   glGenTextures(1, &renderer_id_);
   glBindTexture(GL_TEXTURE_2D, renderer_id_);
@@ -24,9 +38,11 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  CK_ENGINE_WARN("hello");
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-  CK_ENGINE_WARN("hello done");
+  // Fix alignment issue for RGB textures (3 bytes per pixel)
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width_, height_, 0, data_format, GL_UNSIGNED_BYTE,
+               data);
 
   glBindTexture(GL_TEXTURE_2D, 0);
   stbi_image_free(data);

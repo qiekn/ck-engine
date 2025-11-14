@@ -178,7 +178,8 @@ public:
 
     texture_shader_ =
         ck::Shader::Create(texture_shader_vertex_source, texture_shader_fragment_source);
-    texture_ = ck::Texture2D::Create("assets/textures/cat.png");
+    cat_texture_ = ck::Texture2D::Create("assets/textures/cat.jpg");
+    apple_texture_ = ck::Texture2D::Create("assets/textures/apple.png");
     std::dynamic_pointer_cast<ck::OpenGLShader>(texture_shader_)->Bind();
     std::dynamic_pointer_cast<ck::OpenGLShader>(texture_shader_)->UploadUniformInt("u_texture", 0);
   }
@@ -223,9 +224,15 @@ public:
       }
     }
 
-    texture_->Bind();
+    cat_texture_->Bind();
     ck::Renderer::Submit(texture_shader_.get(), square_va_.get(),
-                         glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+                         glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
+                             glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+    apple_texture_->Bind();
+    ck::Renderer::Submit(texture_shader_.get(), square_va_.get(),
+                         glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
+                             glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
     // Triangle
     // ck::Renderer::Submit(shader_.get(), vertex_array_.get());
@@ -262,7 +269,8 @@ private:
   float camera_rotation_ = 0.0f;
   float camera_rotation_speed_ = 1.0f;
 
-  ck::Ref<ck::Texture2D> texture_;
+  ck::Ref<ck::Texture2D> cat_texture_;
+  ck::Ref<ck::Texture2D> apple_texture_;
 };
 
 class Sandbox : public ck::Application {

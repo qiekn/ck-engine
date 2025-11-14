@@ -5,6 +5,8 @@
 #include "renderer/render_command.h"
 
 namespace ck {
+void Renderer::Init() { RenderCommand::Init(); }
+
 void Renderer::BeginScene(OrthographicCamera& camera) {
   scene_data_->view_projection_ = camera.GetViewProjectionMatrix();
 }

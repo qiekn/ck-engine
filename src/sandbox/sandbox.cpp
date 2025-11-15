@@ -2,12 +2,14 @@
 
 #include <memory>
 
+#include "core/entry_point.h"  // IWYU pragma: keep
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "imgui.h"
 #include "platform/opengl/opengl_shader.h"
+#include "sandbox_2d.h"
 
 class ExampleLayer : public ck::Layer {
 public:
@@ -205,7 +207,10 @@ private:
 
 class Sandbox : public ck::Application {
 public:
-  Sandbox() { PushLayer(std::make_unique<ExampleLayer>()); }
+  Sandbox() {
+    // PushLayer(std::make_unique<ExampleLayer>());
+    PushLayer(std::make_unique<Sandbox2D>());
+  }
   ~Sandbox() {}
 };
 

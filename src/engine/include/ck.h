@@ -35,7 +35,7 @@
 │             Entry Point              │
 └──────────────────────────────────────*/
 
-#include "core/entry_point.h"                            // IWYU pragma: export
+// #include "core/entry_point.h"                            // IWYU pragma: export
 
 // clang-format on
 

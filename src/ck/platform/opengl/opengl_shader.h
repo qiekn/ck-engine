@@ -14,11 +14,14 @@ namespace ck {
 class OpenGLShader : public Shader {
 public:
   OpenGLShader(const std::string& filepath);
-  OpenGLShader(const std::string& vertex_source, const std::string& fragment_source);
+  OpenGLShader(const std::string& name, const std::string& vertex_source,
+               const std::string& fragment_source);
   virtual ~OpenGLShader();
 
   void Bind() const override;
   void Unbind() const override;
+
+  const std::string& Name() const override;
 
   void UploadUniformInt(const std::string& name, int) const;
 
@@ -41,5 +44,6 @@ private:  // ReadFile -- Parse -- Compile
 
 private:
   uint32_t renderer_id_;
+  std::string name_;
 };
 }  // namespace ck

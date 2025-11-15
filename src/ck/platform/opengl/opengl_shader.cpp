@@ -1,5 +1,6 @@
 #include "opengl_shader.h"
 
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <string>
@@ -28,9 +29,14 @@ OpenGLShader::OpenGLShader(const std::string& filepath) {
   std::string origin_source = ReadFile(filepath);
   std::unordered_map<GLenum, std::string> shader_sources = Parse(origin_source);
   Compile(shader_sources);
+
+  // Set shader name base on filepath
+  name_ = std::filesystem::path(filepath).stem().string();
 };
 
-OpenGLShader::OpenGLShader(const std::string& vertex_source, const std::string& fragment_source) {
+OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertex_source,
+                           const std::string& fragment_source)
+    : name_(name) {
   // https://wikis.khronos.org/opengl/Shader_Compilation#Example
 
   // Create an empty vertex shader handle
@@ -138,6 +144,8 @@ void OpenGLShader::Bind() const { glUseProgram(renderer_id_); }
 
 void OpenGLShader::Unbind() const { glUseProgram(0); }
 
+const std::string& OpenGLShader::Name() const { return name_; }
+
 /*─────────────────────────────────────┐
 │          Uniform Functions           │
 └──────────────────────────────────────*/
@@ -232,6 +240,8 @@ std::unordered_map<GLenum, std::string> OpenGLShader::Parse(const std::string& s
 
 void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader_sources) {
   GLuint program = glCreateProgram();
+  CK_ENGINE_ASSERT(shader_sources.size() <= 2, "only 2 shader sources in a single file supported");
+  ;
   auto shader_ids = std::vector<GLenum>(shader_sources.size());
 
   // Compile

@@ -82,7 +82,7 @@ public:
     }
   )";
 
-    shader_ = ck::Shader::Create(vertex_source, fragment_source);
+    shader_ = ck::Shader::Create("vertex position color", vertex_source, fragment_source);
 
     /*─────────────────────────────────────┐
     │                Square                │
@@ -141,11 +141,11 @@ public:
     }
   )";
 
-    flat_color_shader_ =
-        ck::Shader::Create(flat_color_shader_vertex_source, flat_color_shader_fragment_source);
+    flat_color_shader_ = ck::Shader::Create("flat color", flat_color_shader_vertex_source,
+                                            flat_color_shader_fragment_source);
 
     // Texture Shader
-    texture_shader_ = ck::Shader::Create("assets/shaders/texture.glsl");
+    auto texture_shader_ = shader_library_.Load("assets/shaders/texture.glsl");
 
     cat_texture_ = ck::Texture2D::Create("assets/textures/cat.jpg");
     apple_texture_ = ck::Texture2D::Create("assets/textures/apple.png");
@@ -193,13 +193,14 @@ public:
       }
     }
 
+    auto texture_shader = shader_library_.Get("texture");
     cat_texture_->Bind();
-    ck::Renderer::Submit(texture_shader_.get(), square_va_.get(),
+    ck::Renderer::Submit(texture_shader.get(), square_va_.get(),
                          glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
                              glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
     apple_texture_->Bind();
-    ck::Renderer::Submit(texture_shader_.get(), square_va_.get(),
+    ck::Renderer::Submit(texture_shader.get(), square_va_.get(),
                          glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
                              glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
@@ -222,13 +223,13 @@ public:
   void OnEvent(ck::Event& event) override {}
 
 private:
+  ck::ShaderLibrary shader_library_;
+
   ck::Ref<ck::VertexArray> vertex_array_;
   ck::Ref<ck::Shader> shader_;
 
   ck::Ref<ck::VertexArray> square_va_;
   ck::Ref<ck::Shader> flat_color_shader_;
-
-  ck::Ref<ck::Shader> texture_shader_;
 
   ck::OrthographicCamera camera_;
 

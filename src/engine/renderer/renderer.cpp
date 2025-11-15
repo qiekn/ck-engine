@@ -3,9 +3,13 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "platform/opengl/opengl_shader.h"
 #include "renderer/render_command.h"
+#include "renderer/renderer_2d.h"
 
 namespace ck {
-void Renderer::Init() { RenderCommand::Init(); }
+void Renderer::Init() {
+  RenderCommand::Init();
+  Renderer2D::Init();
+}
 
 void Renderer::OnWindowResize(uint32_t width, uint32_t height) {
   RenderCommand::SetViewport(0, 0, width, height);

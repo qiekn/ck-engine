@@ -21,5 +21,6 @@ private:
   ck::Ref<ck::IndexBuffer> square_index_buffer_;
   ck::Ref<ck::Shader> flat_color_shader_;
 
-  glm::vec4 square_color_{0.2f, 0.3f, 0.8f, 1.0f};
+  glm::vec4 square_color_{0.8f, 0.2f, 0.3f, 1.0f};
+  glm::vec4 background_color_{0.25f, 0.2f, 0.2f, 1.0f};
 };

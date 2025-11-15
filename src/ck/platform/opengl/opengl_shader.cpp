@@ -233,8 +233,6 @@ std::unordered_map<GLenum, std::string> OpenGLShader::Parse(const std::string& s
     shader_sources[ShaderTypeFromString(type)] = source.substr(begin, length);
   }
   CK_ENGINE_INFO("shader sources size={}", shader_sources.size());
-  CK_ENGINE_INFO("vertex: \n{}", shader_sources[GL_VERTEX_SHADER]);
-  CK_ENGINE_INFO("fragment: \n{}", shader_sources[GL_FRAGMENT_SHADER]);
   return shader_sources;
 }
 

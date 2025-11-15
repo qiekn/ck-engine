@@ -72,14 +72,11 @@ protected:
 };
 
 class EventDispatcher {
-  template <typename T>
-  using EventFunc = std::function<bool(T&)>;
-
 public:
   EventDispatcher(Event& event) : event_(event) {}
 
-  template <typename T>
-  bool DispatchEvent(EventFunc<T> Func) {
+  template <typename T, typename F>
+  bool DispatchEvent(const F& Func) {
     if (event_.GetEventType() == T::GetStaticType()) {
       event_.handled_ = Func(*(T*)&event_);
       return true;

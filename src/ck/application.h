@@ -28,9 +28,11 @@ public:
 
 private:
   bool OnWindowCloseEvent(WindowCloseEvent& e);
+  bool OnWindowResizeEvent(WindowResizeEvent& e);
 
 private:
   bool running_ = true;
+  bool minimized_ = false;
   Scope<Window> window_;
   ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;

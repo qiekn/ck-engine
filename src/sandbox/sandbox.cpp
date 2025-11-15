@@ -11,8 +11,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "imgui.h"
-#include "input.h"
-#include "key_code.h"
+#include "orthographic_camera_controller.h"
 #include "platform/opengl/opengl_shader.h"
 #include "renderer/buffer.h"
 #include "renderer/render_command.h"
@@ -22,7 +21,7 @@
 
 class ExampleLayer : public ck::Layer {
 public:
-  ExampleLayer() : Layer("Example"), camera_(-1.6f, 1.6f, -0.9f, 0.9f) {
+  ExampleLayer() : Layer("Example"), camera_controller_(16.0f / 9.0f) {
     // clang-format off
   float vertices[] = {
     // Position         // Color
@@ -154,31 +153,12 @@ public:
   }
 
   void OnUpdate(ck::DeltaTime dt) override {
-    if (ck::Input::IsKeyPressed(CK_KEY_LEFT)) {
-      camera_position_.x -= camera_speed_ * dt;
-    } else if (ck::Input::IsKeyPressed(CK_KEY_RIGHT)) {
-      camera_position_.x += camera_speed_ * dt;
-    }
-
-    if (ck::Input::IsKeyPressed(CK_KEY_UP)) {
-      camera_position_.y += camera_speed_ * dt;
-    } else if (ck::Input::IsKeyPressed(CK_KEY_DOWN)) {
-      camera_position_.y -= camera_speed_ * dt;
-    }
-
-    if (ck::Input::IsKeyPressed(CK_KEY_A)) {
-      camera_rotation_ += camera_rotation_speed_ * dt;
-    } else if (ck::Input::IsKeyPressed(CK_KEY_D)) {
-      camera_rotation_ -= camera_rotation_speed_ * dt;
-    }
+    camera_controller_.OnUpdate(dt);
 
     ck::RenderCommand::SetClearColor({0.25f, 0.2f, 0.2f, 1.0f});
     ck::RenderCommand::Clear();
 
-    camera_.SetPosition(camera_position_);
-    camera_.SetRotation(camera_rotation_);
-
-    ck::Renderer::BeginScene(camera_);
+    ck::Renderer::BeginScene(camera_controller_.Camera());
 
     auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
     // auto blue_color = glm::vec4(0.2f, 0.3f, 0.8f, 1.0f);
@@ -211,16 +191,12 @@ public:
   }
 
   void OnImGuiRender() override {
-    ImGui::Begin("Camera Control");
-    ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera_position_.x, camera_position_.y,
-                camera_position_.z);
-    ImGui::Text("Rotation: %.2f", camera_rotation_);
-
-    ImGui::SliderFloat("Camera Speed", &camera_speed_, 0.1f, 5.0f);
+    ImGui::Begin("ImGui");
+    ImGui::Text("Hello, Im GUI");
     ImGui::End();
   }
 
-  void OnEvent(ck::Event& event) override {}
+  void OnEvent(ck::Event& event) override { camera_controller_.OnEvent(event); }
 
 private:
   ck::ShaderLibrary shader_library_;
@@ -231,13 +207,7 @@ private:
   ck::Ref<ck::VertexArray> square_va_;
   ck::Ref<ck::Shader> flat_color_shader_;
 
-  ck::OrthographicCamera camera_;
-
-  glm::vec3 camera_position_{0.0f};
-
-  float camera_speed_ = 0.3f;
-  float camera_rotation_ = 0.0f;
-  float camera_rotation_speed_ = 1.0f;
+  ck::OrthographicCameraController camera_controller_;
 
   ck::Ref<ck::Texture2D> cat_texture_;
   ck::Ref<ck::Texture2D> apple_texture_;

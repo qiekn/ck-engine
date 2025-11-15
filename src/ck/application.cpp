@@ -34,8 +34,11 @@ void Application::Run() {
     auto time = std::chrono::steady_clock::now();
     auto diff = std::chrono::duration<float>(time - last_frame_time_).count();
     auto timestep = DeltaTime(diff);
-    for (auto& layer : layer_stack_) {
-      layer->OnUpdate(timestep);
+
+    if (!minimized_) {
+      for (auto& layer : layer_stack_) {
+        layer->OnUpdate(timestep);
+      }
     }
 
     imgui_layer_->Begin();  // this is dirty, but it works
@@ -52,6 +55,7 @@ void Application::Run() {
 void Application::OnEvent(Event& e) {
   auto dispatcher = EventDispatcher(e);
   dispatcher.DispatchEvent<WindowCloseEvent>(CK_BIND_EVENT(Application::OnWindowCloseEvent));
+  dispatcher.DispatchEvent<WindowResizeEvent>(CK_BIND_EVENT(Application::OnWindowResizeEvent));
 
   for (auto it = layer_stack_.end(); it != layer_stack_.begin();) {
     (*--it)->OnEvent(e);
@@ -66,6 +70,16 @@ bool Application::OnWindowCloseEvent(WindowCloseEvent& e) {
   return true;
 }
 
+bool Application::OnWindowResizeEvent(WindowResizeEvent& e) {
+  if (e.GetWindowHeight() == 0 || e.GetWindowWidth() == 0) {
+    minimized_ = true;
+    return false;
+  }
+
+  minimized_ = false;
+  Renderer::OnWindowResize(e.GetWindowWidth(), e.GetWindowHeight());
+  return false;
+}
 void Application::PushLayer(Scope<Layer> layer) {
   layer->OnAttach();
   layer_stack_.push_layer(std::move(layer));

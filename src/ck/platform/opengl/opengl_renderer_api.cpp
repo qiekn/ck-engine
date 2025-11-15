@@ -2,12 +2,20 @@
 
 #include <glm/glm.hpp>
 
+#include "application.h"
+#include "core.h"
 #include "glad/gl.h"
+#include "window.h"
 
 namespace ck {
 void OpenGLRendererAPI::Init() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+  const Scope<Window>& window = Application::Get().GetWindow();
+  glViewport(x, y, width * window->GetScaleX(), height * window->GetScaleY());
 }
 
 void OpenGLRendererAPI::Clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }

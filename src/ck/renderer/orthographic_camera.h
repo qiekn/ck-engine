@@ -9,6 +9,7 @@ public:
   OrthographicCamera(float left, float right, float bottom, float top);
   virtual ~OrthographicCamera();
 
+  void SetProjection(float left, float right, float bottom, float top);
   const glm::vec3& GetPosition() const;
   void SetPosition(const glm::vec3& position);
   float GetRotation() const;
@@ -23,7 +24,7 @@ private:
 
 private:
   glm::mat4 projection_matrix_;
-  glm::mat4 view_matrix_;
+  glm::mat4 view_matrix_{1.0f};
   glm::mat4 view_proj_matrix_;
 
   glm::vec3 position_{0.0f, 0.0f, 0.0f};

@@ -7,10 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Clangd Lsp Support for nvim
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# GDB
+set(CMAKE_BUILD_TYPE DEBUG)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -gdwarf-4")
+
 # Default to a release build
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+
 
 # Variables
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")

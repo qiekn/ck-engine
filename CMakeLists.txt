@@ -25,9 +25,13 @@ set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 #---------------------------------------------------------------------3
 
 # Define the ck-engine static library
-file(GLOB_RECURSE ck_sources CONFIGURE_DEPENDS "${SRC_DIR}/ck/*.cpp")
+file(GLOB_RECURSE ck_sources CONFIGURE_DEPENDS "${SRC_DIR}/engine/*.cpp")
 add_library(ck STATIC
   ${ck_sources}
+)
+
+set_target_properties(ck PROPERTIES
+  PUBLIC_HEADER "${SRC_DIR}/engine/include/ck.h"
 )
 
 target_compile_definitions(ck PRIVATE CK_PLATFORM_MAC)
@@ -35,13 +39,13 @@ target_compile_definitions(ck PRIVATE CK_PLATFORM_MAC)
 # Include directories for ck
 target_include_directories(ck
   PUBLIC
-    "${SRC_DIR}/ck/include"
-    "${SRC_DIR}/ck/"
+    "${SRC_DIR}/engine/include"
+    "${SRC_DIR}/engine/"
     "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
 )
 
 # Precompiled Headers
-target_precompile_headers(ck PUBLIC ${SRC_DIR}/ck/pch.h)
+target_precompile_headers(ck PUBLIC ${SRC_DIR}/engine/pch.h)
 
 # Dependencies
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
@@ -66,10 +70,12 @@ file(GLOB_RECURSE sandbox_sources CONFIGURE_DEPENDS "${SRC_DIR}/sandbox/*.cpp") 
 add_executable(sandbox ${sandbox_sources})
 
 # Include directories for the sandbox application
-target_include_directories(sandbox PUBLIC "${SRC_DIR}/sandbox")
+target_include_directories(sandbox PUBLIC
+  "${SRC_DIR}/sandbox"
+)
 
 # Link sandbox with the ck library
-target_link_libraries(sandbox PUBLIC ck)
+target_link_libraries(sandbox PRIVATE ck)
 
 if (APPLE)
   target_link_libraries(sandbox PRIVATE "-framework OpenGL")

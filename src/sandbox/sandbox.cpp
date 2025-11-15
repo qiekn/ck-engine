@@ -2,33 +2,23 @@
 
 #include <memory>
 
-#include "application.h"
-#include "core.h"
-#include "core/deltatime.h"
-#include "events/event.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "imgui.h"
-#include "orthographic_camera_controller.h"
 #include "platform/opengl/opengl_shader.h"
-#include "renderer/buffer.h"
-#include "renderer/render_command.h"
-#include "renderer/renderer.h"
-#include "renderer/shader.h"
-#include "renderer/texture.h"
 
 class ExampleLayer : public ck::Layer {
 public:
   ExampleLayer() : Layer("Example"), camera_controller_(16.0f / 9.0f) {
     // clang-format off
-  float vertices[] = {
-    // Position         // Color
-    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
-  };
+    float vertices[] = {
+      // Position         // Color
+      -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+       0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+       0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+    };
     // clang-format on
 
     /*─────────────────────────────────────┐

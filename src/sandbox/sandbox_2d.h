@@ -1,7 +1,9 @@
 #pragma once
 
 #include "ck.h"
+#include "core/core.h"
 #include "glm/ext/vector_float2.hpp"
+#include "renderer/texture.h"
 
 class Sandbox2D : public ck::Layer {
 public:
@@ -21,6 +23,8 @@ private:
   ck::Ref<ck::VertexBuffer> square_vertex_buffer_;
   ck::Ref<ck::IndexBuffer> square_index_buffer_;
   ck::Ref<ck::Shader> flat_color_shader_;
+
+  ck::Ref<ck::Texture2D> cat_texture_;
 
   glm::vec2 quad_pos_1_{0.0f, 0.0f};
   glm::vec2 quad_size_1_{0.5f, 0.5f};

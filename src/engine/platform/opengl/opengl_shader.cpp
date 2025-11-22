@@ -150,6 +150,10 @@ const std::string& OpenGLShader::Name() const { return name_; }
 │      Uniform Functions Helpers       │
 └──────────────────────────────────────*/
 
+void OpenGLShader::SetInt(const std::string& name, int value) const {
+  UploadUniformInt(name, value);
+}
+
 void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) const {
   UploadUniformFloat3(name, value);
 }

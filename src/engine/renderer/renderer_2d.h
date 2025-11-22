@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core/core.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "renderer/orthographic_camera.h"
+#include "renderer/texture.h"
 
 namespace ck {
 class Renderer2D {
@@ -16,5 +18,7 @@ public:
   // Primitives (基本图元)
   static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
   static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
+  static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>&);
+  static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>&);
 };
 }  // namespace ck

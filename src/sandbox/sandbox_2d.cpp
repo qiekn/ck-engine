@@ -5,10 +5,11 @@
 #include "renderer/orthographic_camera_controller.h"
 #include "renderer/render_command.h"
 #include "renderer/renderer_2d.h"
+#include "renderer/texture.h"
 
 Sandbox2D::Sandbox2D() : Layer("Sandbox 2D"), camera_controller_(16.0f / 9.0f) {}
 
-void Sandbox2D::OnAttach() {}
+void Sandbox2D::OnAttach() { cat_texture_ = ck::Texture2D::Create("assets/textures/cat.jpg"); }
 
 void Sandbox2D::OnDetach() {}
 
@@ -21,6 +22,7 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
   ck::Renderer2D::BeginScene(camera_controller_.Camera());
   ck::Renderer2D::DrawQuad(quad_pos_1_, quad_size_1_, quad_color_1_);
   ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, quad_color_2_);
+  ck::Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {10.0f, 10.0f}, cat_texture_);
   ck::Renderer2D::EndScene();
 }
 

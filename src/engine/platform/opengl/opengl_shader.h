@@ -5,6 +5,7 @@
 
 #include "glad/gl.h"
 #include "glm/ext/matrix_float3x3.hpp"
+#include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
@@ -23,12 +24,16 @@ public:
 
   const std::string& Name() const override;
 
+  void SetFloat3(const std::string& name, const glm::vec3&) const override;
+  void SetFloat4(const std::string& name, const glm::vec4&) const override;
+  void SetMat4(const std::string& name, const glm::mat4&) const override;
+
   void UploadUniformInt(const std::string& name, int) const;
 
   void UploadUniformFloat(const std::string& name, float) const;
-  void UploadUniformFlaot2(const std::string& name, const glm::vec2&) const;
-  void UploadUniformFlaot3(const std::string& name, const glm::vec3&) const;
-  void UploadUniformFlaot4(const std::string& name, const glm::vec4&) const;
+  void UploadUniformFloat2(const std::string& name, const glm::vec2&) const;
+  void UploadUniformFloat3(const std::string& name, const glm::vec3&) const;
+  void UploadUniformFloat4(const std::string& name, const glm::vec4&) const;
 
   void UploadUniformMat3(const std::string& name, const glm::mat3&) const;
   void UploadUniformMat4(const std::string& name, const glm::mat4&) const;

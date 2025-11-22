@@ -1,9 +1,11 @@
 #include "renderer_2d.h"
 
+#include <algorithm>
 #include <memory>
 
 #include "core/core.h"
 #include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "platform/opengl/opengl_shader.h"
 #include "renderer/buffer.h"
 #include "renderer/render_command.h"
@@ -59,10 +61,10 @@ void Renderer2D::Init() {
 void Renderer2D::Shutdown() { s_data.reset(); }
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {
-  auto* shader = dynamic_cast<OpenGLShader*>(s_data->flat_color_shader.get());
+  auto& shader = s_data->flat_color_shader;
   shader->Bind();
-  shader->UploadUniformMat4("u_view_projection", camera.GetViewProjectionMatrix());
-  shader->UploadUniformMat4("u_transform", glm::mat4(1.0f));
+  shader->SetMat4("u_view_projection", camera.GetViewProjectionMatrix());
+  shader->SetMat4("u_transform", glm::mat4(1.0f));
 }
 
 void Renderer2D::EndScene() {}
@@ -74,9 +76,13 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const glm::vec4& color) {
-  auto* shader = dynamic_cast<OpenGLShader*>(s_data->flat_color_shader.get());
+  auto& shader = s_data->flat_color_shader;
   shader->Bind();
-  shader->UploadUniformFlaot4("u_color", color);
+  shader->SetFloat4("u_color", color);
+
+  auto transform = glm::translate(glm::mat4(1.0f), position) *
+                   glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
+  shader->SetMat4("u_transform", transform);
 
   s_data->quad_vertex_array->Bind();
   RenderCommand::DrawIndexed(s_data->quad_vertex_array.get());

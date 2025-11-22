@@ -4,6 +4,9 @@
 #include <unordered_map>
 
 #include "core/core.h"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/vector_float3.hpp"
+#include "glm/ext/vector_float4.hpp"
 
 namespace ck {
 class Shader {
@@ -14,6 +17,10 @@ public:
   virtual void Unbind() const = 0;
 
   virtual const std::string& Name() const = 0;
+
+  virtual void SetFloat3(const std::string& name, const glm::vec3&) const = 0;
+  virtual void SetFloat4(const std::string& name, const glm::vec4&) const = 0;
+  virtual void SetMat4(const std::string& name, const glm::mat4&) const = 0;
 
   static Scope<Shader> Create(const std::string& name, const std::string& vertex_source,
                               const std::string& fragment_source);

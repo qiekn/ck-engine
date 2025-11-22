@@ -5,6 +5,19 @@
 #include "stb_image.h"
 
 namespace ck {
+OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height) : width_(width), height_(height) {
+  internal_format_ = GL_RGBA8;
+  data_format_ = GL_RGBA;
+
+  glGenTextures(1, &renderer_id_);
+  glBindTexture(GL_TEXTURE_2D, renderer_id_);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
 OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
   stbi_set_flip_vertically_on_load(1);
 
@@ -17,16 +30,15 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
   width_ = width;
   height_ = height;
 
-  GLenum internal_format = 0, data_format = 0;
   if (channels == 4) {
-    internal_format = GL_RGBA8;
-    data_format = GL_RGBA;
+    internal_format_ = GL_RGBA8;
+    data_format_ = GL_RGBA;
   } else if (channels == 3) {
-    internal_format = GL_RGB8;
-    data_format = GL_RGB;
+    internal_format_ = GL_RGB8;
+    data_format_ = GL_RGB;
   }
 
-  CK_ENGINE_ASSERT(internal_format && data_format,
+  CK_ENGINE_ASSERT(internal_format_ && data_format_,
                    "Unsupported image format! Channels: {} (only RGB and RGBA are supported)",
                    channels);
 
@@ -41,8 +53,8 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
   // Fix alignment issue for RGB textures (3 bytes per pixel)
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width_, height_, 0, data_format, GL_UNSIGNED_BYTE,
-               data);
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format_, width_, height_, 0, data_format_,
+               GL_UNSIGNED_BYTE, data);
 
   glBindTexture(GL_TEXTURE_2D, 0);
   stbi_image_free(data);
@@ -53,5 +65,13 @@ OpenGLTexture2D::~OpenGLTexture2D() {}
 void OpenGLTexture2D::Bind(uint32_t slot) const {
   glActiveTexture(GL_TEXTURE0 + slot);
   glBindTexture(GL_TEXTURE_2D, renderer_id_);
+}
+
+void OpenGLTexture2D::SetData(void* data, size_t size) const {
+  uint32_t bpp = data_format_ == GL_RGBA ? 4 : 3;
+  CK_ENGINE_ASSERT(size == width_ * height_ * bpp, "data must be entire texture");
+  glBindTexture(GL_TEXTURE_2D, renderer_id_);
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format_, width_, height_, 0, data_format_,
+               GL_UNSIGNED_BYTE, data);
 }
 }  // namespace ck

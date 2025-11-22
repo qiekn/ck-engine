@@ -24,7 +24,7 @@ private:
   ck::Ref<ck::IndexBuffer> square_index_buffer_;
   ck::Ref<ck::Shader> flat_color_shader_;
 
-  ck::Ref<ck::Texture2D> cat_texture_;
+  ck::Ref<ck::Texture2D> checkboard_texture_;
 
   glm::vec2 quad_pos_1_{0.0f, 0.0f};
   glm::vec2 quad_size_1_{0.5f, 0.5f};

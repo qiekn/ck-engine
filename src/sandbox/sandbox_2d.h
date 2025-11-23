@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "ck.h"
 #include "core/core.h"
 #include "glm/ext/vector_float2.hpp"
@@ -31,4 +33,12 @@ private:
   glm::vec4 quad_color_1_{0.8f, 0.2f, 0.3f, 1.0f};
   glm::vec4 quad_color_2_{0.2f, 0.3f, 0.8f, 1.0f};
   glm::vec4 background_color_{0.25f, 0.2f, 0.2f, 1.0f};
+
+  // Profiling
+  struct ProfileResult {
+    const char* name;
+    float time;
+  };
+
+  std::vector<ProfileResult> profile_results_;
 };

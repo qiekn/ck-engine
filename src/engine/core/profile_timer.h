@@ -1,10 +1,13 @@
 #include <chrono>
+#include <ratio>
 
 template <typename Fn>
 class Timer {
 public:
+  using Clock = std::chrono::steady_clock;
+
   Timer(const char* name, Fn&& func) : name_(name), func_(func), stopped_(false) {
-    start_timepoint_ = std::chrono::high_resolution_clock::now();
+    start_timepoint_ = Clock::now();
   }
 
   ~Timer() {
@@ -14,22 +17,16 @@ public:
   }
 
   void Stop() {
-    auto end_timepoint = std::chrono::high_resolution_clock::now();
-    long long start = std::chrono::time_point_cast<std::chrono::microseconds>(start_timepoint_)
-                          .time_since_epoch()
-                          .count();
-    long long end = std::chrono::time_point_cast<std::chrono::microseconds>(end_timepoint)
-                        .time_since_epoch()
-                        .count();
+    auto end_timepoint = Clock::now();
+    std::chrono::duration<float, std::milli> duration = end_timepoint - start_timepoint_;
     stopped_ = true;
-    float duration = (end - start) * 0.001f;
-    func_({name_, duration});
+    func_({name_, duration.count()});
   }
 
 private:
   const char* name_;
   Fn func_;
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_timepoint_;
+  std::chrono::time_point<Clock> start_timepoint_;
   bool stopped_;
 };
 

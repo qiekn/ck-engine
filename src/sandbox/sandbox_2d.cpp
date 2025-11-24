@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "core/profile_timer.h"
+#include "debug/profiler.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "renderer/orthographic_camera_controller.h"
@@ -19,21 +20,21 @@ void Sandbox2D::OnAttach() {
 void Sandbox2D::OnDetach() {}
 
 void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
-  PROFILE_SCOPE("Sandbox2D::OnUpdate");
+  CK_PROFILE_FUNCTION();
 
   {
-    PROFILE_SCOPE("CameraController::OnUpdate");
+    CK_PROFILE_SCOPE("CameraController::OnUpdate");
     camera_controller_.OnUpdate(dt);
   }
 
   {
-    PROFILE_SCOPE("Renderer Prep");
+    CK_PROFILE_SCOPE("Renderer Prep");
     ck::RenderCommand::SetClearColor(background_color_);
     ck::RenderCommand::Clear();
   }
 
   {
-    PROFILE_SCOPE("Renderer Draw");
+    CK_PROFILE_SCOPE("Renderer Draw");
     ck::Renderer2D::BeginScene(camera_controller_.Camera());
     ck::Renderer2D::DrawQuad(quad_pos_1_, quad_size_1_, quad_color_1_);
     ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, quad_color_2_);

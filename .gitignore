@@ -3,3 +3,6 @@ build/
 
 .clangd
 **/*.ini
+
+# use at ui.perfetto.dev for visual profiling
+CkProfile-*.json

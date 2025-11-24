@@ -14,18 +14,16 @@
 Sandbox2D::Sandbox2D() : Layer("Sandbox 2D"), camera_controller_(16.0f / 9.0f) {}
 
 void Sandbox2D::OnAttach() {
+  CK_PROFILE_FUNCTION();
   checkboard_texture_ = ck::Texture2D::Create("assets/textures/checkerboard.png");
 }
 
-void Sandbox2D::OnDetach() {}
+void Sandbox2D::OnDetach() { CK_PROFILE_FUNCTION(); }
 
 void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
   CK_PROFILE_FUNCTION();
 
-  {
-    CK_PROFILE_SCOPE("CameraController::OnUpdate");
-    camera_controller_.OnUpdate(dt);
-  }
+  camera_controller_.OnUpdate(dt);
 
   {
     CK_PROFILE_SCOPE("Renderer Prep");

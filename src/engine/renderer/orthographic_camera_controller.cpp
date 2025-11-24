@@ -16,6 +16,8 @@ OrthographicCameraController::OrthographicCameraController(float aspect_ratio, b
       rotation_(rotation) {}
 
 void OrthographicCameraController::OnUpdate(DeltaTime dt) {
+  CK_PROFILE_FUNCTION();
+
   if (Input::IsKeyPressed(CK_KEY_A)) {
     camera_position_.x -= camera_translation_speed_ * dt;
   } else if (Input::IsKeyPressed(CK_KEY_D)) {
@@ -41,6 +43,7 @@ void OrthographicCameraController::OnUpdate(DeltaTime dt) {
 }
 
 void OrthographicCameraController::OnEvent(Event& e) {
+  CK_PROFILE_FUNCTION();
   auto dispatcher = EventDispatcher(e);
   dispatcher.DispatchEvent<MouseScrollEvent>(
       CK_BIND_EVENT(OrthographicCameraController::OnMouseScrolled));
@@ -49,6 +52,7 @@ void OrthographicCameraController::OnEvent(Event& e) {
 }
 
 bool OrthographicCameraController::OnMouseScrolled(MouseScrollEvent& e) {
+  CK_PROFILE_FUNCTION();
   zoom_level_ -= e.GetMouseYOffset() * 0.25f;
   zoom_level_ = std::max(zoom_level_, 0.25f);
   camera_.SetProjection(-aspect_ratio_ * zoom_level_, aspect_ratio_ * zoom_level_, -zoom_level_,
@@ -57,6 +61,7 @@ bool OrthographicCameraController::OnMouseScrolled(MouseScrollEvent& e) {
 }
 
 bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e) {
+  CK_PROFILE_FUNCTION();
   aspect_ratio_ = float(e.GetWindowWidth() / e.GetWindowHeight());
   camera_.SetProjection(-aspect_ratio_ * zoom_level_, aspect_ratio_ * zoom_level_, -zoom_level_,
                         zoom_level_);

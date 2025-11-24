@@ -17,11 +17,18 @@ Scope<Window> Window::Create(const WindowProps& props) {
   return std::make_unique<WindowsWindow>(props);
 }
 
-WindowsWindow::WindowsWindow(const WindowProps& props) { Init(props); }
+WindowsWindow::WindowsWindow(const WindowProps& props) {
+  CK_PROFILE_FUNCTION();
+  Init(props);
+}
 
-WindowsWindow::~WindowsWindow() { Shutdown(); }
+WindowsWindow::~WindowsWindow() {
+  CK_PROFILE_FUNCTION();
+  Shutdown();
+}
 
 void WindowsWindow::Init(const WindowProps& props) {
+  CK_PROFILE_FUNCTION();
   data_.title = props.title;
   data_.width = props.width;
   data_.height = props.height;
@@ -29,6 +36,7 @@ void WindowsWindow::Init(const WindowProps& props) {
 
   if (!is_glfw_initialized) {
     // TODO: glfwTerminate on system shutdown <2025-09-12 06:59, @qiekn> //
+    CK_PROFILE_FUNCTION();
     int success = glfwInit();
     CK_ENGINE_ASSERT(success, "Could not initialize GLFW");
     glfwSetErrorCallback(GLFWErrorCallback);
@@ -42,8 +50,11 @@ void WindowsWindow::Init(const WindowProps& props) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   }
 
-  window_ =
-      glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr, nullptr);
+  {
+    CK_PROFILE_FUNCTION();
+    window_ = glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr,
+                               nullptr);
+  }
   context_ = std::make_unique<OpenGlContext>(window_);
   context_->Init();
 
@@ -120,11 +131,13 @@ void WindowsWindow::Init(const WindowProps& props) {
 }
 
 void WindowsWindow::OnUpdate() {
+  CK_PROFILE_FUNCTION();
   glfwPollEvents();
   glfwSwapBuffers(window_);
 }
 
 void WindowsWindow::SetVSync(bool enabled) {
+  CK_PROFILE_FUNCTION();
   if (enabled) {
     glfwSwapInterval(1);
   } else {
@@ -135,5 +148,8 @@ void WindowsWindow::SetVSync(bool enabled) {
 
 bool WindowsWindow::IsVSync() const { return data_.vsync; }
 
-void WindowsWindow::Shutdown() { glfwDestroyWindow(window_); }
+void WindowsWindow::Shutdown() {
+  CK_PROFILE_FUNCTION();
+  glfwDestroyWindow(window_);
+}
 }  // namespace ck

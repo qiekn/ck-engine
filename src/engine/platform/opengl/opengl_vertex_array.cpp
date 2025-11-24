@@ -33,17 +33,28 @@ static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type) {
 };
 
 OpenglVertexArray::OpenglVertexArray() {
+  CK_PROFILE_FUNCTION();
   glGenVertexArrays(1, &renderer_id_);
   glBindVertexArray(renderer_id_);
 }
 
-OpenglVertexArray::~OpenglVertexArray() { glDeleteVertexArrays(1, &renderer_id_); }
+OpenglVertexArray::~OpenglVertexArray() {
+  CK_PROFILE_FUNCTION();
+  glDeleteVertexArrays(1, &renderer_id_);
+}
 
-void OpenglVertexArray::Bind() const { glBindVertexArray(renderer_id_); }
+void OpenglVertexArray::Bind() const {
+  CK_PROFILE_FUNCTION();
+  glBindVertexArray(renderer_id_);
+}
 
-void OpenglVertexArray::Unbind() const { glBindVertexArray(0); }
+void OpenglVertexArray::Unbind() const {
+  CK_PROFILE_FUNCTION();
+  glBindVertexArray(0);
+}
 
 void OpenglVertexArray::AddVertexBuffer(Ref<VertexBuffer> vertex_buffer) {
+  CK_PROFILE_FUNCTION();
   CK_ENGINE_ASSERT(vertex_buffer->Layout().elements().size(), "vertex buffer ahs no layout");
   glBindVertexArray(renderer_id_);
   vertex_buffer->Bind();
@@ -62,6 +73,7 @@ void OpenglVertexArray::AddVertexBuffer(Ref<VertexBuffer> vertex_buffer) {
 }
 
 void OpenglVertexArray::SetIndexBuffer(Ref<IndexBuffer> index_buffer) {
+  CK_PROFILE_FUNCTION();
   glBindVertexArray(renderer_id_);
   index_buffer->Bind();
 

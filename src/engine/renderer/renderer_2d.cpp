@@ -31,6 +31,7 @@ static Scope<Renderer2DStorage> s_data;
 └──────────────────────────────────────*/
 
 void Renderer2D::Init() {
+  CK_PROFILE_FUNCTION();
   s_data = std::make_unique<Renderer2DStorage>();
   s_data->quad_vertex_array = VertexArray::Create();
 
@@ -63,14 +64,18 @@ void Renderer2D::Init() {
   s_data->textuer_shader->SetInt("t_texture", 0);
 }
 
-void Renderer2D::Shutdown() { s_data.reset(); }
+void Renderer2D::Shutdown() {
+  CK_PROFILE_FUNCTION();
+  s_data.reset();
+}
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {
+  CK_PROFILE_FUNCTION();
   s_data->textuer_shader->Bind();
   s_data->textuer_shader->SetMat4("u_view_projection", camera.GetViewProjectionMatrix());
 }
 
-void Renderer2D::EndScene() {}
+void Renderer2D::EndScene() { CK_PROFILE_FUNCTION(); }
 
 void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
                           const glm::vec4& color) {
@@ -79,6 +84,7 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const glm::vec4& color) {
+  CK_PROFILE_FUNCTION();
   auto& texture_shader = s_data->textuer_shader;
   texture_shader->Bind();
   texture_shader->SetFloat4("u_color", color);
@@ -99,6 +105,7 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const Ref<Texture2D>& texture) {
+  CK_PROFILE_FUNCTION();
   s_data->textuer_shader->Bind();
   s_data->textuer_shader->SetFloat4("u_color", glm::vec4(1.0f));
 

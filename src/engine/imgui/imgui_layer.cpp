@@ -15,6 +15,7 @@ ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
 ImGuiLayer::~ImGuiLayer() {}
 
 void ImGuiLayer::OnAttach() {
+  CK_PROFILE_FUNCTION();
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();  // Setup Dear ImGui context
 
@@ -50,6 +51,7 @@ void ImGuiLayer::OnAttach() {
 }
 
 void ImGuiLayer::OnDetach() {
+  CK_PROFILE_FUNCTION();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
@@ -61,12 +63,14 @@ void ImGuiLayer::OnImGuiRender() {
 }
 
 void ImGuiLayer::Begin() {
+  CK_PROFILE_FUNCTION();
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 }
 
 void ImGuiLayer::End() {
+  CK_PROFILE_FUNCTION();
   ImGuiIO& io = ImGui::GetIO();
   Application& app = Application::Get();
   io.DisplaySize = ImVec2((float)app.GetWindow()->GetWidth(), (float)app.GetWindow()->GetHeight());

@@ -26,6 +26,7 @@ static GLenum ShaderTypeFromString(const std::string& type) {
 }
 
 OpenGLShader::OpenGLShader(const std::string& filepath) {
+  CK_PROFILE_FUNCTION();
   std::string origin_source = ReadFile(filepath);
   std::unordered_map<GLenum, std::string> shader_sources = Parse(origin_source);
   Compile(shader_sources);
@@ -37,6 +38,7 @@ OpenGLShader::OpenGLShader(const std::string& filepath) {
 OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertex_source,
                            const std::string& fragment_source)
     : name_(name) {
+  CK_PROFILE_FUNCTION();
   // https://wikis.khronos.org/opengl/Shader_Compilation#Example
 
   // Create an empty vertex shader handle
@@ -138,11 +140,20 @@ OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertex_so
   glDetachShader(program, fragment_shader);
 }
 
-OpenGLShader::~OpenGLShader() { glDeleteProgram(renderer_id_); }
+OpenGLShader::~OpenGLShader() {
+  CK_PROFILE_FUNCTION();
+  glDeleteProgram(renderer_id_);
+}
 
-void OpenGLShader::Bind() const { glUseProgram(renderer_id_); }
+void OpenGLShader::Bind() const {
+  CK_PROFILE_FUNCTION();
+  glUseProgram(renderer_id_);
+}
 
-void OpenGLShader::Unbind() const { glUseProgram(0); }
+void OpenGLShader::Unbind() const {
+  CK_PROFILE_FUNCTION();
+  glUseProgram(0);
+}
 
 const std::string& OpenGLShader::Name() const { return name_; }
 
@@ -151,18 +162,22 @@ const std::string& OpenGLShader::Name() const { return name_; }
 └──────────────────────────────────────*/
 
 void OpenGLShader::SetInt(const std::string& name, int value) const {
+  CK_PROFILE_FUNCTION();
   UploadUniformInt(name, value);
 }
 
 void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) const {
+  CK_PROFILE_FUNCTION();
   UploadUniformFloat3(name, value);
 }
 
 void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value) const {
+  CK_PROFILE_FUNCTION();
   UploadUniformFloat4(name, value);
 }
 
 void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value) const {
+  CK_PROFILE_FUNCTION();
   UploadUniformMat4(name, value);
 }
 
@@ -210,6 +225,7 @@ void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& v
 └──────────────────────────────────────*/
 
 std::string OpenGLShader::ReadFile(const std::string& filepath) {
+  CK_PROFILE_FUNCTION();
   auto result = std::string();
   auto file = std::ifstream(filepath, std::ios::in | std::ios::binary);
   if (!file) {
@@ -227,6 +243,7 @@ std::string OpenGLShader::ReadFile(const std::string& filepath) {
 }
 
 std::unordered_map<GLenum, std::string> OpenGLShader::Parse(const std::string& source) {
+  CK_PROFILE_FUNCTION();
   auto shader_sources = std::unordered_map<GLenum, std::string>();
 
   const char* type_token = "#type";
@@ -257,6 +274,7 @@ std::unordered_map<GLenum, std::string> OpenGLShader::Parse(const std::string& s
 }
 
 void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader_sources) {
+  CK_PROFILE_FUNCTION();
   GLuint program = glCreateProgram();
   CK_ENGINE_ASSERT(shader_sources.size() <= 2, "only 2 shader sources in a single file supported");
   ;

@@ -7,6 +7,7 @@
 
 namespace ck {
 void Renderer::Init() {
+  CK_PROFILE_FUNCTION();
   RenderCommand::Init();
   Renderer2D::Init();
 }

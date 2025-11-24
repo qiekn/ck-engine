@@ -5,6 +5,7 @@
 #include "core/profile_timer.h"
 #include "debug/profiler.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/trigonometric.hpp"
 #include "imgui.h"
 #include "renderer/orthographic_camera_controller.h"
 #include "renderer/render_command.h"
@@ -34,9 +35,9 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
   {
     CK_PROFILE_SCOPE("Renderer Draw");
     ck::Renderer2D::BeginScene(camera_controller_.Camera());
-    ck::Renderer2D::DrawQuad(quad_pos_1_, quad_size_1_, quad_color_1_);
+    ck::Renderer2D::DrawRotatedQuad(quad_pos_1_, quad_size_1_, glm::radians(-45.0f), quad_color_1_);
     ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, quad_color_2_);
-    ck::Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {10.0f, 10.0f}, checkboard_texture_);
+    ck::Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {10.0f, 10.0f}, checkboard_texture_, 10.0f);
     ck::Renderer2D::EndScene();
   }
 }

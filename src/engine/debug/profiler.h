@@ -129,7 +129,7 @@ private:
 }  // namespace ck
 
 // ----------------------------------------------------------------------------: Macros
-#define CK_PROFILE 1
+#define CK_PROFILE 0
 #if CK_PROFILE
 #define CK_PROFILE_BEGIN_SESSION(name, filepath) ::ck::Profiler::Get().BeginSession(name, filepath)
 #define CK_PROFILE_END_SESSION() ::ck::Profiler::Get().EndSession()

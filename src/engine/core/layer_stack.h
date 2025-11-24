@@ -23,6 +23,15 @@ public:
   auto begin() { return layers_.begin(); }
   auto end() { return layers_.end(); }
 
+  auto begin() const { return layers_.begin(); }
+  auto end() const { return layers_.end(); }
+
+  auto rbegin() { return layers_.rbegin(); }
+  auto rend() { return layers_.rend(); }
+
+  auto rbegin() const { return layers_.rbegin(); }
+  auto rend() const { return layers_.rend(); }
+
 private:
   std::vector<Scope<Layer>> layers_;
   unsigned int layer_insert_index_ = 0;

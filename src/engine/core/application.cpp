@@ -65,8 +65,8 @@ void Application::OnEvent(Event& e) {
   dispatcher.DispatchEvent<WindowCloseEvent>(CK_BIND_EVENT(Application::OnWindowCloseEvent));
   dispatcher.DispatchEvent<WindowResizeEvent>(CK_BIND_EVENT(Application::OnWindowResizeEvent));
 
-  for (auto it = layer_stack_.end(); it != layer_stack_.begin();) {
-    (*--it)->OnEvent(e);
+  for (auto it = layer_stack_.rbegin(); it != layer_stack_.rend(); it++) {
+    (*it)->OnEvent(e);
     if (e.IsHandled()) {
       break;
     }

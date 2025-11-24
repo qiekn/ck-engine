@@ -166,6 +166,11 @@ void OpenGLShader::SetInt(const std::string& name, int value) const {
   UploadUniformInt(name, value);
 }
 
+void OpenGLShader::SetFloat(const std::string& name, float value) const {
+  CK_PROFILE_FUNCTION();
+  UploadUniformFloat(name, value);
+}
+
 void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) const {
   CK_PROFILE_FUNCTION();
   UploadUniformFloat3(name, value);

@@ -19,6 +19,7 @@ public:
   virtual const std::string& Name() const = 0;
 
   virtual void SetInt(const std::string& name, int) const = 0;
+  virtual void SetFloat(const std::string& name, float) const = 0;
   virtual void SetFloat3(const std::string& name, const glm::vec3&) const = 0;
   virtual void SetFloat4(const std::string& name, const glm::vec4&) const = 0;
   virtual void SetMat4(const std::string& name, const glm::mat4&) const = 0;

@@ -1,11 +1,14 @@
 #include "opengl_texture.h"
 
+#include <GL/gl.h>
+
 #include "core/log.h"
 #include "glad/gl.h"
 #include "stb_image.h"
 
 namespace ck {
 OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height) : width_(width), height_(height) {
+  CK_PROFILE_FUNCTION();
   internal_format_ = GL_RGBA8;
   data_format_ = GL_RGBA;
 
@@ -19,6 +22,7 @@ OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height) : width_(width
 }
 
 OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
+  CK_PROFILE_FUNCTION();
   stbi_set_flip_vertically_on_load(1);
 
   int width, height, channels;
@@ -60,14 +64,19 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path) : path_(path) {
   stbi_image_free(data);
 }
 
-OpenGLTexture2D::~OpenGLTexture2D() {}
+OpenGLTexture2D::~OpenGLTexture2D() {
+  CK_PROFILE_FUNCTION();
+  glDeleteTextures(1, &renderer_id_);
+}
 
 void OpenGLTexture2D::Bind(uint32_t slot) const {
+  CK_PROFILE_FUNCTION();
   glActiveTexture(GL_TEXTURE0 + slot);
   glBindTexture(GL_TEXTURE_2D, renderer_id_);
 }
 
 void OpenGLTexture2D::SetData(void* data, size_t size) const {
+  CK_PROFILE_FUNCTION();
   uint32_t bpp = data_format_ == GL_RGBA ? 4 : 3;
   CK_ENGINE_ASSERT(size == width_ * height_ * bpp, "data must be entire texture");
   glBindTexture(GL_TEXTURE_2D, renderer_id_);

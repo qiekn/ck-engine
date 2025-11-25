@@ -1,6 +1,7 @@
 #include "opengl_vertex_array.h"
 
 #include "glad/gl.h"
+#include "renderer/buffer.h"
 
 namespace ck {
 
@@ -62,11 +63,39 @@ void OpenglVertexArray::AddVertexBuffer(Ref<VertexBuffer> vertex_buffer) {
   uint32_t index = 0;
   auto const& layout = vertex_buffer->Layout();
   for (const auto& e : layout) {
-    glEnableVertexAttribArray(index);
-    glVertexAttribPointer(index, e.ComponentCount(), ShaderDataTypeToOpenGLBaseType(e.type),
-                          e.normalized ? GL_TRUE : GL_FALSE, layout.stride(),
-                          (const void*)(uintptr_t)e.offset);
-    index++;
+    switch (e.type) {
+      case ShaderDataType::kFloat:
+      case ShaderDataType::kFloat2:
+      case ShaderDataType::kFloat3:
+      case ShaderDataType::kFloat4:
+      case ShaderDataType::kInt:
+      case ShaderDataType::kInt2:
+      case ShaderDataType::kInt3:
+      case ShaderDataType::kInt4:
+      case ShaderDataType::kBool: {
+        glEnableVertexAttribArray(index);
+        glVertexAttribPointer(index, e.ComponentCount(), ShaderDataTypeToOpenGLBaseType(e.type),
+                              e.normalized ? GL_TRUE : GL_FALSE, layout.stride(),
+                              (const void*)(uintptr_t)e.offset);
+        index++;
+        break;
+      }
+      case ShaderDataType::kMat3:
+      case ShaderDataType::kMat4: {
+        uint8_t count = e.ComponentCount();
+        for (uint8_t i = 0; i < count; i++) {
+          glEnableVertexAttribArray(index);
+          glVertexAttribPointer(index, count, ShaderDataTypeToOpenGLBaseType(e.type),
+                                e.normalized ? GL_TRUE : GL_FALSE, layout.stride(),
+                                (const void*)(sizeof(float) * count * i));
+          glVertexAttribDivisor(index, 1);
+          index++;
+        }
+        break;
+      }
+      default:
+        CK_ENGINE_ASSERT(false, "Unknown ShaderDataType!");
+    }
   }
 
   vertex_buffers_.push_back(std::move(vertex_buffer));

@@ -28,31 +28,22 @@ static uint32_t ShaderDataTypeSize(ShaderDataType type) {
       CK_ENGINE_ASSERT(false, "unknown ShaderDataType");
       return 0;
 
-    case ShaderDataType::kFloat:
-      return 4;
-    case ShaderDataType::kFloat2:
-      return 4 * 2;
-    case ShaderDataType::kFloat3:
-      return 4 * 3;
-    case ShaderDataType::kFloat4:
-      return 4 * 4;
+      // clang-format off
+    case ShaderDataType::kFloat:  return 4;
+    case ShaderDataType::kFloat2: return 4 * 2;
+    case ShaderDataType::kFloat3: return 4 * 3;
+    case ShaderDataType::kFloat4: return 4 * 4;
 
-    case ShaderDataType::kMat3:
-      return 4 * 3 * 3;
-    case ShaderDataType::kMat4:
-      return 4 * 4 * 4;
+    case ShaderDataType::kMat3:   return 4 * 3 * 3;
+    case ShaderDataType::kMat4:   return 4 * 4 * 4;
 
-    case ShaderDataType::kInt:
-      return 4;
-    case ShaderDataType::kInt2:
-      return 4 * 2;
-    case ShaderDataType::kInt3:
-      return 4 * 3;
-    case ShaderDataType::kInt4:
-      return 4 * 4;
+    case ShaderDataType::kInt:    return 4;
+    case ShaderDataType::kInt2:   return 4 * 2;
+    case ShaderDataType::kInt3:   return 4 * 3;
+    case ShaderDataType::kInt4:   return 4 * 4;
 
-    case ShaderDataType::kBool:
-      return 1;
+    case ShaderDataType::kBool:   return 1;
+      // clang-format on
   }
 }
 
@@ -90,9 +81,9 @@ struct BufferElement {
         return 4;
 
       case ShaderDataType::kMat3:
-        return 3 * 3;
+        return 3;  // 3 * float3
       case ShaderDataType::kMat4:
-        return 4 * 4;
+        return 4;  // 4 * float4
     }
   }
 };

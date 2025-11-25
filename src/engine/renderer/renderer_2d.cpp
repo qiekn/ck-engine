@@ -210,7 +210,6 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const glm::vec4& tint_color) {
   CK_PROFILE_FUNCTION();
 
-  constexpr glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
   float texture_index = 0.0f;
 
   // Check if this texture already in texture_slots
@@ -235,7 +234,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
 
   for (int i = 0; i < 4; i++) {
     s_data.quad_vertex_buffer_ptr->position = transform * s_data.quad_vertex_position[i];
-    s_data.quad_vertex_buffer_ptr->color = color;
+    s_data.quad_vertex_buffer_ptr->color = tint_color;
     s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
     s_data.quad_vertex_buffer_ptr->tex_index = texture_index;
     s_data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;

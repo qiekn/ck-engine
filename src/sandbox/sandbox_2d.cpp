@@ -1,7 +1,5 @@
 #include "sandbox_2d.h"
 
-#include <cstring>
-
 #include "core/profile_timer.h"
 #include "debug/profiler.h"
 #include "glm/ext/vector_float4.hpp"
@@ -26,6 +24,7 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
 
   camera_controller_.OnUpdate(dt);
 
+  ck::Renderer2D::ResetStats();
   {
     CK_PROFILE_SCOPE("Renderer Prep");
     ck::RenderCommand::SetClearColor(background_color_);

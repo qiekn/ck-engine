@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 
 #include "core/core.h"
@@ -30,9 +31,9 @@ struct QuadVertex {
 };
 
 struct Renderer2DData {
-  const uint32_t kMaxQuads = 10000;
-  const uint32_t kMaxVertices = kMaxQuads * 4;
-  const uint32_t kMaxIndices = kMaxQuads * 6;
+  static const uint32_t kMaxQuads = 20000;
+  static const uint32_t kMaxVertices = kMaxQuads * 4;
+  static const uint32_t kMaxIndices = kMaxQuads * 6;
   static const uint32_t kMaxTextureSlots = 32;  // TOOD: RenderCaps
 
   Ref<VertexArray> quad_vertex_array;
@@ -48,6 +49,8 @@ struct Renderer2DData {
   uint32_t texture_slot_index = 1;  // 0 = white texture
 
   glm::vec4 quad_vertex_position[4];
+
+  Renderer2D::Statistics stats;
 };
 
 static Renderer2DData s_data;
@@ -140,6 +143,15 @@ void Renderer2D::Flush() {
   }
 
   RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
+  s_data.stats.draw_calls++;
+}
+
+void Renderer2D::FlushAndRest() {
+  EndScene();
+
+  s_data.quad_index_count = 0;
+  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
+  s_data.texture_slot_index = 1;
 }
 
 // ----------------------------------------------------------------------------: Primitives
@@ -152,6 +164,10 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const glm::vec4& color) {
   CK_PROFILE_FUNCTION();
+
+  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
+    FlushAndRest();
+  }
 
   const float texture_index = 0.0f;  // white texture
   const float tiling_factor = 1.0f;
@@ -177,19 +193,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
 
   s_data.quad_index_count += 6;
 
-  /*
-  auto& texture_shader = s_data.textuer_shader;
-  texture_shader->Bind();
-  texture_shader->SetFloat4("u_color", color);
-
-  auto transform = glm::translate(glm::mat4(1.0f), position) *
-                   glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
-  texture_shader->SetMat4("u_transform", transform);
-
-  s_data.white_texture->Bind();
-  s_data.quad_vertex_array->Bind();
-  RenderCommand::DrawIndexed(s_data.quad_vertex_array.get());
-  */
+  s_data.stats.quad_count++;
 }
 
 void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
@@ -236,6 +240,8 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
   }
 
   s_data.quad_index_count += 6;
+
+  s_data.stats.quad_count++;
 }
 
 void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation,
@@ -246,6 +252,10 @@ void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& siz
 void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation,
                                  const glm::vec4& color) {
   CK_PROFILE_FUNCTION();
+
+  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
+    FlushAndRest();
+  }
 
   const float kTextureIndex = 0.0f;  // White Texture
   const float kTilingFactor = 1.0f;
@@ -266,6 +276,8 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
   }
 
   s_data.quad_index_count += 6;
+
+  s_data.stats.quad_count++;
 }
 
 void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation,
@@ -279,6 +291,11 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
                                  const Ref<Texture2D>& texture, float tiling_factor,
                                  const glm::vec4& tint_color) {
   CK_PROFILE_FUNCTION();
+
+  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
+    FlushAndRest();
+  }
+
   constexpr glm::vec4 kColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
   float texture_index = 0.0f;
@@ -311,5 +328,14 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
   }
 
   s_data.quad_index_count += 6;
+
+  s_data.stats.quad_count++;
 }
+
+// ----------------------------------------------------------------------------: Stats
+
+void Renderer2D::ResetStats() { memset(&s_data.stats, 0, sizeof(Statistics)); }
+
+Renderer2D::Statistics Renderer2D::GetStats() { return s_data.stats; }
+
 }  // namespace ck

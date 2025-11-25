@@ -4,7 +4,6 @@
 
 #include "ck.h"
 #include "core/core.h"
-#include "glm/ext/vector_float2.hpp"
 #include "renderer/texture.h"
 
 class Sandbox2D : public ck::Layer {
@@ -28,10 +27,8 @@ private:
 
   ck::Ref<ck::Texture2D> checkboard_texture_;
 
-  glm::vec2 quad_pos_1_{0.0f, 0.0f};
-  glm::vec2 quad_size_1_{0.5f, 0.5f};
-  glm::vec4 quad_color_1_{0.8f, 0.2f, 0.3f, 1.0f};
-  glm::vec4 quad_color_2_{0.2f, 0.3f, 0.8f, 1.0f};
+  glm::vec4 color_1_{0.8f, 0.2f, 0.3f, 1.0f};
+  glm::vec4 color_2_{0.2f, 0.3f, 0.8f, 1.0f};
   glm::vec4 background_color_{0.25f, 0.2f, 0.2f, 1.0f};
 
   // Profiling

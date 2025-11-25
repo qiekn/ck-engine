@@ -4,6 +4,7 @@
 
 #include "core/profile_timer.h"
 #include "debug/profiler.h"
+#include "glm/ext/vector_float4.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "renderer/orthographic_camera_controller.h"
@@ -38,35 +39,41 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
     CK_PROFILE_SCOPE("Renderer Draw");
     // clang-format off
     ck::Renderer2D::BeginScene(camera_controller_.Camera());
-
     ck::Renderer2D::DrawRotatedQuad({1.0f, 0.0f}, {0.8f, 0.8f}, -45.0f, {0.8f, 0.2f, 0.3, 1.0f});
-
-    ck::Renderer2D::DrawQuad({-1.0f, 0.0f}, {0.8f, 0.8f}, quad_color_1_);
-    ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, quad_color_2_);
-    ck::Renderer2D::DrawQuad({-5.0f, -5.0f, -0.1f}, {10.0f, 10.0f}, checkboard_texture_, 10.0f);
-
+    ck::Renderer2D::DrawQuad({-1.0f, 0.0f}, {0.8f, 0.8f}, color_1_);
+    ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, color_2_);
+    ck::Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {20.0f, 20.0f}, checkboard_texture_, 10.0f);
     ck::Renderer2D::DrawRotatedQuad({-2.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, rotation, checkboard_texture_, 20.0f);
-
     ck::Renderer2D::EndScene();
     // clang-format on
+
+    ck::Renderer2D::BeginScene(camera_controller_.Camera());
+    for (float y = -5.0f; y < 5.0f; y += 0.5f) {
+      for (float x = -5.0f; x < 5.0f; x += 0.5f) {
+        glm::vec4 color = {(x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f};
+        ck::Renderer2D::DrawQuad({x, y}, {0.45, 0.45f}, color);
+      }
+    }
+    ck::Renderer2D::EndScene();
   }
 }
 
 void Sandbox2D::OnImGuiRender() {
-  ImGui::Begin("Settings");
-  ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
-  ImGui::DragFloat2("Quad Pos 1", glm::value_ptr(quad_pos_1_));
-  ImGui::DragFloat2("Quad Size 1", glm::value_ptr(quad_size_1_));
-  ImGui::ColorEdit4("Quad Color 1", glm::value_ptr(quad_color_1_));
-  ImGui::ColorEdit4("Quad Color 2", glm::value_ptr(quad_color_2_));
+  CK_PROFILE_FUNCTION();
 
-  for (auto& result : profile_results_) {
-    char label[50];
-    strcpy(label, "%.3fms ");
-    strcat(label, result.name);
-    ImGui::Text(label, result.time);
-  }
-  profile_results_.clear();
+  ImGui::Begin("Settings");
+
+  ImGui::Text("Edit Colors");
+  ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
+  ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
+  ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
+  auto stats = ck::Renderer2D::GetStats();
+  ImGui::Text("Renderer2D Stats:");
+  ImGui::Text("Draw Calls: %d", stats.draw_calls);
+  ImGui::Text("Quads: %d", stats.quad_count);
+  ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+  ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+
   ImGui::End();
 }
 

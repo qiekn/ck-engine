@@ -1,11 +1,13 @@
 #!/bin/bash
 
-DIR="build"
+BUILD="build"
+DEBUGGER="gdb"
+TARGET="sandbox"
 
 if [ "$1" = "debug" ]; then
-  lldb ./build/sandbox
+  ${DEBUGGER} ./build/${TARGET}
 else
-  cmake --build ${DIR} -j$(nproc) && ./${DIR}/sandbox
+  cmake --build ${BUILD} -j$(nproc) && ./${BUILD}/${TARGET}
 fi
 
 # vim: ft=sh ts=2 sw=2 et

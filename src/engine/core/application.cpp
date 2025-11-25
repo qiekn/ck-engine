@@ -66,10 +66,10 @@ void Application::OnEvent(Event& e) {
   dispatcher.DispatchEvent<WindowResizeEvent>(CK_BIND_EVENT(Application::OnWindowResizeEvent));
 
   for (auto it = layer_stack_.rbegin(); it != layer_stack_.rend(); it++) {
-    (*it)->OnEvent(e);
     if (e.IsHandled()) {
       break;
     }
+    (*it)->OnEvent(e);
   }
 }
 

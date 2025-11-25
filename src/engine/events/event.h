@@ -66,6 +66,7 @@ public:
     return GetCategoryFlags() & category;
   }
   inline bool IsHandled() const { return handled_; }
+  inline bool& GetIsHandled() { return handled_; }
 
 protected:
   bool handled_{false};

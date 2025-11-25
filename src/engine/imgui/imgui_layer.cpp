@@ -5,6 +5,7 @@
 #include "core/application.h"
 #include "core/layer.h"
 #include "core/window.h"
+#include "events/event.h"
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 #include "pch.h"
@@ -55,6 +56,12 @@ void ImGuiLayer::OnDetach() {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
+}
+
+void ImGuiLayer::OnEvent(Event& e) {
+  ImGuiIO& io = ImGui::GetIO();
+  e.GetIsHandled() |= e.IsInCategorpy(EventCategoryMouse) & io.WantCaptureMouse;
+  e.GetIsHandled() |= e.IsInCategorpy(EventCategoryKeyboard) & io.WantCaptureKeyboard;
 }
 
 void ImGuiLayer::OnImGuiRender() {

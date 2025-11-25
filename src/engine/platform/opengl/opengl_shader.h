@@ -25,12 +25,14 @@ public:
   const std::string& Name() const override;
 
   void SetInt(const std::string& name, int) const override;
+  void SetIntArray(const std::string& name, int* values, uint32_t count) override;
   void SetFloat(const std::string& name, float value) const override;
   void SetFloat3(const std::string& name, const glm::vec3&) const override;
   void SetFloat4(const std::string& name, const glm::vec4&) const override;
   void SetMat4(const std::string& name, const glm::mat4&) const override;
 
   void UploadUniformInt(const std::string& name, int) const;
+  void UploadUniformIntArray(const std::string& name, int* values, uint32_t count) const;
 
   void UploadUniformFloat(const std::string& name, float) const;
   void UploadUniformFloat2(const std::string& name, const glm::vec2&) const;

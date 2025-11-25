@@ -75,6 +75,10 @@ void OpenGLTexture2D::Bind(uint32_t slot) const {
   glBindTexture(GL_TEXTURE_2D, renderer_id_);
 }
 
+bool OpenGLTexture2D::operator==(const Texture& other) const {
+  return renderer_id_ == ((OpenGLTexture2D&)other).renderer_id_;
+}
+
 void OpenGLTexture2D::SetData(void* data, size_t size) const {
   CK_PROFILE_FUNCTION();
   uint32_t bpp = data_format_ == GL_RGBA ? 4 : 3;

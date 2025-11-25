@@ -14,6 +14,7 @@ public:
 
   static void BeginScene(const OrthographicCamera&);
   static void EndScene();
+  static void Flush();
 
   // Primitives (基本图元)
   static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);

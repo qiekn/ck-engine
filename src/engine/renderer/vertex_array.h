@@ -14,7 +14,7 @@ public:
   virtual void SetIndexBuffer(Ref<IndexBuffer>) = 0;
 
   virtual const std::vector<Ref<VertexBuffer>>& GetVertexBuffers() const = 0;
-  ;
+
   virtual const Ref<IndexBuffer>& GetIndexBuffer() const = 0;
 
   static Scope<VertexArray> Create();

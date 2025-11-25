@@ -114,7 +114,10 @@ void Renderer2D::Init() {
   s_data.quad_vertex_position[3] = {-0.5f, 0.5f, 0.0f, 1.0f};
 }
 
-void Renderer2D::Shutdown() { CK_PROFILE_FUNCTION(); }
+void Renderer2D::Shutdown() {
+  CK_PROFILE_FUNCTION();
+  delete[] s_data.quad_vertex_buffer_base;
+}
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {
   CK_PROFILE_FUNCTION();

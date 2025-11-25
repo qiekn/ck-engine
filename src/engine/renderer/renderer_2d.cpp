@@ -140,6 +140,10 @@ void Renderer2D::EndScene() {
 }
 
 void Renderer2D::Flush() {
+  if (s_data.quad_index_count == 0) {
+    return;
+  }
+
   // Bind Textures
   for (uint32_t i = 0; i < s_data.texture_slot_index; i++) {
     s_data.texture_slots[i]->Bind(i);

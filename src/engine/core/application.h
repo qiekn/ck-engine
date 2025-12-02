@@ -25,6 +25,8 @@ public:
 
   inline auto& GetWindow() { return window_; }
 
+  void Close();
+
   inline static Application& Get() { return *instance_; }
 
 private:

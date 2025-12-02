@@ -59,6 +59,8 @@ void Application::Run() {
   }
 }
 
+void Application::Close() { running_ = false; }
+
 void Application::OnEvent(Event& e) {
   CK_PROFILE_FUNCTION();
   auto dispatcher = EventDispatcher(e);

@@ -35,19 +35,27 @@ void WindowsWindow::Init(const WindowProps& props) {
   CK_ENGINE_TRACE("Create window {}, ({}, {})", props.title, props.width, props.height);
 
   if (!is_glfw_initialized) {
-    // TODO: glfwTerminate on system shutdown <2025-09-12 06:59, @qiekn> //
     CK_PROFILE_FUNCTION();
     int success = glfwInit();
     CK_ENGINE_ASSERT(success, "Could not initialize GLFW");
     glfwSetErrorCallback(GLFWErrorCallback);
     is_glfw_initialized = true;
     // Set all the required options for GLFW
+
     // NOTE: OpenGL on MacOS has effectively been deprecated since 2011.
     // It's stuck on an ancient version (4.1)
+
+    // If you are using MacOS, make sure to do these
+    // 1. Uncomment blow lines of codes
+    // 2. Go to https://gen.glad.sh/ generate gl4.1 and replace core/deps/glad
+    // 3. Disable `opengl_debug.hh & .cc`
+
+    /*
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    */
   }
 
   {
@@ -146,7 +154,9 @@ void WindowsWindow::SetVSync(bool enabled) {
   data_.vsync = enabled;
 }
 
-bool WindowsWindow::IsVSync() const { return data_.vsync; }
+bool WindowsWindow::IsVSync() const {
+  return data_.vsync;
+}
 
 void WindowsWindow::Shutdown() {
   CK_PROFILE_FUNCTION();

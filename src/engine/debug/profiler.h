@@ -129,11 +129,15 @@ private:
 }  // namespace ck
 
 // ----------------------------------------------------------------------------: Macros
-#define CK_PROFILE 0
+#define CK_PROFILE 1
 #if CK_PROFILE
 #define CK_PROFILE_BEGIN_SESSION(name, filepath) ::ck::Profiler::Get().BeginSession(name, filepath)
 #define CK_PROFILE_END_SESSION() ::ck::Profiler::Get().EndSession()
-#define CK_PROFILE_SCOPE(name) ::ck::ProfileTimer timer##__LINE__(name)
+
+#define CK_PROFILE_SCOPE_LINE2(name, line) ::ck::ProfileTimer timer##line(name)
+#define CK_PROFILE_SCOPE_LINE(name, line) CK_PROFILE_SCOPE_LINE2(name, line)
+#define CK_PROFILE_SCOPE(name) CK_PROFILE_SCOPE_LINE(name, __LINE__)
+
 #define CK_PROFILE_FUNCTION() CK_PROFILE_SCOPE(__PRETTY_FUNCTION__)
 #else
 #define CK_PROFILE_BEGIN_SESSION(name, filepath)

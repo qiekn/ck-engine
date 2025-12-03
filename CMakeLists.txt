@@ -41,7 +41,11 @@ target_include_directories(ck
   PUBLIC
     "${SRC_DIR}/engine/include"
     "${SRC_DIR}/engine/"
+
+  # Header-only libraries
+  PUBLIC
     "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
+    "${CMAKE_SOURCE_DIR}/deps/entt/include"
 )
 
 # Precompiled Headers

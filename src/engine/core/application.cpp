@@ -14,11 +14,11 @@ namespace ck {
 
 Application* Application::instance_ = nullptr;
 
-Application::Application() {
+Application::Application(const std::string& name) {
   CK_PROFILE_FUNCTION();
   CK_ENGINE_ASSERT(Application::instance_ == nullptr, "application already exists");
   instance_ = this;
-  window_ = Window::Create();
+  window_ = Window::Create(WindowProps(name));
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
   Renderer::Init();
@@ -28,7 +28,9 @@ Application::Application() {
   PushOverlay(std::move(imgui_layer));
 }
 
-Application::~Application() { CK_PROFILE_FUNCTION(); }
+Application::~Application() {
+  CK_PROFILE_FUNCTION();
+}
 
 void Application::Run() {
   CK_PROFILE_FUNCTION();
@@ -59,7 +61,9 @@ void Application::Run() {
   }
 }
 
-void Application::Close() { running_ = false; }
+void Application::Close() {
+  running_ = false;
+}
 
 void Application::OnEvent(Event& e) {
   CK_PROFILE_FUNCTION();

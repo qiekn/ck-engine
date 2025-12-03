@@ -7,11 +7,11 @@
 namespace ck {
 struct WindowProps {  // Props -> properties
   std::string title;
-  unsigned int width;
-  unsigned int height;
+  uint32_t width;
+  uint32_t height;
 
-  WindowProps(const std::string& _title = "ck: Engine", unsigned int _width = 1280,
-              unsigned int _height = 720)
+  explicit WindowProps(const std::string& _title = "ck: Engine", uint32_t _width = 1280,
+                       uint32_t _height = 720)
       : title(_title), width(_width), height(_height) {}
 };
 
@@ -19,12 +19,13 @@ struct WindowProps {  // Props -> properties
 class Window {
 public:
   using EventCallback = std::function<void(Event&)>;
+
   virtual ~Window() {}
 
   virtual void OnUpdate() = 0;
 
-  virtual unsigned int GetWidth() const = 0;
-  virtual unsigned int GetHeight() const = 0;
+  virtual uint32_t GetWidth() const = 0;
+  virtual uint32_t GetHeight() const = 0;
   virtual float GetScaleX() const = 0;
   virtual float GetScaleY() const = 0;
 

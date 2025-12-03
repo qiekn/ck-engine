@@ -62,11 +62,28 @@ target_link_libraries(ck PUBLIC
 )
 
 #---------------------------------------------------------------------3
+#                               Editor                                |
+#---------------------------------------------------------------------3
+
+set(EDITOR_NAME editor)
+# Define sandbox application
+file(GLOB_RECURSE editor_sources CONFIGURE_DEPENDS "${SRC_DIR}/editor/*.cpp")
+add_executable(${EDITOR_NAME} ${editor_sources})
+
+# Include directories for the sandbox application
+target_include_directories(${EDITOR_NAME} PUBLIC
+  "${SRC_DIR}/sandbox"
+)
+
+# Link sandbox with the ck library
+target_link_libraries(${EDITOR_NAME} PRIVATE ck)
+
+#---------------------------------------------------------------------3
 #                               SandBox                               |
 #---------------------------------------------------------------------3
 
 # Define sandbox application
-file(GLOB_RECURSE sandbox_sources CONFIGURE_DEPENDS "${SRC_DIR}/sandbox/*.cpp") # source files
+file(GLOB_RECURSE sandbox_sources CONFIGURE_DEPENDS "${SRC_DIR}/sandbox/*.cpp")
 add_executable(sandbox ${sandbox_sources})
 
 # Include directories for the sandbox application

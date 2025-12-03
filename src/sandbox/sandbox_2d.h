@@ -25,7 +25,6 @@ private:
   ck::Ref<ck::VertexBuffer> square_vertex_buffer_;
   ck::Ref<ck::IndexBuffer> square_index_buffer_;
   ck::Ref<ck::Shader> flat_color_shader_;
-  ck::Ref<ck::FrameBuffer> frame_buffer_;
 
   ck::Ref<ck::Texture2D> checkboard_texture_;
 

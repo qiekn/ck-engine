@@ -2,7 +2,7 @@
 
 BUILD="build"
 DEBUGGER="gdb"
-TARGET="sandbox"
+TARGET="editor"
 
 if [ "$1" = "debug" ]; then
   ${DEBUGGER} ./build/${TARGET}

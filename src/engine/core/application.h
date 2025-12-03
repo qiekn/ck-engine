@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 
 #include "core/layer_stack.h"
 #include "core/window.h"
@@ -13,7 +14,7 @@
 namespace ck {
 class Application {
 public:
-  Application();
+  explicit Application(const std::string& name = "ck: App");
   virtual ~Application();
 
   void Run();
@@ -50,5 +51,7 @@ private:
 extern Application* CreateApplication();
 }  // namespace ck
 
-#define MAKE_APPLICATION(ClassName) \
-  ck::Application* ck::CreateApplication() { return new ClassName(); }
+#define MAKE_APPLICATION(ClassName)          \
+  ck::Application* ck::CreateApplication() { \
+    return new ClassName();                  \
+  }

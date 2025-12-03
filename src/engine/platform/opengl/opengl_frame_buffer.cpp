@@ -5,6 +5,7 @@
 #include "glad/gl.h"
 
 namespace ck {
+static const uint32_t s_max_frame_buffer_size = 8192;
 
 OpenglFrameBuffer::OpenglFrameBuffer(const FrameBufferSpecification& spec) : specification_(spec) {
   Invalidate();
@@ -60,6 +61,11 @@ void OpenglFrameBuffer::Unbind() {
 }
 
 void OpenglFrameBuffer::Resize(uint32_t width, uint32_t height) {
+  if (width == 0 || height == 0 || width > s_max_frame_buffer_size ||
+      height > s_max_frame_buffer_size) {
+    CK_ENGINE_WARN("Attempted to resize framebuffer to {}, {}", width, height);
+    return;
+  }
   specification_.width = width;
   specification_.height = height;
 }

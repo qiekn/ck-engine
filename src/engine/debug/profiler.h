@@ -34,6 +34,11 @@ class Profiler {
 public:
   Profiler() : current_session_(nullptr), profile_count_(0) {}
 
+  Profiler(const Profiler&) = delete;
+  Profiler(Profiler&&) = delete;
+
+  ~Profiler() { EndSession(); }
+
   static Profiler& Get() {
     static Profiler instance;
     return instance;

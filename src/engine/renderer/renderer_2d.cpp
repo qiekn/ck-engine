@@ -6,6 +6,8 @@
 #include <memory>
 
 #include "core/core.h"
+#include "debug/profiler.h"
+#include "glm/ext/matrix_float4x3.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
@@ -170,6 +172,29 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
                           const glm::vec4& color) {
+  glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
+                        glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
+
+  DrawQuad(transform, color);
+}
+
+void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
+                          const Ref<Texture2D>& texture, float tiling_factor,
+                          const glm::vec4& tint_color) {
+  DrawQuad({position.x, position.y, 1.0f}, size, texture, tiling_factor, tint_color);
+}
+
+void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
+                          const Ref<Texture2D>& texture, float tiling_factor,
+                          const glm::vec4& tint_color) {
+  CK_PROFILE_FUNCTION();
+
+  glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
+                        glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
+  DrawQuad(transform, texture, tiling_factor);
+}
+
+void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
   CK_PROFILE_FUNCTION();
 
   if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
@@ -178,9 +203,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
 
   const float texture_index = 0.0f;  // white texture
   const float tiling_factor = 1.0f;
-
-  glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
-                        glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
+  constexpr size_t quad_vertex_count = 4;
 
   glm::vec2 uvs[4] = {
       {0.0f, 0.0f},
@@ -189,7 +212,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
       {0.0f, 1.0f},
   };
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < quad_vertex_count; i++) {
     s_data.quad_vertex_buffer_ptr->position = transform * s_data.quad_vertex_position[i];
     s_data.quad_vertex_buffer_ptr->color = color;
     s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
@@ -203,15 +226,8 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
   s_data.stats.quad_count++;
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size,
-                          const Ref<Texture2D>& texture, float tiling_factor,
-                          const glm::vec4& tint_color) {
-  DrawQuad({position.x, position.y, 1.0f}, size, texture, tiling_factor, tint_color);
-}
-
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
-                          const Ref<Texture2D>& texture, float tiling_factor,
-                          const glm::vec4& tint_color) {
+void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture,
+                          float tiling_factor, const glm::vec4& tint_color) {
   CK_PROFILE_FUNCTION();
 
   float texture_index = 0.0f;
@@ -231,9 +247,6 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
     s_data.texture_slot_index++;
   }
 
-  glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
-                        glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
-
   glm::vec2 uvs[4] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
   for (int i = 0; i < 4; i++) {
@@ -250,6 +263,8 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
   s_data.stats.quad_count++;
 }
 
+// ----------------------------------------------------------------------------: (Rotated Version)
+
 void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation,
                                  const glm::vec4& color) {
   DrawRotatedQuad({position.x, position.y, 0.0f}, size, rotation, color);
@@ -259,31 +274,10 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
                                  const glm::vec4& color) {
   CK_PROFILE_FUNCTION();
 
-  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
-    FlushAndRest();
-  }
-
-  const float kTextureIndex = 0.0f;  // White Texture
-  const float kTilingFactor = 1.0f;
-
   glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
                         glm::rotate(glm::mat4(1.0f), glm::radians(rotation), {0.0f, 0.0f, 1.0f}) *
                         glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
-
-  glm::vec2 uvs[4] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
-
-  for (int i = 0; i < 4; i++) {
-    s_data.quad_vertex_buffer_ptr->position = transform * s_data.quad_vertex_position[i];
-    s_data.quad_vertex_buffer_ptr->color = color;
-    s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
-    s_data.quad_vertex_buffer_ptr->tex_index = kTextureIndex;
-    s_data.quad_vertex_buffer_ptr->tiling_factor = kTilingFactor;
-    s_data.quad_vertex_buffer_ptr++;
-  }
-
-  s_data.quad_index_count += 6;
-
-  s_data.stats.quad_count++;
+  DrawQuad(transform, color);
 }
 
 void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation,
@@ -298,50 +292,21 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
                                  const glm::vec4& tint_color) {
   CK_PROFILE_FUNCTION();
 
-  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
-    FlushAndRest();
-  }
-
-  constexpr glm::vec4 kColor = {1.0f, 1.0f, 1.0f, 1.0f};
-
-  float texture_index = 0.0f;
-  for (uint32_t i = 1; i < s_data.texture_slot_index; i++) {
-    if (*s_data.texture_slots[i].get() == *texture.get()) {
-      texture_index = (float)i;
-      break;
-    }
-  }
-
-  if (texture_index == 0.0f) {
-    texture_index = (float)s_data.texture_slot_index;
-    s_data.texture_slots[s_data.texture_slot_index] = texture;
-    s_data.texture_slot_index++;
-  }
-
   glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) *
                         glm::rotate(glm::mat4(1.0f), glm::radians(rotation), {0.0f, 0.0f, 1.0f}) *
                         glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
 
-  glm::vec2 uvs[4] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
-
-  for (int i = 0; i < 4; i++) {
-    s_data.quad_vertex_buffer_ptr->position = transform * s_data.quad_vertex_position[i];
-    s_data.quad_vertex_buffer_ptr->color = kColor;
-    s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
-    s_data.quad_vertex_buffer_ptr->tex_index = texture_index;
-    s_data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
-    s_data.quad_vertex_buffer_ptr++;
-  }
-
-  s_data.quad_index_count += 6;
-
-  s_data.stats.quad_count++;
+  DrawQuad(transform, texture, tiling_factor, tint_color);
 }
 
 // ----------------------------------------------------------------------------: Stats
 
-void Renderer2D::ResetStats() { memset(&s_data.stats, 0, sizeof(Statistics)); }
+void Renderer2D::ResetStats() {
+  memset(&s_data.stats, 0, sizeof(Statistics));
+}
 
-Renderer2D::Statistics Renderer2D::GetStats() { return s_data.stats; }
+Renderer2D::Statistics Renderer2D::GetStats() {
+  return s_data.stats;
+}
 
 }  // namespace ck

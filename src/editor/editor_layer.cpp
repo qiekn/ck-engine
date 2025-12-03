@@ -1,8 +1,10 @@
 #include "editor_layer.h"
 #include "core/application.h"
+#include "core/core.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
 #include "glm/ext/vector_float2.hpp"
+#include "glm/ext/vector_float4.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "renderer/frame_buffer.h"
@@ -10,6 +12,8 @@
 #include "renderer/render_command.h"
 #include "renderer/renderer_2d.h"
 #include "renderer/texture.h"
+#include "scene/components.h"
+#include "scene/scene.h"
 
 namespace ck {
 
@@ -26,6 +30,14 @@ void EditorLayer::OnAttach() {
   fb_spec.width = 1280;
   fb_spec.height = 720;
   frame_buffer_ = FrameBuffer::Create(fb_spec);
+
+  active_scene_ = CreateRef<Scene>();
+
+  auto square = active_scene_->CreateEntity();
+  active_scene_->Reg().emplace<TransformComponent>(square);
+  active_scene_->Reg().emplace<SpriteRendererComponent>(square, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+
+  square_entity_ = square;
 }
 
 void EditorLayer::OnDetach() {
@@ -50,38 +62,17 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
 
   // Render
   Renderer2D::ResetStats();
-  {
-    CK_PROFILE_SCOPE("Renderer Prep");
-    frame_buffer_->Bind();
-    RenderCommand::SetClearColor(background_color_);
-    RenderCommand::Clear();
-  }
+  frame_buffer_->Bind();
+  RenderCommand::SetClearColor(background_color_);
+  RenderCommand::Clear();
 
-  {
-    static float rotation = 0.0f;
-    rotation += dt * 50.0f;
+  Renderer2D::BeginScene(camera_controller_.Camera());
 
-    CK_PROFILE_SCOPE("Renderer Draw");
-    // clang-format off
-    Renderer2D::BeginScene(camera_controller_.Camera());
-    Renderer2D::DrawRotatedQuad({1.0f, 0.0f}, {0.8f, 0.8f}, -45.0f, {0.8f, 0.2f, 0.3, 1.0f});
-    Renderer2D::DrawQuad({-1.0f, 0.0f}, {0.8f, 0.8f}, color_1_);
-    Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, color_2_);
-    Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {20.0f, 20.0f}, checkerboard_texture_, 10.0f);
-    Renderer2D::DrawRotatedQuad({-2.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, rotation, checkerboard_texture_, 20.0f);
-    Renderer2D::EndScene();
-    // clang-format on
+  active_scene_->OnUpdate(dt);
 
-    Renderer2D::BeginScene(camera_controller_.Camera());
-    for (float y = -5.0f; y < 5.0f; y += 0.5f) {
-      for (float x = -5.0f; x < 5.0f; x += 0.5f) {
-        glm::vec4 color = {(x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f};
-        Renderer2D::DrawQuad({x, y}, {0.45, 0.45f}, color);
-      }
-    }
-    Renderer2D::EndScene();
-    frame_buffer_->Unbind();
-  }
+  Renderer2D::EndScene();
+
+  frame_buffer_->Unbind();
 }
 
 void EditorLayer::OnImGuiRender() {
@@ -158,6 +149,8 @@ void EditorLayer::OnImGuiRender() {
     ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
     ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
     ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
+    auto& square_color = active_scene_->Reg().get<SpriteRendererComponent>(square_entity_).color;
+    ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
     auto stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.draw_calls);

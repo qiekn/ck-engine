@@ -10,6 +10,7 @@
 #include "renderer/shader.h"
 #include "renderer/texture.h"
 #include "renderer/vertex_array.h"
+#include "scene/scene.h"
 
 namespace ck {
 class EditorLayer : public Layer {
@@ -31,6 +32,9 @@ private:
   Ref<VertexArray> square_va_;
   Ref<Shader> flat_color_shader_;
   Ref<FrameBuffer> frame_buffer_;
+
+  Ref<Scene> active_scene_;
+  entt::entity square_entity_;
 
   Ref<Texture2D> checkerboard_texture_;
 

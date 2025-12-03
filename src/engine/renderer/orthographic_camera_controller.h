@@ -6,18 +6,23 @@
 #include "events/mouse_event.h"
 #include "glm/ext/vector_float3.hpp"
 #include "renderer/orthographic_camera.h"
+
 namespace ck {
 class OrthographicCameraController {
 public:
-  OrthographicCameraController(float aspect_ratio, bool rotation = false);
+  explicit OrthographicCameraController(float aspect_ratio, bool rotation = false);
 
   void OnUpdate(DeltaTime);
   void OnEvent(Event&);
 
+  void OnResize(float width, float height);
+
   const auto& Camera() const { return camera_; }
+
   auto& Camera() { return camera_; }
 
   float ZoomLevel() const { return zoom_level_; }
+
   void SetZoomLevel(float level) { zoom_level_ = level; }
 
 private:

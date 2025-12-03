@@ -2,6 +2,7 @@
 #include "core/application.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
+#include "glm/ext/vector_float2.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "renderer/frame_buffer.h"
@@ -154,10 +155,24 @@ void EditorLayer::OnImGuiRender() {
     ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
     ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
-    uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
-    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id), ImVec2{1280, 720});
-
     ImGui::End();  // settings
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::Begin("Viewport");
+    ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
+    if (viewport_size_ != *(glm::vec2*)&viewport_panel_size) {
+      frame_buffer_->Resize((uint32_t)viewport_panel_size.x, (uint32_t)viewport_panel_size.y);
+      viewport_size_ = {viewport_panel_size.x, viewport_panel_size.y};
+
+      camera_controller_.OnResize(viewport_panel_size.x, viewport_panel_size.y);
+    }
+
+    uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
+    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
+                 ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
+    ImGui::End();  // viewport
+    ImGui::PopStyleVar();
+
     ImGui::End();  // dockspace demo
 
   } else {

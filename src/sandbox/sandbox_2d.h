@@ -4,7 +4,6 @@
 
 #include "ck.h"
 #include "core/core.h"
-#include "renderer/frame_buffer.h"
 #include "renderer/texture.h"
 
 class Sandbox2D : public ck::Layer {

@@ -1,7 +1,6 @@
 #include "orthographic_camera_controller.h"
 
 #include "core/input.h"
-#include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
 #include "events/key_code.h"
@@ -62,10 +61,13 @@ bool OrthographicCameraController::OnMouseScrolled(MouseScrollEvent& e) {
 
 bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e) {
   CK_PROFILE_FUNCTION();
-  aspect_ratio_ = float(e.GetWindowWidth() / e.GetWindowHeight());
-  camera_.SetProjection(-aspect_ratio_ * zoom_level_, aspect_ratio_ * zoom_level_, -zoom_level_,
-                        zoom_level_);
+  OnResize((float)e.GetWindowWidth(), (float)e.GetWindowHeight());
   return false;
 }
 
+void OrthographicCameraController::OnResize(float width, float height) {
+  aspect_ratio_ = width / height;
+  camera_.SetProjection(-aspect_ratio_ * zoom_level_, aspect_ratio_ * zoom_level_, -zoom_level_,
+                        zoom_level_);
+}
 }  // namespace ck

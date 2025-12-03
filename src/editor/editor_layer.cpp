@@ -20,12 +20,12 @@ EditorLayer::~EditorLayer() {}
 void EditorLayer::OnAttach() {
   CK_PROFILE_FUNCTION();
 
-  checkerboard_texture_ = ck::Texture2D::Create("assets/textures/checkerboard.png");
+  checkerboard_texture_ = Texture2D::Create("assets/textures/checkerboard.png");
 
-  ck::FrameBufferSpecification fb_spec;
+  FrameBufferSpecification fb_spec;
   fb_spec.width = 1280;
   fb_spec.height = 720;
-  frame_buffer_ = ck::FrameBuffer::Create(fb_spec);
+  frame_buffer_ = FrameBuffer::Create(fb_spec);
 }
 
 void EditorLayer::OnDetach() {
@@ -49,12 +49,12 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
   }
 
   // Render
-  ck::Renderer2D::ResetStats();
+  Renderer2D::ResetStats();
   {
     CK_PROFILE_SCOPE("Renderer Prep");
     frame_buffer_->Bind();
-    ck::RenderCommand::SetClearColor(background_color_);
-    ck::RenderCommand::Clear();
+    RenderCommand::SetClearColor(background_color_);
+    RenderCommand::Clear();
   }
 
   {
@@ -63,23 +63,23 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
 
     CK_PROFILE_SCOPE("Renderer Draw");
     // clang-format off
-    ck::Renderer2D::BeginScene(camera_controller_.Camera());
-    ck::Renderer2D::DrawRotatedQuad({1.0f, 0.0f}, {0.8f, 0.8f}, -45.0f, {0.8f, 0.2f, 0.3, 1.0f});
-    ck::Renderer2D::DrawQuad({-1.0f, 0.0f}, {0.8f, 0.8f}, color_1_);
-    ck::Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, color_2_);
-    ck::Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {20.0f, 20.0f}, checkerboard_texture_, 10.0f);
-    ck::Renderer2D::DrawRotatedQuad({-2.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, rotation, checkerboard_texture_, 20.0f);
-    ck::Renderer2D::EndScene();
+    Renderer2D::BeginScene(camera_controller_.Camera());
+    Renderer2D::DrawRotatedQuad({1.0f, 0.0f}, {0.8f, 0.8f}, -45.0f, {0.8f, 0.2f, 0.3, 1.0f});
+    Renderer2D::DrawQuad({-1.0f, 0.0f}, {0.8f, 0.8f}, color_1_);
+    Renderer2D::DrawQuad({0.5f, -0.5f}, {0.5f, 0.75f}, color_2_);
+    Renderer2D::DrawQuad({0.0f, 0.0f, -0.1f}, {20.0f, 20.0f}, checkerboard_texture_, 10.0f);
+    Renderer2D::DrawRotatedQuad({-2.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, rotation, checkerboard_texture_, 20.0f);
+    Renderer2D::EndScene();
     // clang-format on
 
-    ck::Renderer2D::BeginScene(camera_controller_.Camera());
+    Renderer2D::BeginScene(camera_controller_.Camera());
     for (float y = -5.0f; y < 5.0f; y += 0.5f) {
       for (float x = -5.0f; x < 5.0f; x += 0.5f) {
         glm::vec4 color = {(x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f};
-        ck::Renderer2D::DrawQuad({x, y}, {0.45, 0.45f}, color);
+        Renderer2D::DrawQuad({x, y}, {0.45, 0.45f}, color);
       }
     }
-    ck::Renderer2D::EndScene();
+    Renderer2D::EndScene();
     frame_buffer_->Unbind();
   }
 }
@@ -144,7 +144,7 @@ void EditorLayer::OnImGuiRender() {
         // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
         if (ImGui::MenuItem("Exit")) {
-          ck::Application::Get().Close();
+          Application::Get().Close();
         }
         ImGui::EndMenu();
       }
@@ -158,7 +158,7 @@ void EditorLayer::OnImGuiRender() {
     ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
     ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
     ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-    auto stats = ck::Renderer2D::GetStats();
+    auto stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.draw_calls);
     ImGui::Text("Quads: %d", stats.quad_count);
@@ -196,7 +196,7 @@ void EditorLayer::OnImGuiRender() {
     ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
     ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
     ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-    auto stats = ck::Renderer2D::GetStats();
+    auto stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.draw_calls);
     ImGui::Text("Quads: %d", stats.quad_count);

@@ -3,6 +3,7 @@
 #include "core/core.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
+#include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -37,6 +38,14 @@ void EditorLayer::OnAttach() {
   auto square = active_scene_->CreateEntity("Green Square");
   square.AddComponent<SpriteRendererComponent>(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
   square_entity_ = square;
+
+  main_camera_ = active_scene_->CreateEntity("Main Camera");
+  main_camera_.AddComponent<CameraComponent>(glm::ortho(-16.0f, 16.0f, -9.0f, 9.0f, -1.0f, 1.0f));
+
+  second_camera_ = active_scene_->CreateEntity("Clip-Space Camera");
+  auto& cc = second_camera_.AddComponent<CameraComponent>(
+      glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+  cc.is_primary = false;
 }
 
 void EditorLayer::OnDetach() {
@@ -65,11 +74,7 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
   RenderCommand::SetClearColor(background_color_);
   RenderCommand::Clear();
 
-  Renderer2D::BeginScene(camera_controller_.Camera());
-
   active_scene_->OnUpdate(dt);
-
-  Renderer2D::EndScene();
 
   frame_buffer_->Unbind();
 }
@@ -156,6 +161,14 @@ void EditorLayer::OnImGuiRender() {
 
       auto& square_color = square_entity_.GetComponent<SpriteRendererComponent>().color;
       ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
+    }
+
+    ImGui::DragFloat3("Camera Transform",
+                      glm::value_ptr(main_camera_.GetComponent<TransformComponent>().transform[3]));
+
+    if (ImGui::Checkbox("Camera A", &is_primary_camera)) {
+      main_camera_.GetComponent<CameraComponent>().is_primary = is_primary_camera;
+      second_camera_.GetComponent<CameraComponent>().is_primary = !is_primary_camera;
     }
 
     auto stats = Renderer2D::GetStats();

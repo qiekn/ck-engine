@@ -3,6 +3,7 @@
 #include <string>
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "renderer/camera.h"
 
 namespace ck {
 // ----------------------------------------------------------------------------: Transform
@@ -39,3 +40,11 @@ struct TagComponent {
   explicit TagComponent(const std::string& _name) : name(_name) {}
 };
 }  // namespace ck
+
+// ----------------------------------------------------------------------------: Camera
+struct CameraComponent {
+  ck::Camera camera;
+  bool is_primary = true;  // TODO(qiekn): think about moving to Scene
+
+  explicit CameraComponent(const glm::mat4& projection) : camera(projection) {}
+};

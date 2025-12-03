@@ -37,6 +37,11 @@ private:
   Ref<Scene> active_scene_;
   Entity square_entity_;
 
+  Entity main_camera_;
+  Entity second_camera_;
+
+  bool is_primary_camera = true;
+
   Ref<Texture2D> checkerboard_texture_;
 
   bool is_viewport_hovered_{false};

@@ -7,7 +7,6 @@
 
 #include "core/core.h"
 #include "debug/profiler.h"
-#include "glm/ext/matrix_float4x3.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
@@ -97,7 +96,7 @@ void Renderer2D::Init() {
 
   int32_t samplers[s_data.kMaxTextureSlots];
   for (uint32_t i = 0; i < s_data.kMaxTextureSlots; i++) {
-    samplers[i] = i;
+    samplers[i] = (int32_t)i;
   }
 
   s_data.textuer_shader = Shader::Create("assets/shaders/texture.glsl");
@@ -119,6 +118,20 @@ void Renderer2D::Init() {
 void Renderer2D::Shutdown() {
   CK_PROFILE_FUNCTION();
   delete[] s_data.quad_vertex_buffer_base;
+}
+
+void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform) {
+  CK_PROFILE_FUNCTION();
+
+  glm::mat4 view_proj = camera.GetProjection() * glm::inverse(transform);
+
+  s_data.textuer_shader->Bind();
+  s_data.textuer_shader->SetMat4("u_view_projection", view_proj);
+
+  s_data.quad_index_count = 0;
+  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
+
+  s_data.texture_slot_index = 1;
 }
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {

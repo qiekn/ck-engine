@@ -9,7 +9,6 @@ Checks: >
   bugprone-*,
   clang-analyzer-*,
   performance-*,
-  # allow C-style casts
   -google-readability-casting,
   -bugprone-easily-swappable-parameters
 

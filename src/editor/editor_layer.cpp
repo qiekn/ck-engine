@@ -35,6 +35,14 @@ void EditorLayer::OnDetach() {
 void EditorLayer::OnUpdate(DeltaTime dt) {
   CK_PROFILE_FUNCTION();
 
+  // Resize
+  auto spec = frame_buffer_->GetSpecification();
+  if (viewport_size_.x > 0.0f && viewport_size_.y > 0.0f &&
+      (spec.width != (uint32_t)viewport_size_.x || spec.height != (uint32_t)viewport_size_.y)) {
+    frame_buffer_->Resize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+    camera_controller_.OnResize(viewport_size_.x, viewport_size_.y);
+  }
+
   // Update
   if (is_viewprot_focused_) {
     camera_controller_.OnUpdate(dt);
@@ -171,12 +179,7 @@ void EditorLayer::OnImGuiRender() {
     is_viewport_hovered_ = ImGui::IsWindowHovered();
     Application::Get().GetImGuiLayer()->BlockEvent(!is_viewport_hovered_ || !is_viewprot_focused_);
     ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
-    if (viewport_size_ != *(glm::vec2*)&viewport_panel_size) {
-      frame_buffer_->Resize((uint32_t)viewport_panel_size.x, (uint32_t)viewport_panel_size.y);
-      viewport_size_ = {viewport_panel_size.x, viewport_panel_size.y};
-
-      camera_controller_.OnResize(viewport_panel_size.x, viewport_panel_size.y);
-    }
+    viewport_size_ = {viewport_panel_size.x, viewport_panel_size.y};
 
     uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
     ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),

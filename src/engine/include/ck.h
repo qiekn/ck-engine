@@ -11,8 +11,8 @@
 
 #include "events/event.h"                                   // IWYU pragma: export
 
-#include "events/key_code.h"                                // IWYU pragma: export
-#include "events/mouse_button_code.h"                       // IWYU pragma: export
+#include "events/key_codes.h"                               // IWYU pragma: export
+#include "events/mouse_codes.h"                             // IWYU pragma: export
 
 #include "imgui/imgui_layer.h"                              // IWYU pragma: export
 

@@ -1,40 +1,36 @@
-#include "windows_input.h"
 
-#include "core/application.h"
-#include "core/core.h"
-#include "core/input.h"
 #include "GLFW/glfw3.h"
+#include "core/application.h"
+#include "core/input.h"
 
 namespace ck {
 
-Scope<Input> Input::instance_ = std::make_unique<WindowsInput>();
-
-bool WindowsInput::IsKeyPressedImpl(int key_code) const {
+bool Input::IsKeyPressed(KeyCode key) {
   auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
-  auto state = glfwGetKey(window, key_code);
+  auto state = glfwGetKey(window, static_cast<int32_t>(key));
   return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
-bool WindowsInput::IsMouseButtonPressedImpl(int button) const {
+bool Input::IsMouseButtonPressed(MouseCode button) {
   auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
-  auto state = glfwGetMouseButton(window, button);
+  auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));
   return state == GLFW_PRESS;
 }
 
-std::pair<float, float> WindowsInput::GetMousePosImpl() const {
+std::pair<float, float> Input::GetMousePos() {
   auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
   double x, y;
   glfwGetCursorPos(window, &x, &y);
   return {(float)x, (float)y};
 }
 
-float WindowsInput::GetMouseXImpl() const {
-  auto [x, y] = GetMousePosImpl();
+float Input::GetMouseX() {
+  auto [x, y] = GetMousePos();
   return x;
 }
 
-float WindowsInput::GetMouseYImpl() const {
-  auto [x, y] = GetMousePosImpl();
+float Input::GetMouseY() {
+  auto [x, y] = GetMousePos();
   return y;
 }
 

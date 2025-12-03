@@ -3,7 +3,7 @@
 #include "core/input.h"
 #include "events/application_event.h"
 #include "events/event.h"
-#include "events/key_code.h"
+#include "events/key_codes.h"
 #include "events/mouse_event.h"
 #include "renderer/orthographic_camera.h"
 

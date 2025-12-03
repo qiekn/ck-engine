@@ -1,4 +1,5 @@
 #include "sandbox_2d.h"
+#include <cstdint>
 
 #include "core/profile_timer.h"
 #include "debug/profiler.h"
@@ -14,10 +15,18 @@ Sandbox2D::Sandbox2D() : Layer("Sandbox 2D"), camera_controller_(16.0f / 9.0f) {
 
 void Sandbox2D::OnAttach() {
   CK_PROFILE_FUNCTION();
+
+  ck::FrameBufferSpecification fb_spec;
+  fb_spec.width = 1280;
+  fb_spec.height = 720;
+  frame_buffer_ = ck::FrameBuffer::Create(fb_spec);
+
   checkboard_texture_ = ck::Texture2D::Create("assets/textures/checkerboard.png");
 }
 
-void Sandbox2D::OnDetach() { CK_PROFILE_FUNCTION(); }
+void Sandbox2D::OnDetach() {
+  CK_PROFILE_FUNCTION();
+}
 
 void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
   CK_PROFILE_FUNCTION();
@@ -27,6 +36,7 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
   ck::Renderer2D::ResetStats();
   {
     CK_PROFILE_SCOPE("Renderer Prep");
+    frame_buffer_->Bind();
     ck::RenderCommand::SetClearColor(background_color_);
     ck::RenderCommand::Clear();
   }
@@ -54,17 +64,15 @@ void Sandbox2D::OnUpdate(ck::DeltaTime dt) {
       }
     }
     ck::Renderer2D::EndScene();
+    frame_buffer_->Unbind();
   }
 }
 
 void Sandbox2D::OnImGuiRender() {
   CK_PROFILE_FUNCTION();
 
-  /*
-   */
-
   // Note: Switch this to true to enable dockspace
-  static bool dockingEnabled = false;
+  static bool dockingEnabled = true;
   if (dockingEnabled) {
     static bool dockspaceOpen = true;
     static bool opt_fullscreen_persistant = true;
@@ -88,8 +96,9 @@ void Sandbox2D::OnImGuiRender() {
 
     // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and
     // handle the pass-thru hole, so we ask Begin() to not render a background.
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) {
       window_flags |= ImGuiWindowFlags_NoBackground;
+    }
 
     // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
     // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
@@ -101,7 +110,9 @@ void Sandbox2D::OnImGuiRender() {
     ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
     ImGui::PopStyleVar();
 
-    if (opt_fullscreen) ImGui::PopStyleVar(2);
+    if (opt_fullscreen) {
+      ImGui::PopStyleVar(2);
+    }
 
     // DockSpace
     ImGuiIO& io = ImGui::GetIO();
@@ -116,7 +127,9 @@ void Sandbox2D::OnImGuiRender() {
         // which we can't undo at the moment without finer window depth/z control.
         // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
-        if (ImGui::MenuItem("Exit")) ck::Application::Get().Close();
+        if (ImGui::MenuItem("Exit")) {
+          ck::Application::Get().Close();
+        }
         ImGui::EndMenu();
       }
 
@@ -135,6 +148,9 @@ void Sandbox2D::OnImGuiRender() {
     ImGui::Text("Quads: %d", stats.quad_count);
     ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
     ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+
+    uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
+    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id), ImVec2{1280, 720});
 
     ImGui::End();  // settings
     ImGui::End();  // dockspace demo
@@ -157,4 +173,6 @@ void Sandbox2D::OnImGuiRender() {
   }
 }
 
-void Sandbox2D::OnEvent(ck::Event& event) { camera_controller_.OnEvent(event); }
+void Sandbox2D::OnEvent(ck::Event& event) {
+  camera_controller_.OnEvent(event);
+}

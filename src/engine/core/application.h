@@ -28,6 +28,8 @@ public:
 
   void Close();
 
+  ImGuiLayer* GetImGuiLayer() { return imgui_layer_; }
+
   inline static Application& Get() { return *instance_; }
 
 private:

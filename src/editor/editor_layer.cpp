@@ -36,7 +36,9 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
   CK_PROFILE_FUNCTION();
 
   // Update
-  camera_controller_.OnUpdate(dt);
+  if (is_viewprot_focused_) {
+    camera_controller_.OnUpdate(dt);
+  }
 
   // Render
   ck::Renderer2D::ResetStats();
@@ -155,10 +157,19 @@ void EditorLayer::OnImGuiRender() {
     ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
     ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
+    // debug viewport hover & focus
+    ImGui::Separator();
+    ImGui::Text("Debug Viewpoint");
+    ImGui::Text("Hovered: %s", is_viewport_hovered_ ? "true " : "false");
+    ImGui::Text("Focused: %s", is_viewprot_focused_ ? "true" : "false");
+
     ImGui::End();  // settings
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin("Viewport");
+    is_viewprot_focused_ = ImGui::IsWindowFocused();
+    is_viewport_hovered_ = ImGui::IsWindowHovered();
+    Application::Get().GetImGuiLayer()->BlockEvent(!is_viewport_hovered_ || !is_viewprot_focused_);
     ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
     if (viewport_size_ != *(glm::vec2*)&viewport_panel_size) {
       frame_buffer_->Resize((uint32_t)viewport_panel_size.x, (uint32_t)viewport_panel_size.y);

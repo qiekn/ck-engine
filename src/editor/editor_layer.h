@@ -34,6 +34,8 @@ private:
 
   Ref<Texture2D> checkerboard_texture_;
 
+  bool is_viewport_hovered_{false};
+  bool is_viewprot_focused_{false};
   glm::vec2 viewport_size_{0.0f, 0.0f};
 
   glm::vec4 quare_color_{0.2f, 0.3f, 0.8f, 1.0f};

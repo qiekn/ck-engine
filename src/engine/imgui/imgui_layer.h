@@ -15,5 +15,10 @@ public:
 
   void Begin();
   void End();
+
+  void BlockEvent(bool block) { is_block_events = block; }
+
+private:
+  bool is_block_events = true;
 };
 }  // namespace ck

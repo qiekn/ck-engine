@@ -10,7 +10,8 @@ Checks: >
   clang-analyzer-*,
   performance-*,
   # allow C-style casts
-  -google-readability-casting
+  -google-readability-casting,
+  -bugprone-easily-swappable-parameters
 
 # Treat all warnings as errors (Optional, but recommended for strict compliance)
 WarningsAsErrors: '*'

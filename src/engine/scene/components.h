@@ -1,9 +1,11 @@
 #pragma once
 
+#include <string>
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float4.hpp"
 
 namespace ck {
+// ----------------------------------------------------------------------------: Transform
 struct TransformComponent {
   glm::mat4 transform{1.0f};
 
@@ -17,6 +19,7 @@ struct TransformComponent {
   explicit operator const glm::mat4&() const { return transform; }
 };
 
+// ----------------------------------------------------------------------------: SpriteRenderer
 struct SpriteRendererComponent {
   glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -24,5 +27,15 @@ struct SpriteRendererComponent {
   SpriteRendererComponent(const SpriteRendererComponent&) = default;
 
   explicit SpriteRendererComponent(const glm::vec4& _color) : color(_color) {}
+};
+
+// ----------------------------------------------------------------------------: Tag
+struct TagComponent {
+  std::string name;
+
+  TagComponent() = default;
+  TagComponent(const TagComponent&) = default;
+
+  explicit TagComponent(const std::string& _name) : name(_name) {}
 };
 }  // namespace ck

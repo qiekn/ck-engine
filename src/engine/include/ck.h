@@ -17,6 +17,7 @@
 #include "imgui/imgui_layer.h"                              // IWYU pragma: export
 
 #include "scene/scene.h"                                    // IWYU pragma: export
+#include "scene/entity.h"                                   // IWYU pragma: export
 #include "scene/components.h"                               // IWYU pragma: export
 
 /*─────────────────────────────────────┐

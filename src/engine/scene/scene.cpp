@@ -2,6 +2,7 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "renderer/renderer_2d.h"
 #include "scene/components.h"
+#include "scene/entity.h"
 
 namespace ck {
 // ----------------------------------------------------------------------------: Static Func
@@ -16,8 +17,12 @@ Scene::Scene() {}
 
 Scene::~Scene() {}
 
-entt::entity Scene::CreateEntity() {
-  return registry_.create();
+Entity Scene::CreateEntity(const std::string& name) {
+  Entity entity = {registry_.create(), this};
+  entity.AddComponent<TransformComponent>();
+  auto& tag = entity.AddComponent<TagComponent>();
+  tag.name = name.empty() ? "Entity" : name;
+  return entity;
 }
 
 void Scene::OnUpdate(DeltaTime dt) {

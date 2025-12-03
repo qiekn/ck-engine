@@ -13,6 +13,7 @@
 #include "renderer/renderer_2d.h"
 #include "renderer/texture.h"
 #include "scene/components.h"
+#include "scene/entity.h"
 #include "scene/scene.h"
 
 namespace ck {
@@ -33,10 +34,8 @@ void EditorLayer::OnAttach() {
 
   active_scene_ = CreateRef<Scene>();
 
-  auto square = active_scene_->CreateEntity();
-  active_scene_->Reg().emplace<TransformComponent>(square);
-  active_scene_->Reg().emplace<SpriteRendererComponent>(square, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-
+  auto square = active_scene_->CreateEntity("Green Square");
+  square.AddComponent<SpriteRendererComponent>(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
   square_entity_ = square;
 }
 
@@ -149,8 +148,16 @@ void EditorLayer::OnImGuiRender() {
     ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
     ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
     ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-    auto& square_color = active_scene_->Reg().get<SpriteRendererComponent>(square_entity_).color;
-    ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
+
+    if (square_entity_) {
+      ImGui::Separator();
+      auto& tag = square_entity_.GetComponent<TagComponent>().name;
+      ImGui::Text("%s", tag.c_str());
+
+      auto& square_color = square_entity_.GetComponent<SpriteRendererComponent>().color;
+      ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
+    }
+
     auto stats = Renderer2D::GetStats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.draw_calls);

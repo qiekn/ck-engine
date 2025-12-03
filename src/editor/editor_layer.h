@@ -10,6 +10,7 @@
 #include "renderer/shader.h"
 #include "renderer/texture.h"
 #include "renderer/vertex_array.h"
+#include "scene/entity.h"
 #include "scene/scene.h"
 
 namespace ck {
@@ -34,7 +35,7 @@ private:
   Ref<FrameBuffer> frame_buffer_;
 
   Ref<Scene> active_scene_;
-  entt::entity square_entity_;
+  Entity square_entity_;
 
   Ref<Texture2D> checkerboard_texture_;
 

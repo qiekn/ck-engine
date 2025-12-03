@@ -9,8 +9,8 @@ Checks: >
   bugprone-*,
   clang-analyzer-*,
   performance-*,
-  readability-*,
-  -readability-magic-numbers,
+  # allow C-style casts
+  -google-readability-casting
 
 # Treat all warnings as errors (Optional, but recommended for strict compliance)
 WarningsAsErrors: '*'

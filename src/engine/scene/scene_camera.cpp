@@ -22,12 +22,19 @@ void SceneCamera::SetViewportSize(uint32_t width, uint32_t height) {
 }
 
 void SceneCamera::RecalculateProjection() {
-  float ortho_left = -orthographic_size_ * aspect_ratio_ * 0.5f;
-  float ortho_right = orthographic_size_ * aspect_ratio_ * 0.5f;
-  float ortho_bottom = -orthographic_size_ * 0.5f;
-  float ortho_top = orthographic_size_ * 0.5f;
+  if (projection_type_ == ProjectionType::kPerspective) {
+    projection_ =
+        glm::perspective(perspective_fov_, aspect_ratio_, perspective_near_, perspective_far_);
+  } else {
+    float ortho_left = -orthographic_size_ * aspect_ratio_ * 0.5f;
+    float ortho_right = orthographic_size_ * aspect_ratio_ * 0.5f;
+    float ortho_bottom = -orthographic_size_ * 0.5f;
+    float ortho_top = orthographic_size_ * 0.5f;
 
-  projection_ = glm::ortho(ortho_left, ortho_right, ortho_bottom, ortho_top, orthographic_near_,
-                           orthographic_far_);
+    projection_ = glm::ortho(ortho_left, ortho_right, ortho_bottom, ortho_top, orthographic_near_,
+                             orthographic_far_);
+  }
 }
+
+void SceneCamera::SetPerspective(float vertical_fov, float near_clip, float far_clip) {}
 }  // namespace ck

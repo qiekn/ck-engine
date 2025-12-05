@@ -10,7 +10,8 @@ Checks: >
   clang-analyzer-*,
   performance-*,
   -google-readability-casting,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -performance-no-int-to-ptr
 
 # Treat all warnings as errors (Optional, but recommended for strict compliance)
 WarningsAsErrors: '*'

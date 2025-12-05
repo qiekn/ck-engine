@@ -91,7 +91,7 @@ public:
   template <typename T, typename F>
   bool DispatchEvent(const F& Func) {
     if (event_.GetEventType() == T::GetStaticType()) {
-      event_.handled_ = Func(*(T*)&event_);
+      event_.handled_ |= Func(*(T*)&event_);
       return true;
     }
     return false;

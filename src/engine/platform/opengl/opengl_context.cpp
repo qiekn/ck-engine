@@ -1,7 +1,7 @@
 #include "opengl_context.h"
 
-#include "core/log.h"
 #include "GLFW/glfw3.h"
+#include "core/log.h"
 
 namespace ck {
 
@@ -16,7 +16,12 @@ void OpenGlContext::Init() {
   glfwMakeContextCurrent(window_);
   int version = gladLoadGL(glfwGetProcAddress);
   CK_ENGINE_ASSERT(version, "Glad: Failed to initialize OpenGL context\n")
-  CK_ENGINE_INFO("Loaded OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+
+  int version_minor = GLAD_VERSION_MINOR(version);
+  int version_major = GLAD_VERSION_MAJOR(version);
+  CK_ENGINE_INFO("Loaded OpenGL {}.{}", version_major, version_major);
+  CK_ENGINE_ASSERT(version_major > 4 || (version_major == 4 && version_minor >= 5),
+                   "ck-engine requires at least OpenGL version 4.5!");
 }
 
 void OpenGlContext::SwapBuffers() {

@@ -59,22 +59,20 @@ void EditorLayer::OnAttach() {
     void OnDestroy() {}
 
     void OnUpdate(DeltaTime dt) {
-      auto& transform = GetComponent<TransformComponent>().transform;
+      auto& position = GetComponent<TransformComponent>().position;
       float speed = 5.0f;
 
-      // transform[3][0] = X Translation
-      // transform[3][1] = Y Translation
       if (Input::IsKeyPressed(KeyCode::A)) {
-        transform[3][0] -= speed * dt;
+        position.x -= speed * dt;
       }
       if (Input::IsKeyPressed(KeyCode::D)) {
-        transform[3][0] += speed * dt;
+        position.x += speed * dt;
       }
       if (Input::IsKeyPressed(KeyCode::W)) {
-        transform[3][1] += speed * dt;
+        position.y += speed * dt;
       }
       if (Input::IsKeyPressed(KeyCode::S)) {
-        transform[3][1] -= speed * dt;
+        position.y -= speed * dt;
       }
     }
   };

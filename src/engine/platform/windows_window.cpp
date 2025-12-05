@@ -1,6 +1,9 @@
 #include "windows_window.h"
 
+#include "GLFW/glfw3.h"
 #include "core/log.h"
+#include "core/window.h"
+#include "debug/profiler.h"
 #include "events/application_event.h"
 #include "events/key_event.h"
 #include "events/mouse_event.h"
@@ -8,6 +11,7 @@
 
 namespace ck {
 static bool is_glfw_initialized = false;
+float Window::s_high_dpi_scale_factor_ = 1.0f;
 
 static void GLFWErrorCallback(int error, const char* description) {
   CK_CLIENT_ERROR("GLFW ERROR ({}) {}", error, description);
@@ -59,7 +63,17 @@ void WindowsWindow::Init(const WindowProps& props) {
   }
 
   {
-    CK_PROFILE_FUNCTION();
+    CK_PROFILE_SCOPE("glfwCreateWindow");
+
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    float scale_x, scale_y;
+    glfwGetMonitorContentScale(monitor, &scale_x, &scale_y);
+
+    if (scale_x > 1.0f || scale_y > 1.0f) {
+      s_high_dpi_scale_factor_ = scale_x;
+      glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+    }
+
     window_ = glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr,
                                nullptr);
   }

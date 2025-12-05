@@ -18,6 +18,8 @@ public:
 
   void BlockEvent(bool block) { is_block_events = block; }
 
+  void SetDarkThemeColors();
+
 private:
   bool is_block_events = true;
 };

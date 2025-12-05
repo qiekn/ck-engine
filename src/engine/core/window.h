@@ -10,8 +10,8 @@ struct WindowProps {  // Props -> properties
   uint32_t width;
   uint32_t height;
 
-  explicit WindowProps(const std::string& _title = "ck: Engine", uint32_t _width = 1280,
-                       uint32_t _height = 720)
+  explicit WindowProps(const std::string& _title = "ck: Engine", uint32_t _width = 1600,
+                       uint32_t _height = 900)
       : title(_title), width(_width), height(_height) {}
 };
 
@@ -37,5 +37,8 @@ public:
   virtual void* GetNativeWindow() const = 0;
 
   static Scope<Window> Create(const WindowProps& props = WindowProps());
+
+public:
+  static float s_high_dpi_scale_factor_;
 };
 }  // namespace ck

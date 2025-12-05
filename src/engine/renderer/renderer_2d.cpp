@@ -128,10 +128,7 @@ void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform) {
   s_data.textuer_shader->Bind();
   s_data.textuer_shader->SetMat4("u_view_projection", view_proj);
 
-  s_data.quad_index_count = 0;
-  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
-
-  s_data.texture_slot_index = 1;
+  StartBatch();
 }
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {
@@ -139,17 +136,11 @@ void Renderer2D::BeginScene(const OrthographicCamera& camera) {
   s_data.textuer_shader->Bind();
   s_data.textuer_shader->SetMat4("u_view_projection", camera.GetViewProjectionMatrix());
 
-  s_data.quad_index_count = 0;
-  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
-
-  s_data.texture_slot_index = 1;
+  StartBatch();
 }
 
 void Renderer2D::EndScene() {
   CK_PROFILE_FUNCTION();
-  uint32_t data_size =
-      (uint8_t*)s_data.quad_vertex_buffer_ptr - (uint8_t*)s_data.quad_vertex_buffer_base;
-  s_data.quad_vertex_buffer->SetData(s_data.quad_vertex_buffer_base, data_size);
 
   Flush();
 }
@@ -159,6 +150,10 @@ void Renderer2D::Flush() {
     return;
   }
 
+  uint32_t data_size =
+      (uint8_t*)s_data.quad_vertex_buffer_ptr - (uint8_t*)s_data.quad_vertex_buffer_base;
+  s_data.quad_vertex_buffer->SetData(s_data.quad_vertex_buffer_base, data_size);
+
   // Bind Textures
   for (uint32_t i = 0; i < s_data.texture_slot_index; i++) {
     s_data.texture_slots[i]->Bind(i);
@@ -166,14 +161,6 @@ void Renderer2D::Flush() {
 
   RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
   s_data.stats.draw_calls++;
-}
-
-void Renderer2D::FlushAndRest() {
-  EndScene();
-
-  s_data.quad_index_count = 0;
-  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
-  s_data.texture_slot_index = 1;
 }
 
 // ----------------------------------------------------------------------------: Primitives
@@ -211,7 +198,7 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
   CK_PROFILE_FUNCTION();
 
   if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
-    FlushAndRest();
+    NextBatch();
   }
 
   const float texture_index = 0.0f;  // white texture
@@ -243,6 +230,10 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& text
                           float tiling_factor, const glm::vec4& tint_color) {
   CK_PROFILE_FUNCTION();
 
+  if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
+    NextBatch();
+  }
+
   float texture_index = 0.0f;
 
   // Check if this texture already in texture_slots
@@ -255,6 +246,10 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& text
 
   // Texture Index still be zero means it's unique one that not in texture slots array
   if (texture_index == 0.0f) {
+
+    if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
+      NextBatch();
+    }
     texture_index = (float)s_data.texture_slot_index;
     s_data.texture_slots[s_data.texture_slot_index] = texture;
     s_data.texture_slot_index++;
@@ -322,4 +317,15 @@ Renderer2D::Statistics Renderer2D::GetStats() {
   return s_data.stats;
 }
 
+void Renderer2D::StartBatch() {
+  s_data.quad_index_count = 0;
+  s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
+
+  s_data.texture_slot_index = 1;
+}
+
+void Renderer2D::NextBatch() {
+  Flush();
+  StartBatch();
+}
 }  // namespace ck

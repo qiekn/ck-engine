@@ -60,6 +60,7 @@ public:
   static Statistics GetStats();
 
 private:
-  static void FlushAndRest();
+  static void StartBatch();
+  static void NextBatch();
 };
 }  // namespace ck

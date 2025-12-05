@@ -18,7 +18,9 @@ public:
   template <typename T, typename... Args>
   T& AddComponent(Args&&... args) {
     CK_ENGINE_ASSERT(!HasComponent<T>(), "Entity already has component!");
-    return scene_->registry_.emplace<T>(entity_handle_, std::forward<Args>(args)...);
+    T& component = scene_->registry_.emplace<T>(entity_handle_, std::forward<Args>(args)...);
+    // todo
+    return component;
   }
 
   template <typename T>
@@ -45,6 +47,8 @@ public:
   }
 
   explicit operator bool() const { return entity_handle_ != entt::null; }
+
+  explicit operator entt::entity() const { return entity_handle_; }
 
   entt::entity GetID() const { return entity_handle_; }
 

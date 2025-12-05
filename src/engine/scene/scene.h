@@ -12,9 +12,14 @@ public:
   virtual ~Scene();
 
   Entity CreateEntity(const std::string& name = std::string());
+  void DestroyEntity(const Entity& entity);
 
   void OnUpdate(DeltaTime dt);
   void OnViewportResize(uint32_t width, uint32_t height);
+
+private:
+  template <typename T>
+  void OnComponentAdded(const Entity& entity, T& component);
 
 private:
   entt::registry registry_;

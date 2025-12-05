@@ -26,6 +26,10 @@ Entity Scene::CreateEntity(const std::string& name) {
   return entity;
 }
 
+void Scene::DestroyEntity(const Entity& entity) {
+  registry_.destroy(entity.GetID());
+}
+
 void Scene::OnUpdate(DeltaTime dt) {
   // Update Scripts
   {
@@ -86,4 +90,30 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height) {
     }
   }
 }
+
+template <typename T>
+void Scene::OnComponentAdded(const Entity& entity, T& component) {
+  static_assert(false);
+}
+
+template <>
+void Scene::OnComponentAdded<TransformComponent>(const Entity& entity,
+                                                 TransformComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<CameraComponent>(const Entity& entity, CameraComponent& component) {
+  component.camera.SetViewportSize(viewport_width, viewport_height);
+}
+
+template <>
+void Scene::OnComponentAdded<SpriteRendererComponent>(const Entity& entity,
+                                                      SpriteRendererComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<TagComponent>(const Entity& entity, TagComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<NativeScriptComponent>(const Entity& entity,
+                                                    NativeScriptComponent& component) {}
+
 }  // namespace ck

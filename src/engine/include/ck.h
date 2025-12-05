@@ -18,6 +18,7 @@
 
 #include "scene/scene.h"                                    // IWYU pragma: export
 #include "scene/entity.h"                                   // IWYU pragma: export
+#include "scene/scriptable_entity.h"                        // IWYU pragma: export
 #include "scene/components.h"                               // IWYU pragma: export
 
 /*─────────────────────────────────────┐

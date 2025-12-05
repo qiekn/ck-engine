@@ -1,6 +1,8 @@
 #include "editor_layer.h"
 #include "core/application.h"
 #include "core/core.h"
+#include "core/deltatime.h"
+#include "core/input.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -9,6 +11,7 @@
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "renderer/frame_buffer.h"
 #include "renderer/orthographic_camera_controller.h"
 #include "renderer/render_command.h"
@@ -17,6 +20,7 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
+#include "scene/scriptable_entity.h"
 
 namespace ck {
 
@@ -46,6 +50,35 @@ void EditorLayer::OnAttach() {
   second_camera_ = active_scene_->CreateEntity("Clip-Space Camera");
   auto& cc = second_camera_.AddComponent<CameraComponent>();
   cc.is_primary = false;
+
+  // Native Script
+  class CameraController : public ScriptableEntity {
+    void OnCreate() {}
+
+    void OnDestroy() {}
+
+    void OnUpdate(DeltaTime dt) {
+      auto& transform = GetComponent<TransformComponent>().transform;
+      float speed = 5.0f;
+
+      // transform[3][0] = X Translation
+      // transform[3][1] = Y Translation
+      if (Input::IsKeyPressed(KeyCode::A)) {
+        transform[3][0] -= speed * dt;
+      }
+      if (Input::IsKeyPressed(KeyCode::D)) {
+        transform[3][0] += speed * dt;
+      }
+      if (Input::IsKeyPressed(KeyCode::W)) {
+        transform[3][1] += speed * dt;
+      }
+      if (Input::IsKeyPressed(KeyCode::S)) {
+        transform[3][1] -= speed * dt;
+      }
+    }
+  };
+
+  main_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 }
 
 void EditorLayer::OnDetach() {

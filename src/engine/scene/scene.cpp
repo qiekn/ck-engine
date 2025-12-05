@@ -27,6 +27,20 @@ Entity Scene::CreateEntity(const std::string& name) {
 }
 
 void Scene::OnUpdate(DeltaTime dt) {
+  // Update Scripts
+  {
+    registry_.view<NativeScriptComponent>().each([=, this](auto entity, auto& nsc) {
+      // TODO(qiekn): Move to Scene::OnScenePlay
+      if (!nsc.instance) {
+        nsc.instance = nsc.InstantiateScript();
+        nsc.instance->entity_ = Entity{entity, this};
+        nsc.instance->OnCreate();
+      }
+
+      nsc.instance->OnUpdate(dt);
+    });
+  }
+
   // Render 2D
   Camera* main_camera = nullptr;
   glm::mat4* camera_transform = nullptr;

@@ -1,5 +1,9 @@
 #include "scene_hierarchy_panel.h"
+#include <sec_api/string_s.h>
 #include <cstdint>
+#include <cstring>
+#include <string>
+#include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "scene/components.h"
 #include "scene/entity.h"
@@ -23,9 +27,15 @@ void SceneHierarchyPanel::OnImGuiRender() {
     DrawEntityNode(entity);
   }
   ImGui::End();
+
+  ImGui::Begin("Properties");
+  if (selection_context_) {
+    DrawComponents(selection_context_);
+  }
+  ImGui::End();
 }
 
-void SceneHierarchyPanel::DrawEntityNode(Entity& entity) {
+void SceneHierarchyPanel::DrawEntityNode(const Entity& entity) {
   auto& tag = entity.GetComponent<TagComponent>();
 
   ImGuiTreeNodeFlags flags = ((selection_context_ == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
@@ -44,6 +54,29 @@ void SceneHierarchyPanel::DrawEntityNode(Entity& entity) {
       ImGui::TreePop();
     }
     ImGui::TreePop();
+  }
+}
+
+void SceneHierarchyPanel::DrawComponents(Entity& entity) {
+  if (entity.HasComponent<TagComponent>()) {
+    auto& tag = entity.GetComponent<TagComponent>();
+
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strcpy_s(buffer, sizeof(buffer), tag.name.c_str());
+    if (ImGui::InputText("Tag", buffer, sizeof(buffer))) {
+      tag.name = std::string(buffer);
+    }
+  }
+
+  if (entity.HasComponent<TransformComponent>()) {
+    if (ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(),
+                          ImGuiTreeNodeFlags_DefaultOpen, "Transform")) {
+      auto& transform = entity.GetComponent<TransformComponent>().transform;
+      ImGui::DragFloat3("Position", glm::value_ptr(transform[3]), 0.1f);
+
+      ImGui::TreePop();
+    }
   }
 }
 }  // namespace ck

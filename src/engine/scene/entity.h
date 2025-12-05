@@ -28,7 +28,13 @@ public:
   }
 
   template <typename T>
-  bool HasComponent() {
+  const T& GetComponent() const {
+    CK_ENGINE_ASSERT(HasComponent<T>(), "Entity does not have this component!");
+    return scene_->registry_.get<T>(entity_handle_);
+  }
+
+  template <typename T>
+  bool HasComponent() const {
     return scene_->registry_.any_of<T>(entity_handle_);
   }
 

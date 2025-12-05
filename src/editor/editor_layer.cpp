@@ -5,13 +5,11 @@
 #include "core/input.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
-#include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "renderer/frame_buffer.h"
 #include "renderer/orthographic_camera_controller.h"
 #include "renderer/render_command.h"
@@ -47,10 +45,10 @@ void EditorLayer::OnAttach() {
   auto red_square = active_scene_->CreateEntity("Red Square");
   red_square.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 
-  main_camera_ = active_scene_->CreateEntity("Main Camera");
+  main_camera_ = active_scene_->CreateEntity("Camera A");
   main_camera_.AddComponent<CameraComponent>();
 
-  second_camera_ = active_scene_->CreateEntity("Clip-Space Camera");
+  second_camera_ = active_scene_->CreateEntity("Camera B");
   auto& cc = second_camera_.AddComponent<CameraComponent>();
   cc.is_primary = false;
 
@@ -185,37 +183,12 @@ void EditorLayer::OnImGuiRender() {
 
   scene_hierarachy_panel_.OnImGuiRender();
 
-  ImGui::Begin("Settings");
+  ImGui::Begin("Stats");
 
   ImGui::Text("Edit Colors");
   ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
   ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
   ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-
-  if (square_entity_) {
-    ImGui::Separator();
-    auto& tag = square_entity_.GetComponent<TagComponent>().name;
-    ImGui::Text("%s", tag.c_str());
-
-    auto& square_color = square_entity_.GetComponent<SpriteRendererComponent>().color;
-    ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
-  }
-
-  ImGui::DragFloat3("Camera Transform",
-                    glm::value_ptr(main_camera_.GetComponent<TransformComponent>().transform[3]));
-
-  if (ImGui::Checkbox("Camera A", &is_primary_camera)) {
-    main_camera_.GetComponent<CameraComponent>().is_primary = is_primary_camera;
-    second_camera_.GetComponent<CameraComponent>().is_primary = !is_primary_camera;
-  }
-
-  {
-    auto& camera = second_camera_.GetComponent<CameraComponent>().camera;
-    float ortho_size = camera.GetOrthographicSize();
-    if (ImGui::DragFloat("Second Camera Ortho Size", &ortho_size)) {
-      camera.SetOrthographicSize(ortho_size);
-    }
-  }
 
   auto stats = Renderer2D::GetStats();
   ImGui::Text("Renderer2D Stats:");

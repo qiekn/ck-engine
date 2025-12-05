@@ -7,6 +7,7 @@
 #include "imgui.h"
 #include "scene/components.h"
 #include "scene/entity.h"
+#include "scene/scene.h"
 
 namespace ck {
 
@@ -142,5 +143,14 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
       ImGui::TreePop();
     }
   }  // end of camera component
+
+  if (entity.HasComponent<SpriteRendererComponent>()) {
+    if (ImGui::TreeNodeEx((void*)typeid(SpriteRendererComponent).hash_code(),
+                          ImGuiTreeNodeFlags_DefaultOpen, "Sprite Renderer")) {
+      auto& src = entity.GetComponent<SpriteRendererComponent>();
+      ImGui::ColorEdit4("Color", glm::value_ptr(src.color));
+      ImGui::TreePop();
+    }
+  }
 }
 }  // namespace ck

@@ -31,10 +31,10 @@ void Scene::OnUpdate(DeltaTime dt) {
   Camera* main_camera = nullptr;
   glm::mat4* camera_transform = nullptr;
   {
-    auto group = registry_.view<TransformComponent, CameraComponent>();
-    for (auto entity : group) {
+    auto view = registry_.view<TransformComponent, CameraComponent>();
+    for (auto entity : view) {
       const auto& [transform_comp, camera_comp] =
-          group.get<TransformComponent, CameraComponent>(entity);
+          view.get<TransformComponent, CameraComponent>(entity);
 
       if (camera_comp.is_primary) {
         main_camera = &camera_comp.camera;
@@ -59,4 +59,17 @@ void Scene::OnUpdate(DeltaTime dt) {
   }
 }
 
+void Scene::OnViewportResize(uint32_t width, uint32_t height) {
+  viewport_width = width;
+  viewport_height = height;
+
+  // Resize our non-FixedAspectRatio Cameras
+  auto view = registry_.view<CameraComponent>();
+  for (auto entity : view) {
+    auto& camera_comp = view.get<CameraComponent>(entity);
+    if (!camera_comp.is_fixed_aspect_ratio) {
+      camera_comp.camera.SetViewportSize(width, height);
+    }
+  }
+}
 }  // namespace ck

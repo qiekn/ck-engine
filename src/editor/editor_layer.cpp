@@ -6,6 +6,7 @@
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "renderer/frame_buffer.h"
@@ -40,11 +41,10 @@ void EditorLayer::OnAttach() {
   square_entity_ = square;
 
   main_camera_ = active_scene_->CreateEntity("Main Camera");
-  main_camera_.AddComponent<CameraComponent>(glm::ortho(-16.0f, 16.0f, -9.0f, 9.0f, -1.0f, 1.0f));
+  main_camera_.AddComponent<CameraComponent>();
 
   second_camera_ = active_scene_->CreateEntity("Clip-Space Camera");
-  auto& cc = second_camera_.AddComponent<CameraComponent>(
-      glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+  auto& cc = second_camera_.AddComponent<CameraComponent>();
   cc.is_primary = false;
 }
 
@@ -61,6 +61,7 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
       (spec.width != (uint32_t)viewport_size_.x || spec.height != (uint32_t)viewport_size_.y)) {
     frame_buffer_->Resize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
     camera_controller_.OnResize(viewport_size_.x, viewport_size_.y);
+    active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
   }
 
   // Update
@@ -169,6 +170,14 @@ void EditorLayer::OnImGuiRender() {
     if (ImGui::Checkbox("Camera A", &is_primary_camera)) {
       main_camera_.GetComponent<CameraComponent>().is_primary = is_primary_camera;
       second_camera_.GetComponent<CameraComponent>().is_primary = !is_primary_camera;
+    }
+
+    {
+      auto& camera = second_camera_.GetComponent<CameraComponent>().camera;
+      float ortho_size = camera.GetOrthographicSize();
+      if (ImGui::DragFloat("Second Camera Ortho Size", &ortho_size)) {
+        camera.SetOrthographicSize(ortho_size);
+      }
     }
 
     auto stats = Renderer2D::GetStats();

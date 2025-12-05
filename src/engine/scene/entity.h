@@ -40,7 +40,7 @@ public:
 
   explicit operator bool() const { return entity_handle_ != entt::null; }
 
-  explicit operator uint32_t() const { return (uint32_t)entity_handle_; }
+  entt::entity GetID() const { return entity_handle_; }
 
   bool operator==(const Entity& other) const {
     return entity_handle_ == other.entity_handle_ && scene_ == other.scene_;

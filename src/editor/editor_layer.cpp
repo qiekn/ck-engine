@@ -79,6 +79,8 @@ void EditorLayer::OnAttach() {
   };
 
   main_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+  second_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+  scene_hierarachy_panel_.SetContext(active_scene_);
 }
 
 void EditorLayer::OnDetach() {
@@ -116,150 +118,132 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
 void EditorLayer::OnImGuiRender() {
   CK_PROFILE_FUNCTION();
 
-  // Note: Switch this to true to enable dockspace
-  static bool dockingEnabled = true;
-  if (dockingEnabled) {
-    static bool dockspaceOpen = true;
-    static bool opt_fullscreen_persistant = true;
-    bool opt_fullscreen = opt_fullscreen_persistant;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+  static bool dockspaceOpen = true;
+  static bool opt_fullscreen_persistant = true;
+  bool opt_fullscreen = opt_fullscreen_persistant;
+  static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // because it would be confusing to have two docking targets within each others.
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    if (opt_fullscreen) {
-      ImGuiViewport* viewport = ImGui::GetMainViewport();
-      ImGui::SetNextWindowPos(viewport->Pos);
-      ImGui::SetNextWindowSize(viewport->Size);
-      ImGui::SetNextWindowViewport(viewport->ID);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-      window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    }
-
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and
-    // handle the pass-thru hole, so we ask Begin() to not render a background.
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) {
-      window_flags |= ImGuiWindowFlags_NoBackground;
-    }
-
-    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // all active windows docked into it will lose their parent and become undocked.
-    // We cannot preserve the docking relationship between an active window and an inactive docking,
-    // otherwise any change of dockspace/settings would lead to windows being stuck in limbo and
-    // never being visible.
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
-    ImGui::PopStyleVar();
-
-    if (opt_fullscreen) {
-      ImGui::PopStyleVar(2);
-    }
-
-    // DockSpace
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-      ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-      ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
-
-    if (ImGui::BeginMenuBar()) {
-      if (ImGui::BeginMenu("File")) {
-        // Disabling fullscreen would allow the window to be moved to the front of other windows,
-        // which we can't undo at the moment without finer window depth/z control.
-        // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
-
-        if (ImGui::MenuItem("Exit")) {
-          Application::Get().Close();
-        }
-        ImGui::EndMenu();
-      }
-
-      ImGui::EndMenuBar();
-    }
-
-    ImGui::Begin("Settings");
-
-    ImGui::Text("Edit Colors");
-    ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
-    ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
-    ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-
-    if (square_entity_) {
-      ImGui::Separator();
-      auto& tag = square_entity_.GetComponent<TagComponent>().name;
-      ImGui::Text("%s", tag.c_str());
-
-      auto& square_color = square_entity_.GetComponent<SpriteRendererComponent>().color;
-      ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
-    }
-
-    ImGui::DragFloat3("Camera Transform",
-                      glm::value_ptr(main_camera_.GetComponent<TransformComponent>().transform[3]));
-
-    if (ImGui::Checkbox("Camera A", &is_primary_camera)) {
-      main_camera_.GetComponent<CameraComponent>().is_primary = is_primary_camera;
-      second_camera_.GetComponent<CameraComponent>().is_primary = !is_primary_camera;
-    }
-
-    {
-      auto& camera = second_camera_.GetComponent<CameraComponent>().camera;
-      float ortho_size = camera.GetOrthographicSize();
-      if (ImGui::DragFloat("Second Camera Ortho Size", &ortho_size)) {
-        camera.SetOrthographicSize(ortho_size);
-      }
-    }
-
-    auto stats = Renderer2D::GetStats();
-    ImGui::Text("Renderer2D Stats:");
-    ImGui::Text("Draw Calls: %d", stats.draw_calls);
-    ImGui::Text("Quads: %d", stats.quad_count);
-    ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-    ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-
-    // debug viewport hover & focus
-    ImGui::Separator();
-    ImGui::Text("Debug Viewpoint");
-    ImGui::Text("Hovered: %s", is_viewport_hovered_ ? "true " : "false");
-    ImGui::Text("Focused: %s", is_viewprot_focused_ ? "true" : "false");
-
-    ImGui::End();  // settings
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Viewport");
-    is_viewprot_focused_ = ImGui::IsWindowFocused();
-    is_viewport_hovered_ = ImGui::IsWindowHovered();
-    Application::Get().GetImGuiLayer()->BlockEvent(!is_viewport_hovered_ || !is_viewprot_focused_);
-    ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
-    viewport_size_ = {viewport_panel_size.x, viewport_panel_size.y};
-
-    uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
-    ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
-                 ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
-    ImGui::End();  // viewport
-    ImGui::PopStyleVar();
-
-    ImGui::End();  // dockspace demo
-
-  } else {
-    ImGui::Begin("Settings");
-
-    ImGui::Text("Edit Colors");
-    ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
-    ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
-    ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
-    auto stats = Renderer2D::GetStats();
-    ImGui::Text("Renderer2D Stats:");
-    ImGui::Text("Draw Calls: %d", stats.draw_calls);
-    ImGui::Text("Quads: %d", stats.quad_count);
-    ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-    ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-
-    ImGui::End();
+  // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+  // because it would be confusing to have two docking targets within each others.
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+  if (opt_fullscreen) {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
   }
+
+  // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and
+  // handle the pass-thru hole, so we ask Begin() to not render a background.
+  if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) {
+    window_flags |= ImGuiWindowFlags_NoBackground;
+  }
+
+  // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+  // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+  // all active windows docked into it will lose their parent and become undocked.
+  // We cannot preserve the docking relationship between an active window and an inactive docking,
+  // otherwise any change of dockspace/settings would lead to windows being stuck in limbo and
+  // never being visible.
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+  ImGui::PopStyleVar();
+
+  if (opt_fullscreen) {
+    ImGui::PopStyleVar(2);
+  }
+
+  // DockSpace
+  ImGuiIO& io = ImGui::GetIO();
+  if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+  }
+
+  if (ImGui::BeginMenuBar()) {
+    if (ImGui::BeginMenu("File")) {
+      // Disabling fullscreen would allow the window to be moved to the front of other windows,
+      // which we can't undo at the moment without finer window depth/z control.
+      // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
+
+      if (ImGui::MenuItem("Exit")) {
+        Application::Get().Close();
+      }
+      ImGui::EndMenu();
+    }
+
+    ImGui::EndMenuBar();
+  }
+
+  scene_hierarachy_panel_.OnImGuiRender();
+
+  ImGui::Begin("Settings");
+
+  ImGui::Text("Edit Colors");
+  ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
+  ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
+  ImGui::ColorEdit4("Color 2", glm::value_ptr(color_2_));
+
+  if (square_entity_) {
+    ImGui::Separator();
+    auto& tag = square_entity_.GetComponent<TagComponent>().name;
+    ImGui::Text("%s", tag.c_str());
+
+    auto& square_color = square_entity_.GetComponent<SpriteRendererComponent>().color;
+    ImGui::ColorEdit4("Square Entity Color", glm::value_ptr(square_color));
+  }
+
+  ImGui::DragFloat3("Camera Transform",
+                    glm::value_ptr(main_camera_.GetComponent<TransformComponent>().transform[3]));
+
+  if (ImGui::Checkbox("Camera A", &is_primary_camera)) {
+    main_camera_.GetComponent<CameraComponent>().is_primary = is_primary_camera;
+    second_camera_.GetComponent<CameraComponent>().is_primary = !is_primary_camera;
+  }
+
+  {
+    auto& camera = second_camera_.GetComponent<CameraComponent>().camera;
+    float ortho_size = camera.GetOrthographicSize();
+    if (ImGui::DragFloat("Second Camera Ortho Size", &ortho_size)) {
+      camera.SetOrthographicSize(ortho_size);
+    }
+  }
+
+  auto stats = Renderer2D::GetStats();
+  ImGui::Text("Renderer2D Stats:");
+  ImGui::Text("Draw Calls: %d", stats.draw_calls);
+  ImGui::Text("Quads: %d", stats.quad_count);
+  ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+  ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+
+  // debug viewport hover & focus
+  ImGui::Separator();
+  ImGui::Text("Debug Viewpoint");
+  ImGui::Text("Hovered: %s", is_viewport_hovered_ ? "true " : "false");
+  ImGui::Text("Focused: %s", is_viewprot_focused_ ? "true" : "false");
+
+  ImGui::End();  // settings
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+  ImGui::Begin("Viewport");
+  is_viewprot_focused_ = ImGui::IsWindowFocused();
+  is_viewport_hovered_ = ImGui::IsWindowHovered();
+  Application::Get().GetImGuiLayer()->BlockEvent(!is_viewport_hovered_ || !is_viewprot_focused_);
+  ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
+  viewport_size_ = {viewport_panel_size.x, viewport_panel_size.y};
+
+  uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
+  ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
+               ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
+  ImGui::End();  // viewport
+  ImGui::PopStyleVar();
+
+  ImGui::End();  // dockspace demo
 }
 
 void EditorLayer::OnEvent(Event& event) {

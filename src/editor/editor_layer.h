@@ -3,6 +3,7 @@
 #include "core/core.h"
 #include "core/deltatime.h"
 #include "core/layer.h"
+#include "events/key_event.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "panels/scene_hierarchy_panel.h"
@@ -26,6 +27,15 @@ public:
   void OnUpdate(DeltaTime dt) override;
   virtual void OnImGuiRender() override;
   void OnEvent(Event& e) override;
+
+private:
+  bool OnKeyPressed(KeyPressedEvent& e);
+
+  void NewScene();
+
+  void OpenScene();
+
+  void SaveSceneAs();
 
 private:
   ck::OrthographicCameraController camera_controller_;

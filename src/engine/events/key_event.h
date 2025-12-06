@@ -12,12 +12,14 @@ public:
 
 protected:
   KeyEvent(int keycode) : keycode_(keycode) {}
+
   int keycode_;
 };
 
 class KeyPressedEvent : public KeyEvent {
 public:
   KeyPressedEvent(int keycode, int repeat_count) : KeyEvent(keycode), repeat_count_(repeat_count) {}
+
   inline int GetRepeatCount() const { return repeat_count_; }
 
   std::string ToString() const override {

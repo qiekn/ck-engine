@@ -1,10 +1,14 @@
 #include "editor_layer.h"
+#include <string>
 #include "core/application.h"
 #include "core/core.h"
 #include "core/deltatime.h"
 #include "core/input.h"
 #include "core/layer.h"
 #include "debug/profiler.h"
+#include "events/event.h"
+#include "events/key_codes.h"
+#include "events/key_event.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "glm/fwd.hpp"
@@ -20,6 +24,7 @@
 #include "scene/scene.h"
 #include "scene/scene_serializer.h"
 #include "scene/scriptable_entity.h"
+#include "utils/platform_utils.h"
 
 namespace ck {
 
@@ -177,14 +182,16 @@ void EditorLayer::OnImGuiRender() {
       // which we can't undo at the moment without finer window depth/z control.
       // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
-      if (ImGui::MenuItem("Serialize")) {
-        SceneSerializer serializer(active_scene_);
-        serializer.Serialize("assets/scenes/example.scene");
+      if (ImGui::MenuItem("New", "Ctrl+N")) {
+        NewScene();
       }
 
-      if (ImGui::MenuItem("Deserialize")) {
-        SceneSerializer serializer(active_scene_);
-        serializer.Deserialize("assets/scenes/example.scene");
+      if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+        OpenScene();
+      }
+
+      if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) {
+        SaveSceneAs();
       }
 
       if (ImGui::MenuItem("Exit")) {
@@ -239,6 +246,67 @@ void EditorLayer::OnImGuiRender() {
 
 void EditorLayer::OnEvent(Event& event) {
   camera_controller_.OnEvent(event);
+
+  EventDispatcher dispatcher(event);
+  dispatcher.DispatchEvent<KeyPressedEvent>(CK_BIND_EVENT(EditorLayer::OnKeyPressed));
 }
 
+bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
+  // Shortcuts
+  if (e.GetRepeatCount() > 0) {
+    return false;
+  }
+
+  bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
+  bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+  switch (static_cast<Key>(e.GetKeyCode())) {
+    case Key::N: {
+      if (control) {
+        NewScene();
+      }
+      break;
+    }
+    case Key::O: {
+      if (control) {
+        OpenScene();
+      }
+      break;
+    }
+    case Key::S: {
+      if (control && shift) {
+        SaveSceneAs();
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return true;
+}
+
+void EditorLayer::NewScene() {
+  active_scene_ = CreateRef<Scene>();
+  active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+  scene_hierarachy_panel_.SetContext(active_scene_);
+}
+
+void EditorLayer::OpenScene() {
+  std::string filepath = FileDialogs::OpenFile("SeedEngine Scene (*.scene)\0*.scene\0");
+  if (!filepath.empty()) {
+    active_scene_ = CreateRef<Scene>();
+    active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+    scene_hierarachy_panel_.SetContext(active_scene_);
+
+    SceneSerializer serializer(active_scene_);
+    serializer.Deserialize(filepath);
+  }
+}
+
+void EditorLayer::SaveSceneAs() {
+  std::string filepath = FileDialogs::SaveFile("SeedEngine Scene (*.scene)\0*.scene\0");
+  if (!filepath.empty()) {
+    SceneSerializer serializer(active_scene_);
+    serializer.Serialize(filepath);
+  }
+}
 }  // namespace ck

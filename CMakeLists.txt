@@ -56,6 +56,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glad)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imgui)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imguizmo)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/stb_image)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/yaml-cpp)
 target_link_libraries(ck PUBLIC
@@ -65,6 +66,7 @@ target_link_libraries(ck PUBLIC
   imgui
   stb_image
   yaml-cpp
+  imguizmo
 )
 
 #---------------------------------------------------------------------3

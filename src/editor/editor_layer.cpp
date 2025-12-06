@@ -1,4 +1,5 @@
 #include "editor_layer.h"
+#include <optional>
 #include <string>
 #include "core/application.h"
 #include "core/core.h"
@@ -291,22 +292,24 @@ void EditorLayer::NewScene() {
 }
 
 void EditorLayer::OpenScene() {
-  std::string filepath = FileDialogs::OpenFile("SeedEngine Scene (*.scene)\0*.scene\0");
-  if (!filepath.empty()) {
+  std::optional<std::string> filepath =
+      FileDialogs::OpenFile("SeedEngine Scene (*.scene)\0*.scene\0");
+  if (filepath) {
     active_scene_ = CreateRef<Scene>();
     active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
     scene_hierarachy_panel_.SetContext(active_scene_);
 
     SceneSerializer serializer(active_scene_);
-    serializer.Deserialize(filepath);
+    serializer.Deserialize(*filepath);
   }
 }
 
 void EditorLayer::SaveSceneAs() {
-  std::string filepath = FileDialogs::SaveFile("SeedEngine Scene (*.scene)\0*.scene\0");
-  if (!filepath.empty()) {
+  std::optional<std::string> filepath =
+      FileDialogs::SaveFile("SeedEngine Scene (*.scene)\0*.scene\0");
+  if (filepath) {
     SceneSerializer serializer(active_scene_);
-    serializer.Serialize(filepath);
+    serializer.Serialize(*filepath);
   }
 }
 }  // namespace ck

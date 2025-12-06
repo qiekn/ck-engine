@@ -41,6 +41,10 @@ std::optional<std::string> FileDialogs::SaveFile(const char* filter) {
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
   // Sets the default extension by extracting it from the filter
   ofn.lpstrDefExt = strchr(filter, '\0') + 1;
+
+  if (GetSaveFileNameA(&ofn) == TRUE) {
+    return ofn.lpstrFile;
+  }
   return std::nullopt;
 }
 }  // namespace ck

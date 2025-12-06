@@ -307,9 +307,9 @@ void EditorLayer::OpenScene() {
 void EditorLayer::SaveSceneAs() {
   std::optional<std::string> filepath =
       FileDialogs::SaveFile("SeedEngine Scene (*.scene)\0*.scene\0");
-  if (filepath) {
+  if (filepath.has_value()) {
     SceneSerializer serializer(active_scene_);
-    serializer.Serialize(*filepath);
+    serializer.Serialize(filepath.value());
   }
 }
 }  // namespace ck

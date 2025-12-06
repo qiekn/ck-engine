@@ -37,6 +37,8 @@ std::string FileDialogs::SaveFile(const char* filter) {
   ofn.nMaxFile = sizeof(szFile);
   ofn.lpstrFilter = filter;
   ofn.nFilterIndex = 1;
+  // Sets the default extension by extracting it from the filter
+  ofn.lpstrDefExt = strchr(filter, '\0') + 1;
   ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
   if (GetSaveFileNameA(&ofn) == TRUE) {
     return ofn.lpstrFile;

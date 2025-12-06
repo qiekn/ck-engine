@@ -222,11 +222,20 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
 
   if (ImGui::BeginPopup("AddComponent")) {
     if (ImGui::MenuItem("Camera")) {
-      selection_context_.AddComponent<CameraComponent>();
+      if (!selection_context_.HasComponent<CameraComponent>()) {
+        selection_context_.AddComponent<CameraComponent>();
+      } else {
+        CK_ENGINE_WARN("This entity already has the Camera component!");
+      }
       ImGui::CloseCurrentPopup();
     }
     if (ImGui::MenuItem("Sprite Renderer")) {
-      selection_context_.AddComponent<SpriteRendererComponent>();
+
+      if (!selection_context_.HasComponent<SpriteRendererComponent>()) {
+        selection_context_.AddComponent<SpriteRendererComponent>();
+      } else {
+        CK_ENGINE_WARN("This entity already has the Camera component!");
+      }
       ImGui::CloseCurrentPopup();
     }
 

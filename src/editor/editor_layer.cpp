@@ -18,6 +18,7 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
+#include "scene/scene_serializer.h"
 #include "scene/scriptable_entity.h"
 
 namespace ck {
@@ -38,6 +39,7 @@ void EditorLayer::OnAttach() {
 
   active_scene_ = CreateRef<Scene>();
 
+#if 1
   auto square = active_scene_->CreateEntity("Green Square");
   square.AddComponent<SpriteRendererComponent>(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
   square_entity_ = square;
@@ -79,6 +81,7 @@ void EditorLayer::OnAttach() {
 
   main_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
   second_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+#endif
   scene_hierarachy_panel_.SetContext(active_scene_);
 }
 
@@ -173,6 +176,16 @@ void EditorLayer::OnImGuiRender() {
       // Disabling fullscreen would allow the window to be moved to the front of other windows,
       // which we can't undo at the moment without finer window depth/z control.
       // ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
+
+      if (ImGui::MenuItem("Serialize")) {
+        SceneSerializer serializer(active_scene_);
+        serializer.Serialize("assets/scenes/example.scene");
+      }
+
+      if (ImGui::MenuItem("Deserialize")) {
+        SceneSerializer serializer(active_scene_);
+        serializer.Deserialize("assets/scenes/example.scene");
+      }
 
       if (ImGui::MenuItem("Exit")) {
         Application::Get().Close();

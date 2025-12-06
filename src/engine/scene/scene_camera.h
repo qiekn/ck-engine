@@ -37,11 +37,11 @@ public:
     RecalculateProjection();
   }
 
-  float GetPerspectiveVerticalFOV() { return perspective_fov_; }
+  float GetPerspectiveVerticalFOV() const { return perspective_fov_; }
 
-  float GetPerspectiveNearClip() { return perspective_near_; }
+  float GetPerspectiveNearClip() const { return perspective_near_; }
 
-  float GetPerspectiveFarClip() { return perspective_far_; }
+  float GetPerspectiveFarClip() const { return perspective_far_; }
 
   // ----------------------------------------------------------------------------: Ortho
 

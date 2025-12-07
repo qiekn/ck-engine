@@ -19,7 +19,7 @@ public:
   T& AddComponent(Args&&... args) {
     CK_ENGINE_ASSERT(!HasComponent<T>(), "Entity already has component!");
     T& component = scene_->registry_.emplace<T>(entity_handle_, std::forward<Args>(args)...);
-    // todo
+    scene_->OnComponentAdded<T>(*this, component);
     return component;
   }
 

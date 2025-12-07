@@ -16,12 +16,25 @@ void SceneCamera::SetOrthographic(float size, float near_clip, float far_clip) {
   RecalculateProjection();
 }
 
+void SceneCamera::SetPerspective(float vertical_fov, float near_clip, float far_clip) {
+  projection_type_ = ProjectionType::kPerspective;
+  perspective_fov_ = vertical_fov;
+  perspective_near_ = near_clip;
+  perspective_far_ = far_clip;
+  RecalculateProjection();
+}
+
 void SceneCamera::SetViewportSize(uint32_t width, uint32_t height) {
   aspect_ratio_ = (float)width / (float)height;
   RecalculateProjection();
 }
 
 void SceneCamera::RecalculateProjection() {
+  // Don't recalculate if aspect ratio hasn't been set yet
+  if (aspect_ratio_ == 0.0f) {
+    return;
+  }
+
   if (projection_type_ == ProjectionType::kPerspective) {
     projection_ =
         glm::perspective(perspective_fov_, aspect_ratio_, perspective_near_, perspective_far_);
@@ -36,5 +49,4 @@ void SceneCamera::RecalculateProjection() {
   }
 }
 
-void SceneCamera::SetPerspective(float vertical_fov, float near_clip, float far_clip) {}
 }  // namespace ck

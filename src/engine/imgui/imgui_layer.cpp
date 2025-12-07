@@ -7,8 +7,12 @@
 #include "core/layer.h"
 #include "core/window.h"
 #include "events/event.h"
-#include "imgui.h"
 #include "pch.h"
+
+// clang-format off
+#include "imgui.h"
+#include "ImGuizmo.h" // make sure the order
+// clang-format on
 
 namespace ck {
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
@@ -83,6 +87,7 @@ void ImGuiLayer::Begin() {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
+  ImGuizmo::BeginFrame();
 }
 
 void ImGuiLayer::End() {

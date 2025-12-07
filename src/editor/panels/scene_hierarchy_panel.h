@@ -14,6 +14,8 @@ public:
 
   void OnImGuiRender();
 
+  Entity GetSelectedEntity() const { return selection_context_; }
+
 private:
   void DrawEntityNode(const Entity& entity);
   void DrawComponents(Entity& entity);

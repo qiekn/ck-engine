@@ -3,10 +3,14 @@
 #include <string>
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/quaternion_float.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "scene/scene_camera.h"
 #include "scene/scriptable_entity.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 namespace ck {
 // ----------------------------------------------------------------------------: Transform
@@ -21,11 +25,11 @@ struct TransformComponent {
   explicit TransformComponent(const glm::vec3& _position) : position(_position) {}
 
   glm::mat4 GetTransform() const {
-    glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), rotation.x, {1, 0, 0}) *
-                                glm::rotate(glm::mat4(1.0f), rotation.y, {0, 1, 0}) *
-                                glm::rotate(glm::mat4(1.0f), rotation.z, {0, 0, 1});
-    return glm::translate(glm::mat4(1.0f), position) * rotation_matrix *
-           glm::scale(glm::mat4(1.0f), scale);
+    glm::mat4 rotation_matrix = glm::toMat4(glm::quat(rotation));
+    glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), position);
+    glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), scale);
+
+    return translation_matrix * rotation_matrix * scale_matrix;
   }
 };
 

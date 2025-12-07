@@ -61,6 +61,8 @@ private:
 
   glm::vec4 quare_color_{0.2f, 0.3f, 0.8f, 1.0f};
 
+  int gizmo_type = -1;
+
   // TEMP
   glm::vec4 color_1_{0.8f, 0.2f, 0.3f, 1.0f};
   glm::vec4 color_2_{0.2f, 0.3f, 0.8f, 1.0f};

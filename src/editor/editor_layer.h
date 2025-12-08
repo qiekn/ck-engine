@@ -7,6 +7,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "panels/scene_hierarchy_panel.h"
+#include "renderer/editor_camera.h"
 #include "renderer/frame_buffer.h"
 #include "renderer/orthographic_camera_controller.h"
 #include "renderer/shader.h"
@@ -52,6 +53,7 @@ private:
   Entity second_camera_;
 
   bool is_primary_camera = true;
+  EditorCamera editor_camera_;
 
   Ref<Texture2D> checkerboard_texture_;
 

@@ -2,6 +2,7 @@
 
 #include "core/deltatime.h"
 #include "entt.hpp"
+#include "renderer/editor_camera.h"
 
 namespace ck {
 class Entity;
@@ -14,7 +15,8 @@ public:
   Entity CreateEntity(const std::string& name = std::string());
   void DestroyEntity(const Entity& entity);
 
-  void OnUpdate(DeltaTime dt);
+  void OnUpdateRuntime(DeltaTime dt);
+  void OnUpdateEditor(DeltaTime dt, EditorCamera& camera);
   void OnViewportResize(uint32_t width, uint32_t height);
   Entity GetPrimaryCameraEntity();
 

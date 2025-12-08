@@ -5,6 +5,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "renderer/camera.h"
+#include "renderer/editor_camera.h"
 #include "renderer/orthographic_camera.h"
 #include "renderer/texture.h"
 
@@ -15,6 +16,7 @@ public:
   static void Shutdown();
 
   static void BeginScene(const Camera& camera, const glm::mat4& transform);
+  static void BeginScene(const EditorCamera& camera);
   static void BeginScene(const OrthographicCamera&);  // TODO(qiekn): Remote
   static void EndScene();
   static void Flush();

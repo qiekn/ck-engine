@@ -30,7 +30,7 @@ void Scene::DestroyEntity(const Entity& entity) {
   registry_.destroy(entity.GetID());
 }
 
-void Scene::OnUpdate(DeltaTime dt) {
+void Scene::OnUpdateRuntime(DeltaTime dt) {
   // Update Scripts
   {
     registry_.view<NativeScriptComponent>().each([=, this](auto entity, auto& nsc) {
@@ -75,6 +75,16 @@ void Scene::OnUpdate(DeltaTime dt) {
 
     Renderer2D::EndScene();
   }
+}
+
+void Scene::OnUpdateEditor(DeltaTime dt, EditorCamera& camera) {
+  Renderer2D::BeginScene(camera);
+  auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+  for (auto entity : group) {
+    auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+    Renderer2D::DrawQuad(transform.GetTransform(), sprite.color);
+  }
+  Renderer2D::EndScene();
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height) {

@@ -18,6 +18,7 @@ public:
   virtual ~Application();
 
   void Run();
+  void Close();
 
   void OnEvent(Event& e);
 
@@ -25,8 +26,6 @@ public:
   void PushOverlay(Scope<Layer> layer);
 
   inline auto& GetWindow() { return window_; }
-
-  void Close();
 
   ImGuiLayer* GetImGuiLayer() { return imgui_layer_; }
 

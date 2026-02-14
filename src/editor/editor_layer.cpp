@@ -258,9 +258,12 @@ void EditorLayer::OnImGuiRender() {
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist();
 
-    float width = (float)ImGui::GetWindowWidth();
-    float height = (float)ImGui::GetWindowHeight();
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, width, height);
+    auto viewport_min_region = ImGui::GetWindowContentRegionMin();
+    auto viewport_offset = ImGui::GetWindowPos();
+    ImVec2 viewport_bounds_min = {viewport_min_region.x + viewport_offset.x,
+                                  viewport_min_region.y + viewport_offset.y};
+    ImGuizmo::SetRect(viewport_bounds_min.x, viewport_bounds_min.y,
+                      viewport_size_.x, viewport_size_.y);
 
     // Editor camera
     const glm::mat4& camera_projection = editor_camera_.GetProjection();

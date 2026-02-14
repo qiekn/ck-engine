@@ -54,6 +54,7 @@ void OpenglFrameBuffer::Invalidate() {
 
 void OpenglFrameBuffer::Bind() {
   glBindFramebuffer(GL_FRAMEBUFFER, renderer_id_);
+  glViewport(0, 0, specification_.width, specification_.height);
 }
 
 void OpenglFrameBuffer::Unbind() {
@@ -68,5 +69,6 @@ void OpenglFrameBuffer::Resize(uint32_t width, uint32_t height) {
   }
   specification_.width = width;
   specification_.height = height;
+  Invalidate();
 }
 }  // namespace ck

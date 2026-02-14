@@ -2,7 +2,7 @@
 
 Excited to start building my own 2D game engine! Repository setup begins now.
 
-[WIP: docs](https://qiekn.github.io/ck-engine/)
+<a href="https://qiekn.github.io/ck-engine/" target="_blank">WIP: docs</a>
 
 This repository is following the
 [game engine](https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)

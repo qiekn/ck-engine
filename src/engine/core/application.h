@@ -14,7 +14,7 @@
 namespace ck {
 class Application {
 public:
-  explicit Application(const std::string& name = "ck: App");
+  explicit Application(const std::string& name = "QIEKN ENGINE");
   virtual ~Application();
 
   void Run();

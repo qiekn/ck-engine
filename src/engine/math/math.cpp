@@ -47,10 +47,19 @@ bool DecomposeTransform(const glm::mat4& transform, glm::vec3& position, glm::ve
     }
   }
 
-  // Compute X scale factor and normalize first row.
-  scale.x = length(Row[0]), Row[0] /= scale.x;
-  scale.y = length(Row[1]), Row[1] /= scale.y;
-  scale.z = length(Row[2]), Row[2] /= scale.z;
+  // Compute scale factors and normalize rows.
+  // Guard against zero scale to prevent NaN from division by zero.
+  scale.x = length(Row[0]);
+  scale.y = length(Row[1]);
+  scale.z = length(Row[2]);
+
+  if (scale.x < epsilon<T>() || scale.y < epsilon<T>() || scale.z < epsilon<T>()) {
+    return false;
+  }
+
+  Row[0] /= scale.x;
+  Row[1] /= scale.y;
+  Row[2] /= scale.z;
 
   // At this point, the matrix (in rows[]) is orthonormal.
   // Check for a coordinate system flip.  If the determinant

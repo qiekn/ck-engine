@@ -296,12 +296,12 @@ void EditorLayer::OnImGuiRender() {
 
     if (ImGuizmo::IsUsing()) {
       glm::vec3 position, rotation, scale;
-      math::DecomposeTransform(transform, position, rotation, scale);
-
-      glm::vec3 deltaRotation = rotation - tc.rotation;
-      tc.position = position;
-      tc.rotation += deltaRotation;
-      tc.scale = scale;
+      if (math::DecomposeTransform(transform, position, rotation, scale)) {
+        glm::vec3 deltaRotation = rotation - tc.rotation;
+        tc.position = position;
+        tc.rotation += deltaRotation;
+        tc.scale = scale;
+      }
     }
   }
 

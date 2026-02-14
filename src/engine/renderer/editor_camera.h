@@ -72,7 +72,7 @@ private:
   glm::vec2 initial_mouse_pos_{0.0f, 0.0f};
 
   // Core orbital camera  paramters
-  float distance_{0.0f};  // distance form the camera's position to the focal point
+  float distance_{10.0f};  // distance from the camera's position to the focal point
   float pitch_{0.0f};     // controls the vertical angle (looking up/down)
   float yaw_{0.0f};       // controls the horizontal angle (looking left/right)
 

@@ -6,7 +6,7 @@
 namespace ck {
 namespace math {
 bool DecomposeTransform(const glm::mat4& transform, glm::vec3& out_transform,
-                        glm::vec3& out_rotation, glm::vec3& out_scale);
+                        glm::vec3& rotation, glm::vec3& scale);
 
 }
 }  // namespace ck

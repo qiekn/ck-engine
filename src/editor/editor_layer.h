@@ -7,6 +7,7 @@
 #include "events/mouse_event.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "panels/content_browser_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "renderer/editor_camera.h"
 #include "renderer/frame_buffer.h"
@@ -77,6 +78,7 @@ private:
 
   // Panel
   SceneHierarchyPanel scene_hierarachy_panel_;
+  ContentBrowserPanel content_browser_panel_;
 };
 
 }  // namespace ck

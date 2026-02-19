@@ -239,6 +239,7 @@ void EditorLayer::OnImGuiRender() {
   }
 
   scene_hierarachy_panel_.OnImGuiRender();
+  content_browser_panel_.OnImGuiRender();
 
   ImGui::Begin("Stats");
 

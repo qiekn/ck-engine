@@ -1,5 +1,5 @@
 #type vertex
-#version 330 core
+#version 450
 
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec4 a_color;
@@ -12,7 +12,7 @@ uniform mat4 u_transform;
 
 out vec4 v_color;
 out vec2 v_tex_coord;
-out float v_tex_index;
+out flat float v_tex_index;
 out float v_tiling_factor;
 
 void main() {
@@ -24,13 +24,13 @@ void main() {
 }
 
 #type fragment
-#version 330 core
+#version 450
 
 layout(location = 0) out vec4 color;
 
 in vec4 v_color;
 in vec2 v_tex_coord;
-in float v_tex_index;
+in flat float v_tex_index;
 in float v_tiling_factor;
 
 uniform sampler2D u_textures[32];

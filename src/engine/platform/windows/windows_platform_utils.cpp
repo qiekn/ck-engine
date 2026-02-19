@@ -1,4 +1,3 @@
-#include <optional>
 #include <string>
 #include "core/application.h"
 #include "utils/platform_utils.h"
@@ -9,7 +8,7 @@
 #include <GLFW/glfw3native.h>
 
 namespace ck {
-std::optional<std::string> FileDialogs::OpenFile(const char* filter) {
+std::string FileDialogs::OpenFile(const char* filter) {
   OPENFILENAMEA ofn;
   CHAR szFile[260] = {0};
   CHAR currentDir[256] = {0};
@@ -28,10 +27,10 @@ std::optional<std::string> FileDialogs::OpenFile(const char* filter) {
   if (GetOpenFileNameA(&ofn) == TRUE) {
     return ofn.lpstrFile;
   }
-  return std::nullopt;
+  return std::string();
 }
 
-std::optional<std::string> FileDialogs::SaveFile(const char* filter) {
+std::string FileDialogs::SaveFile(const char* filter) {
   OPENFILENAMEA ofn;
   CHAR szFile[260] = {0};
   CHAR currentDir[256] = {0};
@@ -54,6 +53,6 @@ std::optional<std::string> FileDialogs::SaveFile(const char* filter) {
   if (GetSaveFileNameA(&ofn) == TRUE) {
     return ofn.lpstrFile;
   }
-  return std::nullopt;
+  return std::string();
 }
 }  // namespace ck

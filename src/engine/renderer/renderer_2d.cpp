@@ -17,6 +17,7 @@
 #include "renderer/render_command.h"
 #include "renderer/shader.h"
 #include "renderer/texture.h"
+#include "renderer/uniform_buffer.h"
 #include "renderer/vertex_array.h"
 
 namespace ck {
@@ -55,6 +56,12 @@ struct Renderer2DData {
   glm::vec4 quad_vertex_position[4];
 
   Renderer2D::Statistics stats;
+
+  struct CameraData {
+    glm::mat4 view_projection;
+  };
+  CameraData camera_buffer;
+  Ref<UniformBuffer> camera_uniform_buffer;
 };
 
 static Renderer2DData s_data;
@@ -104,8 +111,6 @@ void Renderer2D::Init() {
   }
 
   s_data.texture_shader = Shader::Create("assets/shaders/texture.glsl");
-  s_data.texture_shader->Bind();
-  s_data.texture_shader->SetIntArray("u_textures", samplers, s_data.kMaxTextureSlots);
 
   // Initialize Texture Slots
   for (uint32_t i = 0; i < s_data.kMaxTextureSlots; i++) {
@@ -117,6 +122,9 @@ void Renderer2D::Init() {
   s_data.quad_vertex_position[1] = {0.5f, -0.5f, 0.0f, 1.0f};
   s_data.quad_vertex_position[2] = {0.5f, 0.5f, 0.0f, 1.0f};
   s_data.quad_vertex_position[3] = {-0.5f, 0.5f, 0.0f, 1.0f};
+
+  s_data.camera_uniform_buffer =
+      UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 }
 
 void Renderer2D::Shutdown() {
@@ -127,27 +135,29 @@ void Renderer2D::Shutdown() {
 void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform) {
   CK_PROFILE_FUNCTION();
 
-  glm::mat4 view_proj = camera.GetProjection() * glm::inverse(transform);
-
-  s_data.texture_shader->Bind();
-  s_data.texture_shader->SetMat4("u_view_projection", view_proj);
+  s_data.camera_buffer.view_projection = camera.GetProjection() * glm::inverse(transform);
+  s_data.camera_uniform_buffer->SetData(&s_data.camera_buffer,
+                                        sizeof(Renderer2DData::CameraData));
 
   StartBatch();
 }
 
 void Renderer2D::BeginScene(const EditorCamera& camera) {
   CK_PROFILE_FUNCTION();
-  glm::mat4 view_proj = camera.GetViewProjection();
-  s_data.texture_shader->Bind();
-  s_data.texture_shader->SetMat4("u_view_projection", view_proj);
+
+  s_data.camera_buffer.view_projection = camera.GetViewProjection();
+  s_data.camera_uniform_buffer->SetData(&s_data.camera_buffer,
+                                        sizeof(Renderer2DData::CameraData));
 
   StartBatch();
 }
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera) {
   CK_PROFILE_FUNCTION();
-  s_data.texture_shader->Bind();
-  s_data.texture_shader->SetMat4("u_view_projection", camera.GetViewProjectionMatrix());
+
+  s_data.camera_buffer.view_projection = camera.GetViewProjectionMatrix();
+  s_data.camera_uniform_buffer->SetData(&s_data.camera_buffer,
+                                        sizeof(Renderer2DData::CameraData));
 
   StartBatch();
 }
@@ -172,6 +182,7 @@ void Renderer2D::Flush() {
     s_data.texture_slots[i]->Bind(i);
   }
 
+  s_data.texture_shader->Bind();
   RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
   s_data.stats.draw_calls++;
 }

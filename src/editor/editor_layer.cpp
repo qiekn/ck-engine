@@ -46,7 +46,8 @@ void EditorLayer::OnAttach() {
 
   FrameBufferSpecification fb_spec;
   fb_spec.attachments = {
-      {FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::Depth}};
+      {FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RedInteger,
+       FrameBufferTextureFormat::Depth}};
   fb_spec.width = 1280;
   fb_spec.height = 720;
   frame_buffer_ = FrameBuffer::Create(fb_spec);
@@ -131,7 +132,26 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
   RenderCommand::SetClearColor(background_color_);
   RenderCommand::Clear();
 
+  // Clear entity ID attachment to -1
+  frame_buffer_->ClearAttachment(1, -1);
+
   active_scene_->OnUpdateEditor(dt, editor_camera_);
+
+  // Mouse picking
+  auto [mx, my] = ImGui::GetMousePos();
+  mx -= viewport_bounds_[0].x;
+  my -= viewport_bounds_[0].y;
+  glm::vec2 viewport_size = viewport_bounds_[1] - viewport_bounds_[0];
+  my = viewport_size.y - my;
+  int mouse_x = (int)mx;
+  int mouse_y = (int)my;
+
+  if (mouse_x >= 0 && mouse_y >= 0 && mouse_x < (int)viewport_size.x &&
+      mouse_y < (int)viewport_size.y) {
+    int pixel_data = frame_buffer_->ReadPixel(1, mouse_x, mouse_y);
+    hovered_entity_ =
+        pixel_data == -1 ? Entity() : Entity((entt::entity)pixel_data, active_scene_.get());
+  }
 
   frame_buffer_->Unbind();
 }
@@ -222,6 +242,10 @@ void EditorLayer::OnImGuiRender() {
 
   ImGui::Begin("Stats");
 
+  std::string name = "None";
+  if (hovered_entity_) name = hovered_entity_.GetComponent<TagComponent>().name;
+  ImGui::Text("Hovered Entity: %s", name.c_str());
+
   ImGui::Text("Edit Colors");
   ImGui::ColorEdit4("Background Color", glm::value_ptr(background_color_));
   ImGui::ColorEdit4("Color 1", glm::value_ptr(color_1_));
@@ -244,6 +268,8 @@ void EditorLayer::OnImGuiRender() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
   ImGui::Begin("Viewport");
+  auto viewport_offset = ImGui::GetCursorPos();  // Includes tab bar
+
   is_viewprot_focused_ = ImGui::IsWindowFocused();
   is_viewport_hovered_ = ImGui::IsWindowHovered();
   Application::Get().GetImGuiLayer()->BlockEvent(!is_viewport_hovered_ && !is_viewprot_focused_);
@@ -253,6 +279,15 @@ void EditorLayer::OnImGuiRender() {
   uint64_t texture_id = frame_buffer_->GetColorAttachmentRendererID();
   ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
                ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
+
+  auto window_size = ImGui::GetWindowSize();
+  ImVec2 min_bound = ImGui::GetWindowPos();
+  min_bound.x += viewport_offset.x;
+  min_bound.y += viewport_offset.y;
+
+  ImVec2 max_bound = {min_bound.x + window_size.x, min_bound.y + window_size.y};
+  viewport_bounds_[0] = {min_bound.x, min_bound.y};
+  viewport_bounds_[1] = {max_bound.x, max_bound.y};
 
   // ----------------------------------------------------------------------------: Gizmos
   Entity selected_entity = scene_hierarachy_panel_.GetSelectedEntity();

@@ -60,10 +60,13 @@ private:
   bool is_viewport_hovered_{false};
   bool is_viewprot_focused_{false};
   glm::vec2 viewport_size_{0.0f, 0.0f};
+  glm::vec2 viewport_bounds_[2];
 
   glm::vec4 quare_color_{0.2f, 0.3f, 0.8f, 1.0f};
 
   int gizmo_type = -1;
+
+  Entity hovered_entity_;
 
   // TEMP
   glm::vec4 color_1_{0.8f, 0.2f, 0.3f, 1.0f};

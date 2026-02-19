@@ -19,13 +19,15 @@ static void BindTexture(bool multisampled, uint32_t id) {
   glBindTexture(TextureTarget(multisampled), id);
 }
 
-static void AttachColorTexture(uint32_t id, int samples, GLenum format, uint32_t width,
-                               uint32_t height, int index) {
+static void AttachColorTexture(uint32_t id, int samples, GLenum internal_format, GLenum format,
+                               uint32_t width, uint32_t height, int index) {
   bool multisampled = samples > 1;
   if (multisampled) {
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internal_format, width, height,
+                            GL_FALSE);
   } else {
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE,
+                 nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -63,6 +65,19 @@ static bool IsDepthFormat(FrameBufferTextureFormat format) {
     default:
       return false;
   }
+}
+
+static GLenum FBTextureFormatToGL(FrameBufferTextureFormat format) {
+  switch (format) {
+    case FrameBufferTextureFormat::RGBA8:
+      return GL_RGBA8;
+    case FrameBufferTextureFormat::RedInteger:
+      return GL_RED_INTEGER;
+    default:
+      break;
+  }
+  CK_ENGINE_ASSERT(false, "Unknown FrameBufferTextureFormat");
+  return 0;
 }
 
 }  // namespace utils
@@ -110,7 +125,12 @@ void OpenglFrameBuffer::Invalidate() {
       switch (color_attachment_specifications_[i].texture_format) {
         case FrameBufferTextureFormat::RGBA8:
           utils::AttachColorTexture(color_attachments_[i], specification_.samples, GL_RGBA8,
-                                    specification_.width, specification_.height,
+                                    GL_RGBA, specification_.width, specification_.height,
+                                    static_cast<int>(i));
+          break;
+        case FrameBufferTextureFormat::RedInteger:
+          utils::AttachColorTexture(color_attachments_[i], specification_.samples, GL_R32I,
+                                    GL_RED_INTEGER, specification_.width, specification_.height,
                                     static_cast<int>(i));
           break;
         default:
@@ -168,4 +188,24 @@ void OpenglFrameBuffer::Resize(uint32_t width, uint32_t height) {
   specification_.height = height;
   Invalidate();
 }
+
+int OpenglFrameBuffer::ReadPixel(uint32_t attachment_index, int x, int y) {
+  CK_ENGINE_ASSERT(attachment_index < color_attachments_.size(),
+                   "Attachment index out of range");
+
+  glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_index);
+  int pixel_data;
+  glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixel_data);
+  return pixel_data;
+}
+
+void OpenglFrameBuffer::ClearAttachment(uint32_t attachment_index, int value) {
+  CK_ENGINE_ASSERT(attachment_index < color_attachments_.size(),
+                   "Attachment index out of range");
+
+  auto& spec = color_attachment_specifications_[attachment_index];
+  glClearTexImage(color_attachments_[attachment_index], 0,
+                  utils::FBTextureFormatToGL(spec.texture_format), GL_INT, &value);
+}
+
 }  // namespace ck

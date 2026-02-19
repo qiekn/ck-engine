@@ -70,7 +70,7 @@ void Scene::OnUpdateRuntime(DeltaTime dt) {
       const auto& [Transform, Sprite] =
           group.get<TransformComponent, SpriteRendererComponent>(entity);
 
-      Renderer2D::DrawQuad(Transform.GetTransform(), Sprite.color);
+      Renderer2D::DrawSprite(Transform.GetTransform(), Sprite, (int)entity);
     }
 
     Renderer2D::EndScene();
@@ -82,7 +82,7 @@ void Scene::OnUpdateEditor(DeltaTime dt, EditorCamera& camera) {
   auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
   for (auto entity : group) {
     auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-    Renderer2D::DrawQuad(transform.GetTransform(), sprite.color);
+    Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
   }
   Renderer2D::EndScene();
 }

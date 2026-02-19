@@ -8,6 +8,7 @@
 #include "renderer/editor_camera.h"
 #include "renderer/orthographic_camera.h"
 #include "renderer/texture.h"
+#include "scene/components.h"
 
 namespace ck {
 class Renderer2D {
@@ -30,9 +31,10 @@ public:
   static void DrawQuad(const glm::vec3& position, const glm::vec2& size,
                        const Ref<Texture2D>& texture, float tiling_factor = 1.0f,
                        const glm::vec4& tint_color = glm::vec4(1.0f));
-  static void DrawQuad(const glm::mat4& transform, const glm::vec4& color);
+  static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entity_id = -1);
   static void DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture,
-                       float tiling_factor = 1.0f, const glm::vec4& tint_color = glm::vec4(1.0f));
+                       float tiling_factor = 1.0f, const glm::vec4& tint_color = glm::vec4(1.0f),
+                       int entity_id = -1);
 
   // ----------------------------------------------------------------------------: rotated version
   // clang-format off
@@ -47,6 +49,8 @@ public:
                               const Ref<Texture2D>& texture, float tiling_factor = 1.0f,
                               const glm::vec4& tint_color = glm::vec4(1.0f));
   // clang-format on
+
+  static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entity_id);
 
   // ----------------------------------------------------------------------------: Stats
   struct Statistics {

@@ -29,6 +29,9 @@ struct QuadVertex {
   glm::vec2 tex_coord;
   float tex_index;
   float tiling_factor;
+
+  // Editor-only
+  int entity_id;
 };
 
 struct Renderer2DData {
@@ -70,6 +73,7 @@ void Renderer2D::Init() {
       {ShaderDataType::kFloat2, "a_tex_coord"},
       {ShaderDataType::kFloat, "a_tex_index"},
       {ShaderDataType::kFloat, "a_tiling_factor"},
+      {ShaderDataType::kInt, "a_entity_id"},
   });
   s_data.quad_vertex_array->AddVertexBuffer(s_data.quad_vertex_buffer);
   s_data.quad_vertex_buffer_base = new QuadVertex[s_data.kMaxVertices];
@@ -203,7 +207,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size,
   DrawQuad(transform, texture, tiling_factor);
 }
 
-void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
+void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entity_id) {
   CK_PROFILE_FUNCTION();
 
   if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
@@ -227,6 +231,7 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
     s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
     s_data.quad_vertex_buffer_ptr->tex_index = texture_index;
     s_data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+    s_data.quad_vertex_buffer_ptr->entity_id = entity_id;
     s_data.quad_vertex_buffer_ptr++;
   }
 
@@ -236,7 +241,7 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
 }
 
 void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture,
-                          float tiling_factor, const glm::vec4& tint_color) {
+                          float tiling_factor, const glm::vec4& tint_color, int entity_id) {
   CK_PROFILE_FUNCTION();
 
   if (s_data.quad_index_count >= Renderer2DData::kMaxIndices) {
@@ -272,6 +277,7 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& text
     s_data.quad_vertex_buffer_ptr->tex_coord = uvs[i];
     s_data.quad_vertex_buffer_ptr->tex_index = texture_index;
     s_data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+    s_data.quad_vertex_buffer_ptr->entity_id = entity_id;
     s_data.quad_vertex_buffer_ptr++;
   }
 
@@ -314,6 +320,11 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
                         glm::scale(glm::mat4(1.0f), {size.x, size.y, 1.0f});
 
   DrawQuad(transform, texture, tiling_factor, tint_color);
+}
+
+void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src,
+                            int entity_id) {
+  DrawQuad(transform, src.color, entity_id);
 }
 
 // ----------------------------------------------------------------------------: Stats

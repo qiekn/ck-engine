@@ -6,6 +6,7 @@
 #include "glm/ext/quaternion_float.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "renderer/texture.h"
 #include "scene/scene_camera.h"
 #include "scene/scriptable_entity.h"
 
@@ -36,6 +37,8 @@ struct TransformComponent {
 // ----------------------------------------------------------------------------: SpriteRenderer
 struct SpriteRendererComponent {
   glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+  Ref<Texture2D> texture;
+  float tiling_factor = 1.0f;
 
   SpriteRendererComponent() = default;
   SpriteRendererComponent(const SpriteRendererComponent&) = default;

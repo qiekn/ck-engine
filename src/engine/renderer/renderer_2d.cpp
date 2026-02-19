@@ -335,7 +335,10 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 
 void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src,
                             int entity_id) {
-  DrawQuad(transform, src.color, entity_id);
+  if (src.texture)
+    DrawQuad(transform, src.texture, src.tiling_factor, src.color, entity_id);
+  else
+    DrawQuad(transform, src.color, entity_id);
 }
 
 // ----------------------------------------------------------------------------: Stats

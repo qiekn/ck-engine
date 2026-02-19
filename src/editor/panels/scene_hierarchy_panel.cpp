@@ -2,17 +2,21 @@
 #include <sec_api/string_s.h>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/trigonometric.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "renderer/texture.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
 
 namespace ck {
+
+extern const std::filesystem::path g_asset_path;
 
 SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context) {
   SetContext(context);
@@ -319,6 +323,19 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
 
   DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component) {
     ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+
+    ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
+    if (ImGui::BeginDragDropTarget()) {
+      if (const ImGuiPayload* payload =
+              ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+        const char* path = (const char*)payload->Data;
+        std::filesystem::path texture_path = std::filesystem::path(g_asset_path) / path;
+        component.texture = Texture2D::Create(texture_path.string());
+      }
+      ImGui::EndDragDropTarget();
+    }
+
+    ImGui::DragFloat("Tiling Factor", &component.tiling_factor, 0.1f, 0.0f, 100.0f);
   });
 }
 }  // namespace ck

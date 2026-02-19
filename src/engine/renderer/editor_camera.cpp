@@ -40,7 +40,7 @@ void EditorCamera::OnUpdate(DeltaTime dt) {
     } else if (Input::IsMouseButtonPressed(Mouse::ButtonLeft)) {
       MouseRotate(delta);
     } else if (Input::IsMouseButtonPressed(Mouse::ButtonRight)) {
-      MouseZoom(delta.y);
+      MouseZoom(-delta.y);
     }
   }
 

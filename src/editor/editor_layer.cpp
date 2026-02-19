@@ -350,16 +350,16 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
     }
     // Gizmos
     case Key::Q:
-      gizmo_type = -1;
+      if (!ImGuizmo::IsUsing()) gizmo_type = -1;
       break;
     case Key::W:
-      gizmo_type = ImGuizmo::OPERATION::TRANSLATE;
+      if (!ImGuizmo::IsUsing()) gizmo_type = ImGuizmo::OPERATION::TRANSLATE;
       break;
     case Key::E:
-      gizmo_type = ImGuizmo::OPERATION::ROTATE;
+      if (!ImGuizmo::IsUsing()) gizmo_type = ImGuizmo::OPERATION::ROTATE;
       break;
     case Key::R:
-      gizmo_type = ImGuizmo::OPERATION::SCALE;
+      if (!ImGuizmo::IsUsing()) gizmo_type = ImGuizmo::OPERATION::SCALE;
       break;
     default:
       break;

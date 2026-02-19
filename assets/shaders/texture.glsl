@@ -15,18 +15,18 @@ layout(std140, binding = 0) uniform Camera {
 struct VertexOutput {
   vec4 color;
   vec2 tex_coord;
-  float tex_index;
   float tiling_factor;
 };
 
 layout(location = 0) out VertexOutput Output;
+layout(location = 3) out flat float v_tex_index;
 layout(location = 4) out flat int v_entity_id;
 
 void main() {
   Output.color = a_color;
   Output.tex_coord = a_tex_coord;
-  Output.tex_index = a_tex_index;
   Output.tiling_factor = a_tiling_factor;
+  v_tex_index = a_tex_index;
   v_entity_id = a_entity_id;
 
   gl_Position = u_view_projection * vec4(a_position, 1.0);
@@ -41,11 +41,11 @@ layout(location = 1) out int color2;
 struct VertexOutput {
   vec4 color;
   vec2 tex_coord;
-  float tex_index;
   float tiling_factor;
 };
 
 layout(location = 0) in VertexOutput Input;
+layout(location = 3) in flat float v_tex_index;
 layout(location = 4) in flat int v_entity_id;
 
 layout(binding = 0) uniform sampler2D u_textures[32];
@@ -53,7 +53,7 @@ layout(binding = 0) uniform sampler2D u_textures[32];
 void main() {
   vec4 tex_color = Input.color;
 
-  switch(int(Input.tex_index)) {
+  switch(int(v_tex_index)) {
     case  0: tex_color *= texture(u_textures[ 0], Input.tex_coord * Input.tiling_factor); break;
     case  1: tex_color *= texture(u_textures[ 1], Input.tex_coord * Input.tiling_factor); break;
     case  2: tex_color *= texture(u_textures[ 2], Input.tex_coord * Input.tiling_factor); break;

@@ -51,6 +51,10 @@ void SceneHierarchyPanel::OnImGuiRender() {
   ImGui::End();  // end of properties
 }
 
+void SceneHierarchyPanel::SetSelectedEntity(Entity entity) {
+  selection_context_ = entity;
+}
+
 void SceneHierarchyPanel::DrawEntityNode(const Entity& entity) {
   auto& tag = entity.GetComponent<TagComponent>();
 

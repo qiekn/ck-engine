@@ -4,6 +4,7 @@
 #include "core/deltatime.h"
 #include "core/layer.h"
 #include "events/key_event.h"
+#include "events/mouse_event.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "panels/scene_hierarchy_panel.h"
@@ -31,6 +32,7 @@ public:
 
 private:
   bool OnKeyPressed(KeyPressedEvent& e);
+  bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
   void NewScene();
 

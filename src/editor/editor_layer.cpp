@@ -10,6 +10,7 @@
 #include "events/event.h"
 #include "events/key_codes.h"
 #include "events/key_event.h"
+#include "events/mouse_codes.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
@@ -268,7 +269,13 @@ void EditorLayer::OnImGuiRender() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
   ImGui::Begin("Viewport");
-  auto viewport_offset = ImGui::GetCursorPos();  // Includes tab bar
+  auto viewport_min_region = ImGui::GetWindowContentRegionMin();
+  auto viewport_max_region = ImGui::GetWindowContentRegionMax();
+  auto viewport_offset = ImGui::GetWindowPos();
+  viewport_bounds_[0] = {viewport_min_region.x + viewport_offset.x,
+                         viewport_min_region.y + viewport_offset.y};
+  viewport_bounds_[1] = {viewport_max_region.x + viewport_offset.x,
+                         viewport_max_region.y + viewport_offset.y};
 
   is_viewprot_focused_ = ImGui::IsWindowFocused();
   is_viewport_hovered_ = ImGui::IsWindowHovered();
@@ -280,27 +287,15 @@ void EditorLayer::OnImGuiRender() {
   ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
                ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
 
-  auto window_size = ImGui::GetWindowSize();
-  ImVec2 min_bound = ImGui::GetWindowPos();
-  min_bound.x += viewport_offset.x;
-  min_bound.y += viewport_offset.y;
-
-  ImVec2 max_bound = {min_bound.x + window_size.x, min_bound.y + window_size.y};
-  viewport_bounds_[0] = {min_bound.x, min_bound.y};
-  viewport_bounds_[1] = {max_bound.x, max_bound.y};
-
   // ----------------------------------------------------------------------------: Gizmos
   Entity selected_entity = scene_hierarachy_panel_.GetSelectedEntity();
   if (selected_entity && gizmo_type != -1) {
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist();
 
-    auto viewport_min_region = ImGui::GetWindowContentRegionMin();
-    auto viewport_offset = ImGui::GetWindowPos();
-    ImVec2 viewport_bounds_min = {viewport_min_region.x + viewport_offset.x,
-                                  viewport_min_region.y + viewport_offset.y};
-    ImGuizmo::SetRect(viewport_bounds_min.x, viewport_bounds_min.y,
-                      viewport_size_.x, viewport_size_.y);
+    ImGuizmo::SetRect(viewport_bounds_[0].x, viewport_bounds_[0].y,
+                      viewport_bounds_[1].x - viewport_bounds_[0].x,
+                      viewport_bounds_[1].y - viewport_bounds_[0].y);
 
     // Editor camera
     const glm::mat4& camera_projection = editor_camera_.GetProjection();
@@ -354,6 +349,8 @@ void EditorLayer::OnEvent(Event& event) {
 
   EventDispatcher dispatcher(event);
   dispatcher.DispatchEvent<KeyPressedEvent>(CK_BIND_EVENT(EditorLayer::OnKeyPressed));
+  dispatcher.DispatchEvent<MouseButtonPressedEvent>(
+      CK_BIND_EVENT(EditorLayer::OnMouseButtonPressed));
 }
 
 bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
@@ -401,6 +398,14 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
   }
 
   return true;
+}
+
+bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e) {
+  if (e.GetMouseButton() == (int)Mouse::ButtonLeft) {
+    if (is_viewport_hovered_ && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
+      scene_hierarachy_panel_.SetSelectedEntity(hovered_entity_);
+  }
+  return false;
 }
 
 void EditorLayer::NewScene() {

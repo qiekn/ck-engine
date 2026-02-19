@@ -27,6 +27,7 @@ public:
   void SetInt(const std::string& name, int) const override;
   void SetIntArray(const std::string& name, int* values, uint32_t count) override;
   void SetFloat(const std::string& name, float value) const override;
+  void SetFloat2(const std::string& name, const glm::vec2&) const override;
   void SetFloat3(const std::string& name, const glm::vec3&) const override;
   void SetFloat4(const std::string& name, const glm::vec4&) const override;
   void SetMat4(const std::string& name, const glm::mat4&) const override;

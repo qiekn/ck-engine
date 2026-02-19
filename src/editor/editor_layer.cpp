@@ -35,6 +35,8 @@
 
 namespace ck {
 
+extern const std::filesystem::path g_asset_path;
+
 EditorLayer::EditorLayer() : Layer("EditorLayer"), camera_controller_(1280.0f / 720.0f) {}
 
 EditorLayer::~EditorLayer() {}
@@ -287,6 +289,14 @@ void EditorLayer::OnImGuiRender() {
   ImGui::Image(reinterpret_cast<ImTextureID>(texture_id),
                ImVec2{viewport_size_.x, viewport_size_.y}, ImVec2{0, 1}, ImVec2{1, 0});
 
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+      const char* path = static_cast<const char*>(payload->Data);
+      OpenScene(std::filesystem::path(g_asset_path) / path);
+    }
+    ImGui::EndDragDropTarget();
+  }
+
   // ----------------------------------------------------------------------------: Gizmos
   Entity selected_entity = scene_hierarachy_panel_.GetSelectedEntity();
   if (selected_entity && gizmo_type != -1) {
@@ -417,13 +427,17 @@ void EditorLayer::NewScene() {
 void EditorLayer::OpenScene() {
   std::string filepath = FileDialogs::OpenFile("SeedEngine Scene (*.scene)\0*.scene\0");
   if (!filepath.empty()) {
-    active_scene_ = CreateRef<Scene>();
-    active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
-    scene_hierarachy_panel_.SetContext(active_scene_);
-
-    SceneSerializer serializer(active_scene_);
-    serializer.Deserialize(filepath);
+    OpenScene(filepath);
   }
+}
+
+void EditorLayer::OpenScene(const std::filesystem::path& path) {
+  active_scene_ = CreateRef<Scene>();
+  active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+  scene_hierarachy_panel_.SetContext(active_scene_);
+
+  SceneSerializer serializer(active_scene_);
+  serializer.Deserialize(path.string());
 }
 
 void EditorLayer::SaveSceneAs() {

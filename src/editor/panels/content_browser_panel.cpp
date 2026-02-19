@@ -5,9 +5,9 @@
 namespace ck {
 
 // TODO: change this once we have a project system
-static const std::filesystem::path kAssetPath = "assets";
+extern const std::filesystem::path g_asset_path = "assets";
 
-ContentBrowserPanel::ContentBrowserPanel() : current_directory_(kAssetPath) {
+ContentBrowserPanel::ContentBrowserPanel() : current_directory_(g_asset_path) {
   directory_icon_ = Texture2D::Create("assets/icons/content_browser/folder.png");
   file_icon_ = Texture2D::Create("assets/icons/content_browser/file.png");
 }
@@ -15,7 +15,7 @@ ContentBrowserPanel::ContentBrowserPanel() : current_directory_(kAssetPath) {
 void ContentBrowserPanel::OnImGuiRender() {
   ImGui::Begin("Content Browser");
 
-  if (current_directory_ != std::filesystem::path(kAssetPath)) {
+  if (current_directory_ != std::filesystem::path(g_asset_path)) {
     if (ImGui::Button("<-")) {
       current_directory_ = current_directory_.parent_path();
     }
@@ -33,7 +33,7 @@ void ContentBrowserPanel::OnImGuiRender() {
 
   for (auto& directory_entry : std::filesystem::directory_iterator(current_directory_)) {
     const auto& path = directory_entry.path();
-    auto relative_path = std::filesystem::relative(path, kAssetPath);
+    auto relative_path = std::filesystem::relative(path, g_asset_path);
     std::string filename_string = relative_path.filename().string();
 
     ImGui::PushID(filename_string.c_str());
@@ -41,11 +41,19 @@ void ContentBrowserPanel::OnImGuiRender() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
     ImGui::ImageButton("##thumbnail", (ImTextureID)(uint64_t)icon->GetRendererID(),
                        {thumbnail_size, thumbnail_size}, {0, 1}, {1, 0});
+
+    if (ImGui::BeginDragDropSource()) {
+      auto item_path = relative_path.string();
+      ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", item_path.c_str(),
+                                item_path.size() + 1);
+      ImGui::EndDragDropSource();
+    }
+
+    ImGui::PopStyleColor();
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
       if (directory_entry.is_directory()) current_directory_ /= path.filename();
     }
     ImGui::TextWrapped("%s", filename_string.c_str());
-    ImGui::PopStyleColor();
     ImGui::PopID();
 
     ImGui::NextColumn();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "core/core.h"
 #include "core/deltatime.h"
 #include "core/layer.h"
@@ -38,6 +40,7 @@ private:
   void NewScene();
 
   void OpenScene();
+  void OpenScene(const std::filesystem::path& path);
 
   void SaveSceneAs();
 

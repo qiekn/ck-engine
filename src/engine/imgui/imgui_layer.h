@@ -1,8 +1,19 @@
 #pragma once
 
 #include "core/layer.h"
+#include "imgui_internal.h"
 
 namespace ck {
+
+inline void HideDockNodeTabBar() {
+  if (ImGui::IsWindowDocked()) {
+    ImGuiDockNode* node = ImGui::GetWindowDockNode();
+    if (node && node->Windows.Size == 1) {
+      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+    }
+  }
+}
+
 class ImGuiLayer : public Layer {
 public:
   ImGuiLayer();

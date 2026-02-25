@@ -281,12 +281,7 @@ void EditorLayer::OnImGuiRender() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
   ImGui::Begin("Viewport");
 
-  if (ImGui::IsWindowDocked()) {
-    ImGuiDockNode* node = ImGui::GetWindowDockNode();
-    if (node && node->Windows.Size == 1) {
-      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
-    }
-  }
+  HideDockNodeTabBar();
 
   auto viewport_min_region = ImGui::GetWindowContentRegionMin();
   auto viewport_max_region = ImGui::GetWindowContentRegionMax();
@@ -482,13 +477,7 @@ void EditorLayer::UI_Toolbar() {
   // ImGuiWindowFlags_NoDecoration
   ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse);
 
-  // Hide the tab bar of the dock node this window is docked into
-  if (ImGui::IsWindowDocked()) {
-    ImGuiDockNode* node = ImGui::GetWindowDockNode();
-    if (node && node->Windows.Size == 1) {
-      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
-    }
-  }
+  HideDockNodeTabBar();
 
   float size = std::min(ImGui::GetContentRegionAvail().y, 32.0f);
   Ref<Texture2D> icon = scene_state_ == SceneState::Edit ? icon_play_ : icon_stop_;

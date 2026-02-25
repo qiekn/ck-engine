@@ -1,4 +1,4 @@
-# ck-engine
+# ck-engine (Yet Another Hazel Engine)
 
 A learning-oriented 2D game engine, following the
 [game engine](https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)

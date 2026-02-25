@@ -280,6 +280,14 @@ void EditorLayer::OnImGuiRender() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
   ImGui::Begin("Viewport");
+
+  if (ImGui::IsWindowDocked()) {
+    ImGuiDockNode* node = ImGui::GetWindowDockNode();
+    if (node && node->Windows.Size == 1) {
+      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+    }
+  }
+
   auto viewport_min_region = ImGui::GetWindowContentRegionMin();
   auto viewport_max_region = ImGui::GetWindowContentRegionMax();
   auto viewport_offset = ImGui::GetWindowPos();

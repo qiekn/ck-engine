@@ -8,8 +8,11 @@ namespace ck {
 inline void HideDockNodeTabBar() {
   if (ImGui::IsWindowDocked()) {
     ImGuiDockNode* node = ImGui::GetWindowDockNode();
-    if (node && node->Windows.Size == 1) {
-      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+    if (node) {
+      if (node->Windows.Size == 1)
+        node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+      else
+        node->LocalFlags &= ~ImGuiDockNodeFlags_NoTabBar;
     }
   }
 }

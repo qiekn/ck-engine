@@ -1,4 +1,5 @@
 #include "editor_layer.h"
+#include <algorithm>
 #include <string>
 #include "core/application.h"
 #include "core/core.h"
@@ -12,7 +13,6 @@
 #include "events/mouse_codes.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
-#include "glm/ext/vector_float4.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "imgui.h"
@@ -27,7 +27,6 @@
 #include "scene/entity.h"
 #include "scene/scene.h"
 #include "scene/scene_serializer.h"
-#include "scene/scriptable_entity.h"
 #include "utils/platform_utils.h"
 
 #include "imgui_internal.h"
@@ -45,6 +44,8 @@ void EditorLayer::OnAttach() {
   CK_PROFILE_FUNCTION();
 
   checkerboard_texture_ = Texture2D::Create("assets/textures/checkerboard.png");
+  icon_play_ = Texture2D::Create("resources/icons/play_button.png");
+  icon_stop_ = Texture2D::Create("resources/icons/stop_button.png");
 
   FrameBufferSpecification fb_spec;
   fb_spec.attachments = {
@@ -121,13 +122,6 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
     editor_camera_.SetViewportSize(viewport_size_.x, viewport_size_.y);
   }
 
-  // Update
-  if (is_viewprot_focused_) {
-    camera_controller_.OnUpdate(dt);
-  }
-
-  editor_camera_.OnUpdate(dt);
-
   // Render
   Renderer2D::ResetStats();
   frame_buffer_->Bind();
@@ -137,7 +131,22 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
   // Clear entity ID attachment to -1
   frame_buffer_->ClearAttachment(1, -1);
 
-  active_scene_->OnUpdateEditor(dt, editor_camera_);
+  switch (scene_state_) {
+    case SceneState::Edit: {
+      if (is_viewprot_focused_) {
+        camera_controller_.OnUpdate(dt);
+      }
+
+      editor_camera_.OnUpdate(dt);
+
+      active_scene_->OnUpdateEditor(dt, editor_camera_);
+      break;
+    }
+    case SceneState::Play: {
+      active_scene_->OnUpdateRuntime(dt);
+      break;
+    }
+  }
 
   // Mouse picking
   auto [mx, my] = ImGui::GetMousePos();
@@ -350,6 +359,8 @@ void EditorLayer::OnImGuiRender() {
   ImGui::End();  // viewport
   ImGui::PopStyleVar();
 
+  UI_Toolbar();
+
   ImGui::End();  // dockspace demo
 }
 
@@ -447,4 +458,52 @@ void EditorLayer::SaveSceneAs() {
     serializer.Serialize(filepath);
   }
 }
+
+void EditorLayer::UI_Toolbar() {
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  auto& colors = ImGui::GetStyle().Colors;
+  const auto& button_hovered = colors[ImGuiCol_ButtonHovered];
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(button_hovered.x, button_hovered.y, button_hovered.z, 0.5f));
+  const auto& button_active = colors[ImGuiCol_ButtonActive];
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(button_active.x, button_active.y, button_active.z, 0.5f));
+
+  // Add this flag when you to pin the toolbar position.
+  // ImGuiWindowFlags_NoDecoration
+  ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse);
+
+  // Hide the tab bar of the dock node this window is docked into
+  if (ImGui::IsWindowDocked()) {
+    ImGuiDockNode* node = ImGui::GetWindowDockNode();
+    if (node && node->Windows.Size == 1) {
+      node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+    }
+  }
+
+  float size = std::min(ImGui::GetContentRegionAvail().y, 32.0f);
+  Ref<Texture2D> icon = scene_state_ == SceneState::Edit ? icon_play_ : icon_stop_;
+  ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (ImGui::GetContentRegionAvail().y - size) * 0.5f);
+  if (ImGui::ImageButton("##play_stop", (ImTextureID)(uint64_t)icon->GetRendererID(),
+                          ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
+    if (scene_state_ == SceneState::Edit)
+      OnScenePlay();
+    else if (scene_state_ == SceneState::Play)
+      OnSceneStop();
+  }
+  ImGui::PopStyleVar(3);
+  ImGui::PopStyleColor(3);
+  ImGui::End();
+}
+
+void EditorLayer::OnScenePlay() {
+  scene_state_ = SceneState::Play;
+}
+
+void EditorLayer::OnSceneStop() {
+  scene_state_ = SceneState::Edit;
+}
+
 }  // namespace ck

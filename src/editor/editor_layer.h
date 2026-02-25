@@ -44,6 +44,12 @@ private:
 
   void SaveSceneAs();
 
+  void OnScenePlay();
+  void OnSceneStop();
+
+  // UI Panels
+  void UI_Toolbar();
+
 private:
   ck::OrthographicCameraController camera_controller_;
 
@@ -72,6 +78,9 @@ private:
 
   int gizmo_type = -1;
 
+  enum class SceneState { Edit = 0, Play = 1 };
+  SceneState scene_state_ = SceneState::Edit;
+
   Entity hovered_entity_;
 
   // TEMP
@@ -82,6 +91,9 @@ private:
   // Panel
   SceneHierarchyPanel scene_hierarachy_panel_;
   ContentBrowserPanel content_browser_panel_;
+
+  // Editor resources
+  Ref<Texture2D> icon_play_, icon_stop_;
 };
 
 }  // namespace ck

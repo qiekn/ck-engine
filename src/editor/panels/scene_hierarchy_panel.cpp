@@ -29,23 +29,27 @@ void SceneHierarchyPanel::SetContext(const Ref<Scene>& context) {
 
 void SceneHierarchyPanel::OnImGuiRender() {
   ImGui::Begin("Hierarchy");
-  // Get all entities and process everyone
-  auto entities = context_->registry_.view<entt::entity>();
-  for (auto entity_id : entities) {
-    Entity entity{entity_id, context_.get()};
-    DrawEntityNode(entity);
-  }
-  if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
-    selection_context_ = {};
-  }
-  // Right-click on blank space
-  if (ImGui::BeginPopupContextWindow(
-          nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
-    if (ImGui::MenuItem("Create Empty Entity")) {
-      context_->CreateEntity("Empty Entity");
+
+  if (context_) {
+    // Get all entities and process everyone
+    auto entities = context_->registry_.view<entt::entity>();
+    for (auto entity_id : entities) {
+      Entity entity{entity_id, context_.get()};
+      DrawEntityNode(entity);
     }
-    ImGui::EndPopup();
+    if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
+      selection_context_ = {};
+    }
+    // Right-click on blank space
+    if (ImGui::BeginPopupContextWindow(
+            nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+      if (ImGui::MenuItem("Create Empty Entity")) {
+        context_->CreateEntity("Empty Entity");
+      }
+      ImGui::EndPopup();
+    }
   }
+
   ImGui::End();  // end of hierarchy
 
   ImGui::Begin("Properties");

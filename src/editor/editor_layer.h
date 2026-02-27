@@ -42,10 +42,15 @@ private:
   void OpenScene();
   void OpenScene(const std::filesystem::path& path);
 
+  void SaveScene();
   void SaveSceneAs();
+
+  void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
   void OnScenePlay();
   void OnSceneStop();
+
+  void OnDuplicateEntity();
 
   // UI Panels
   void UI_Toolbar();
@@ -59,6 +64,8 @@ private:
   Ref<FrameBuffer> frame_buffer_;
 
   Ref<Scene> active_scene_;
+  Ref<Scene> editor_scene_;
+  std::filesystem::path editor_scene_path_;
   Entity square_entity_;
 
   Entity main_camera_;

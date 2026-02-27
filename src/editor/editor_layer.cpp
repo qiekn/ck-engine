@@ -55,7 +55,8 @@ void EditorLayer::OnAttach() {
   fb_spec.height = 720;
   frame_buffer_ = FrameBuffer::Create(fb_spec);
 
-  active_scene_ = CreateRef<Scene>();
+  editor_scene_ = CreateRef<Scene>();
+  active_scene_ = editor_scene_;
 
   editor_camera_ = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
@@ -102,7 +103,7 @@ void EditorLayer::OnAttach() {
   main_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
   second_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 #endif
-  scene_hierarachy_panel_.SetContext(active_scene_);
+  scene_hierarachy_panel_.SetContext(editor_scene_);
 }
 
 void EditorLayer::OnDetach() {
@@ -399,9 +400,19 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
       break;
     }
     case Key::S: {
-      if (control && shift) {
-        SaveSceneAs();
+      if (control) {
+        if (shift)
+          SaveSceneAs();
+        else
+          SaveScene();
       }
+      break;
+    }
+
+    // Scene Commands
+    case Key::D: {
+      if (control)
+        OnDuplicateEntity();
       break;
     }
     // Gizmos
@@ -436,6 +447,8 @@ void EditorLayer::NewScene() {
   active_scene_ = CreateRef<Scene>();
   active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
   scene_hierarachy_panel_.SetContext(active_scene_);
+
+  editor_scene_path_ = std::filesystem::path();
 }
 
 void EditorLayer::OpenScene() {
@@ -446,6 +459,9 @@ void EditorLayer::OpenScene() {
 }
 
 void EditorLayer::OpenScene(const std::filesystem::path& path) {
+  if (scene_state_ != SceneState::Edit)
+    OnSceneStop();
+
   if (path.extension().string() != ".scene") {
     CK_ENGINE_WARN("Could not load {0} - not a scene file", path.filename().string());
     return;
@@ -454,18 +470,33 @@ void EditorLayer::OpenScene(const std::filesystem::path& path) {
   Ref<Scene> new_scene = CreateRef<Scene>();
   SceneSerializer serializer(new_scene);
   if (serializer.Deserialize(path.string())) {
-    active_scene_ = new_scene;
-    active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
-    scene_hierarachy_panel_.SetContext(active_scene_);
+    editor_scene_ = new_scene;
+    editor_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+    scene_hierarachy_panel_.SetContext(editor_scene_);
+
+    active_scene_ = editor_scene_;
+    editor_scene_path_ = path;
   }
+}
+
+void EditorLayer::SaveScene() {
+  if (!editor_scene_path_.empty())
+    SerializeScene(active_scene_, editor_scene_path_);
+  else
+    SaveSceneAs();
 }
 
 void EditorLayer::SaveSceneAs() {
   std::string filepath = FileDialogs::SaveFile("SeedEngine Scene (*.scene)\0*.scene\0");
   if (!filepath.empty()) {
-    SceneSerializer serializer(active_scene_);
-    serializer.Serialize(filepath);
+    SerializeScene(active_scene_, filepath);
+    editor_scene_path_ = filepath;
   }
+}
+
+void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path) {
+  SceneSerializer serializer(scene);
+  serializer.Serialize(path.string());
 }
 
 void EditorLayer::UI_Toolbar() {
@@ -503,12 +534,29 @@ void EditorLayer::UI_Toolbar() {
 
 void EditorLayer::OnScenePlay() {
   scene_state_ = SceneState::Play;
+
+  active_scene_ = Scene::Copy(editor_scene_);
   active_scene_->OnRuntimeStart();
+
+  scene_hierarachy_panel_.SetContext(active_scene_);
 }
 
 void EditorLayer::OnSceneStop() {
   scene_state_ = SceneState::Edit;
+
   active_scene_->OnRuntimeStop();
+  active_scene_ = editor_scene_;
+
+  scene_hierarachy_panel_.SetContext(active_scene_);
+}
+
+void EditorLayer::OnDuplicateEntity() {
+  if (scene_state_ != SceneState::Edit)
+    return;
+
+  Entity selected_entity = scene_hierarachy_panel_.GetSelectedEntity();
+  if (selected_entity)
+    editor_scene_->DuplicateEntity(selected_entity);
 }
 
 }  // namespace ck

@@ -24,6 +24,14 @@ public:
     return component;
   }
 
+  template <typename T, typename... Args>
+  T& AddOrReplaceComponent(Args&&... args) {
+    T& component =
+        scene_->registry_.emplace_or_replace<T>(entity_handle_, std::forward<Args>(args)...);
+    scene_->OnComponentAdded<T>(*this, component);
+    return component;
+  }
+
   template <typename T>
   T& GetComponent() {
     CK_ENGINE_ASSERT(HasComponent<T>(), "Entity  does not have this component!");
@@ -54,6 +62,7 @@ public:
   entt::entity GetID() const { return entity_handle_; }
 
   UUID GetUUID() const { return GetComponent<IDComponent>().id; }
+  const std::string& GetName() const { return GetComponent<TagComponent>().name; }
 
   bool operator==(const Entity& other) const {
     return entity_handle_ == other.entity_handle_ && scene_ == other.scene_;

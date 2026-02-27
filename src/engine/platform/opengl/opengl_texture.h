@@ -20,10 +20,13 @@ public:
 
   void Bind(uint32_t slot = 0) const override;
 
+  bool IsLoaded() const override { return is_loaded_; }
+
   bool operator==(const Texture& other) const override;
 
 private:
   std::string path_;
+  bool is_loaded_ = false;
   uint32_t renderer_id_;
   uint32_t width_;
   uint32_t height_;

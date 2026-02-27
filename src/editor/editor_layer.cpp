@@ -446,12 +446,18 @@ void EditorLayer::OpenScene() {
 }
 
 void EditorLayer::OpenScene(const std::filesystem::path& path) {
-  active_scene_ = CreateRef<Scene>();
-  active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
-  scene_hierarachy_panel_.SetContext(active_scene_);
+  if (path.extension().string() != ".scene") {
+    CK_ENGINE_WARN("Could not load {0} - not a scene file", path.filename().string());
+    return;
+  }
 
-  SceneSerializer serializer(active_scene_);
-  serializer.Deserialize(path.string());
+  Ref<Scene> new_scene = CreateRef<Scene>();
+  SceneSerializer serializer(new_scene);
+  if (serializer.Deserialize(path.string())) {
+    active_scene_ = new_scene;
+    active_scene_->OnViewportResize((uint32_t)viewport_size_.x, (uint32_t)viewport_size_.y);
+    scene_hierarachy_panel_.SetContext(active_scene_);
+  }
 }
 
 void EditorLayer::SaveSceneAs() {

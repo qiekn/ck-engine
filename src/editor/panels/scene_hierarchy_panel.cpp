@@ -330,7 +330,11 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
               ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
         const char* path = (const char*)payload->Data;
         std::filesystem::path texture_path = std::filesystem::path(g_asset_path) / path;
-        component.texture = Texture2D::Create(texture_path.string());
+        Ref<Texture2D> texture = Texture2D::Create(texture_path.string());
+        if (texture->IsLoaded())
+          component.texture = texture;
+        else
+          CK_ENGINE_WARN("Could not load texture {0}", texture_path.filename().string());
       }
       ImGui::EndDragDropTarget();
     }

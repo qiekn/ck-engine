@@ -4,6 +4,7 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/quaternion_float.hpp"
+#include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "renderer/texture.h"
@@ -82,5 +83,32 @@ struct NativeScriptComponent {
       nsc->instance = nullptr;
     };
   }
+};
+
+// ----------------------------------------------------------------------------: Rigidbody2D
+struct Rigidbody2DComponent {
+  enum class BodyType { Static = 0, Dynamic, Kinematic };
+  BodyType body_type = BodyType::Static;
+  bool fixed_rotation = false;
+
+  // Storage for runtime body id (uint64_t from b2StoreBodyId)
+  uint64_t runtime_body_id = 0;
+
+  Rigidbody2DComponent() = default;
+  Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
+};
+
+// ----------------------------------------------------------------------------: BoxCollider2D
+struct BoxCollider2DComponent {
+  glm::vec2 offset = {0.0f, 0.0f};
+  glm::vec2 size = {0.5f, 0.5f};
+
+  float density = 1.0f;
+  float friction = 0.5f;
+  float restitution = 0.0f;
+  float restitution_threshold = 0.5f;
+
+  BoxCollider2DComponent() = default;
+  BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
 };
 }  // namespace ck

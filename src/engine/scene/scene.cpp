@@ -1,4 +1,6 @@
 #include "scene.h"
+#include "box2d/box2d.h"
+#include "box2d/math_functions.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "renderer/camera.h"
 #include "renderer/renderer_2d.h"
@@ -8,9 +10,19 @@
 namespace ck {
 // ----------------------------------------------------------------------------: Static Func
 
-static void DoMath(const glm::mat4& transform) {}
+static b2BodyType Rigidbody2DTypeToBox2DType(Rigidbody2DComponent::BodyType body_type) {
+  switch (body_type) {
+    case Rigidbody2DComponent::BodyType::Static:
+      return b2_staticBody;
+    case Rigidbody2DComponent::BodyType::Dynamic:
+      return b2_dynamicBody;
+    case Rigidbody2DComponent::BodyType::Kinematic:
+      return b2_kinematicBody;
+  }
 
-static void OnTransformConstruct(entt::registry& registry, entt::entity entity) {}
+  CK_ENGINE_ASSERT(false, "Unknown body type");
+  return b2_staticBody;
+}
 
 // ----------------------------------------------------------------------------: Class Impl
 
@@ -30,6 +42,49 @@ void Scene::DestroyEntity(const Entity& entity) {
   registry_.destroy(entity.GetID());
 }
 
+void Scene::OnRuntimeStart() {
+  b2WorldDef world_def = b2DefaultWorldDef();
+  world_def.gravity = {0.0f, -9.8f};
+  physics_world_ = b2CreateWorld(&world_def);
+
+  auto view = registry_.view<Rigidbody2DComponent>();
+  for (auto e : view) {
+    Entity entity = {e, this};
+    auto& transform = entity.GetComponent<TransformComponent>();
+    auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+    b2BodyDef body_def = b2DefaultBodyDef();
+    body_def.type = Rigidbody2DTypeToBox2DType(rb2d.body_type);
+    body_def.position = {transform.position.x, transform.position.y};
+    body_def.rotation = b2MakeRot(transform.rotation.z);
+    body_def.motionLocks.angularZ = rb2d.fixed_rotation;
+
+    b2BodyId body_id = b2CreateBody(physics_world_, &body_def);
+
+    if (entity.HasComponent<BoxCollider2DComponent>()) {
+      auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+
+      b2Polygon box = b2MakeOffsetBox(bc2d.size.x * transform.scale.x,
+                                      bc2d.size.y * transform.scale.y,
+                                      {bc2d.offset.x, bc2d.offset.y},
+                                      b2MakeRot(0.0f));
+
+      b2ShapeDef shape_def = b2DefaultShapeDef();
+      shape_def.density = bc2d.density;
+      shape_def.material.friction = bc2d.friction;
+      shape_def.material.restitution = bc2d.restitution;
+      b2CreatePolygonShape(body_id, &shape_def, &box);
+    }
+
+    rb2d.runtime_body_id = b2StoreBodyId(body_id);
+  }
+}
+
+void Scene::OnRuntimeStop() {
+  b2DestroyWorld(physics_world_);
+  physics_world_ = {};
+}
+
 void Scene::OnUpdateRuntime(DeltaTime dt) {
   // Update Scripts
   {
@@ -43,6 +98,25 @@ void Scene::OnUpdateRuntime(DeltaTime dt) {
 
       nsc.instance->OnUpdate(dt);
     });
+  }
+
+  // Physics
+  {
+    const int kSubStepCount = 4;
+    b2World_Step(physics_world_, dt, kSubStepCount);
+
+    auto view = registry_.view<Rigidbody2DComponent>();
+    for (auto e : view) {
+      Entity entity = {e, this};
+      auto& transform = entity.GetComponent<TransformComponent>();
+      auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+      b2BodyId body_id = b2LoadBodyId(rb2d.runtime_body_id);
+      b2Vec2 position = b2Body_GetPosition(body_id);
+      transform.position.x = position.x;
+      transform.position.y = position.y;
+      transform.rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body_id));
+    }
   }
 
   // Render 2D
@@ -137,5 +211,13 @@ void Scene::OnComponentAdded<TagComponent>(const Entity& entity, TagComponent& c
 template <>
 void Scene::OnComponentAdded<NativeScriptComponent>(const Entity& entity,
                                                     NativeScriptComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<Rigidbody2DComponent>(const Entity& entity,
+                                                   Rigidbody2DComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<BoxCollider2DComponent>(const Entity& entity,
+                                                     BoxCollider2DComponent& component) {}
 
 }  // namespace ck

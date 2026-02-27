@@ -503,10 +503,12 @@ void EditorLayer::UI_Toolbar() {
 
 void EditorLayer::OnScenePlay() {
   scene_state_ = SceneState::Play;
+  active_scene_->OnRuntimeStart();
 }
 
 void EditorLayer::OnSceneStop() {
   scene_state_ = SceneState::Edit;
+  active_scene_->OnRuntimeStop();
 }
 
 }  // namespace ck

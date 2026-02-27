@@ -59,6 +59,10 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imgui)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/imguizmo)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/stb_image)
 add_subdirectory(${CMAKE_SOURCE_DIR}/deps/yaml-cpp)
+option(BOX2D_SAMPLES "Build the Box2D samples" OFF)
+option(BOX2D_UNIT_TESTS "Build the Box2D unit tests" OFF)
+option(BOX2D_BENCHMARKS "Build the Box2D benchmarks" OFF)
+add_subdirectory(${CMAKE_SOURCE_DIR}/deps/box2d)
 target_link_libraries(ck PUBLIC
   glfw
   glad
@@ -67,6 +71,7 @@ target_link_libraries(ck PUBLIC
   stb_image
   yaml-cpp
   imguizmo
+  box2d
 )
 
 #---------------------------------------------------------------------3

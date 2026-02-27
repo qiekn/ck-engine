@@ -17,3 +17,6 @@
 [submodule "deps/imguizmo"]
 	path = deps/imguizmo
 	url = git@github.com:qiekn/ImGuizmo.git
+[submodule "deps/box2d"]
+	path = deps/box2d
+	url = https://github.com/erincatto/box2d

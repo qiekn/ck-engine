@@ -1,5 +1,6 @@
 #pragma once
 
+#include "box2d/id.h"
 #include "core/deltatime.h"
 #include "entt.hpp"
 #include "renderer/editor_camera.h"
@@ -15,6 +16,9 @@ public:
   Entity CreateEntity(const std::string& name = std::string());
   void DestroyEntity(const Entity& entity);
 
+  void OnRuntimeStart();
+  void OnRuntimeStop();
+
   void OnUpdateRuntime(DeltaTime dt);
   void OnUpdateEditor(DeltaTime dt, EditorCamera& camera);
   void OnViewportResize(uint32_t width, uint32_t height);
@@ -27,6 +31,8 @@ private:
 private:
   entt::registry registry_;
   uint32_t viewport_width = 0, viewport_height = 0;
+
+  b2WorldId physics_world_ = {};
 
   friend class Entity;
   friend class SceneSerializer;

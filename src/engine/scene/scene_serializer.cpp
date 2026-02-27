@@ -1,5 +1,6 @@
 #include "scene_serializer.h"
 #include "core/log.h"
+#include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "scene/components.h"
@@ -11,6 +12,24 @@
 #include "yaml-cpp/yaml.h"
 
 namespace YAML {
+template <>
+struct convert<glm::vec2> {
+  static Node encode(const glm::vec2& rhs) {
+    Node node;
+    node.push_back(rhs.x);
+    node.push_back(rhs.y);
+    return node;
+  }
+
+  static bool decode(const Node& node, glm::vec2& rhs) {
+    if (!node.IsSequence() || node.size() != 2)
+      return false;
+    rhs.x = node[0].as<float>();
+    rhs.y = node[1].as<float>();
+    return true;
+  }
+};
+
 template <>
 struct convert<glm::vec3> {
   static Node encode(const glm::vec3& rhs) {
@@ -62,6 +81,12 @@ struct convert<glm::vec4> {
 namespace ck {
 
 // ----------------------------------------------------------------------------: Prepare
+
+YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v) {
+  out << YAML::Flow;
+  out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
+  return out;
+}
 
 YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v) {
   out << YAML::Flow;
@@ -143,6 +168,34 @@ static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
 
     auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
     out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.color;
+
+    out << YAML::EndMap;
+  }
+
+  // ----------------------------------------------------------------------------: Rigidbody2D
+  if (entity.HasComponent<Rigidbody2DComponent>()) {
+    out << YAML::Key << "Rigidbody2DComponent";
+    out << YAML::BeginMap;
+
+    auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+    out << YAML::Key << "BodyType" << YAML::Value << (int)rb2d.body_type;
+    out << YAML::Key << "FixedRotation" << YAML::Value << rb2d.fixed_rotation;
+
+    out << YAML::EndMap;
+  }
+
+  // ----------------------------------------------------------------------------: BoxCollider2D
+  if (entity.HasComponent<BoxCollider2DComponent>()) {
+    out << YAML::Key << "BoxCollider2DComponent";
+    out << YAML::BeginMap;
+
+    auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+    out << YAML::Key << "Offset" << YAML::Value << bc2d.offset;
+    out << YAML::Key << "Size" << YAML::Value << bc2d.size;
+    out << YAML::Key << "Density" << YAML::Value << bc2d.density;
+    out << YAML::Key << "Friction" << YAML::Value << bc2d.friction;
+    out << YAML::Key << "Restitution" << YAML::Value << bc2d.restitution;
+    out << YAML::Key << "RestitutionThreshold" << YAML::Value << bc2d.restitution_threshold;
 
     out << YAML::EndMap;
   }
@@ -235,6 +288,24 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
       if (sprite_renderer_comp) {
         auto& src = deserialized_entity.AddComponent<SpriteRendererComponent>();
         src.color = sprite_renderer_comp["Color"].as<glm::vec4>();
+      }
+
+      auto rigidbody2d_comp = entity["Rigidbody2DComponent"];
+      if (rigidbody2d_comp) {
+        auto& rb2d = deserialized_entity.AddComponent<Rigidbody2DComponent>();
+        rb2d.body_type = (Rigidbody2DComponent::BodyType)rigidbody2d_comp["BodyType"].as<int>();
+        rb2d.fixed_rotation = rigidbody2d_comp["FixedRotation"].as<bool>();
+      }
+
+      auto box_collider2d_comp = entity["BoxCollider2DComponent"];
+      if (box_collider2d_comp) {
+        auto& bc2d = deserialized_entity.AddComponent<BoxCollider2DComponent>();
+        bc2d.offset = box_collider2d_comp["Offset"].as<glm::vec2>();
+        bc2d.size = box_collider2d_comp["Size"].as<glm::vec2>();
+        bc2d.density = box_collider2d_comp["Density"].as<float>();
+        bc2d.friction = box_collider2d_comp["Friction"].as<float>();
+        bc2d.restitution = box_collider2d_comp["Restitution"].as<float>();
+        bc2d.restitution_threshold = box_collider2d_comp["RestitutionThreshold"].as<float>();
       }
     }
   }

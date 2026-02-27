@@ -6,6 +6,7 @@
 #include "renderer/renderer_2d.h"
 #include "scene/components.h"
 #include "scene/entity.h"
+#include "scene/scriptable_entity.h"
 
 namespace ck {
 // ----------------------------------------------------------------------------: Static Func
@@ -31,7 +32,12 @@ Scene::Scene() {}
 Scene::~Scene() {}
 
 Entity Scene::CreateEntity(const std::string& name) {
+  return CreateEntityWithUUID(UUID(), name);
+}
+
+Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name) {
   Entity entity = {registry_.create(), this};
+  entity.AddComponent<IDComponent>(uuid);
   entity.AddComponent<TransformComponent>();
   auto& tag = entity.AddComponent<TagComponent>();
   tag.name = name.empty() ? "Entity" : name;
@@ -204,6 +210,9 @@ void Scene::OnComponentAdded<CameraComponent>(const Entity& entity, CameraCompon
 template <>
 void Scene::OnComponentAdded<SpriteRendererComponent>(const Entity& entity,
                                                       SpriteRendererComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<IDComponent>(const Entity& entity, IDComponent& component) {}
 
 template <>
 void Scene::OnComponentAdded<TagComponent>(const Entity& entity, TagComponent& component) {}

@@ -108,9 +108,11 @@ SceneSerializer::~SceneSerializer() {}
 
 static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
   // ----------------------------------------------------------------------------: Entity Start
+  CK_ENGINE_ASSERT(entity.HasComponent<IDComponent>(), "Entity missing IDComponent");
+
   out << YAML::BeginMap;
   out << YAML::Key << "Entity" << YAML::Value
-      << "12837192831273";  // TODO(qiekn): Entity ID goes here
+      << entity.GetUUID();
 
   // ----------------------------------------------------------------------------: Tag
   if (entity.HasComponent<TagComponent>()) {
@@ -243,7 +245,7 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
   auto entities = data["Entities"];
   if (entities) {
     for (auto entity : entities) {
-      uint64_t uuid = entity["Entity"].as<uint64_t>();  // TODO(qiekn)
+      uint64_t uuid = entity["Entity"].as<uint64_t>();
 
       std::string name;
       auto tag_comp = entity["TagComponent"];
@@ -253,7 +255,7 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
 
       CK_ENGINE_TRACE("Deserialized entity with ID = {0}, name = {1}", uuid, name);
 
-      Entity deserialized_entity = scene_->CreateEntity(name);
+      Entity deserialized_entity = scene_->CreateEntityWithUUID(uuid, name);
 
       auto transform_comp = entity["TransformComponent"];
       if (transform_comp) {

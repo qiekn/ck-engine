@@ -2,6 +2,7 @@
 
 #include <utility>
 #include "entt.hpp"
+#include "scene/components.h"
 #include "scene/scene.h"
 
 namespace ck {
@@ -51,6 +52,8 @@ public:
   explicit operator entt::entity() const { return entity_handle_; }
 
   entt::entity GetID() const { return entity_handle_; }
+
+  UUID GetUUID() const { return GetComponent<IDComponent>().id; }
 
   bool operator==(const Entity& other) const {
     return entity_handle_ == other.entity_handle_ && scene_ == other.scene_;

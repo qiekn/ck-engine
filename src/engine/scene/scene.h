@@ -2,6 +2,7 @@
 
 #include "box2d/id.h"
 #include "core/deltatime.h"
+#include "core/uuid.h"
 #include "entt.hpp"
 #include "renderer/editor_camera.h"
 
@@ -14,6 +15,7 @@ public:
   virtual ~Scene();
 
   Entity CreateEntity(const std::string& name = std::string());
+  Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
   void DestroyEntity(const Entity& entity);
 
   void OnRuntimeStart();

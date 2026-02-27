@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "core/uuid.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/quaternion_float.hpp"
@@ -9,12 +10,34 @@
 #include "glm/ext/vector_float4.hpp"
 #include "renderer/texture.h"
 #include "scene/scene_camera.h"
-#include "scene/scriptable_entity.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
 namespace ck {
+
+// Forward declaration
+class ScriptableEntity;
+
+// ----------------------------------------------------------------------------: ID
+struct IDComponent {
+  UUID id;
+
+  IDComponent() = default;
+  IDComponent(const IDComponent&) = default;
+  IDComponent(UUID _id) : id(_id) {}
+};
+
+// ----------------------------------------------------------------------------: Tag
+struct TagComponent {
+  std::string name;
+
+  TagComponent() = default;
+  TagComponent(const TagComponent&) = default;
+
+  explicit TagComponent(const std::string& _name) : name(_name) {}
+};
+
 // ----------------------------------------------------------------------------: Transform
 struct TransformComponent {
   glm::vec3 position = {0.0f, 0.0f, 0.0f};
@@ -45,16 +68,6 @@ struct SpriteRendererComponent {
   SpriteRendererComponent(const SpriteRendererComponent&) = default;
 
   explicit SpriteRendererComponent(const glm::vec4& _color) : color(_color) {}
-};
-
-// ----------------------------------------------------------------------------: Tag
-struct TagComponent {
-  std::string name;
-
-  TagComponent() = default;
-  TagComponent(const TagComponent&) = default;
-
-  explicit TagComponent(const std::string& _name) : name(_name) {}
 };
 
 // ----------------------------------------------------------------------------: Camera

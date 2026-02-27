@@ -92,7 +92,7 @@ struct NativeScriptComponent {
       return static_cast<ScriptableEntity*>(new T());
     };
     DestoryScript = [](NativeScriptComponent* nsc) {
-      delete nsc->instance;
+      delete static_cast<T*>(nsc->instance);
       nsc->instance = nullptr;
     };
   }

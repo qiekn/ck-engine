@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/string_cast.hpp"
 #include "spdlog/spdlog.h"  // IWYU pragma: keep
 
 namespace ck {
@@ -18,6 +20,21 @@ private:
   static Ref<spdlog::logger> client_logger_;
 };
 }  // namespace ck
+
+template <typename OStream, glm::length_t L, typename T, glm::qualifier Q>
+inline OStream& operator<<(OStream& os, const glm::vec<L, T, Q>& vector) {
+  return os << glm::to_string(vector);
+}
+
+template <typename OStream, glm::length_t C, glm::length_t R, typename T, glm::qualifier Q>
+inline OStream& operator<<(OStream& os, const glm::mat<C, R, T, Q>& matrix) {
+  return os << glm::to_string(matrix);
+}
+
+template <typename OStream, typename T, glm::qualifier Q>
+inline OStream& operator<<(OStream& os, const glm::qua<T, Q>& quaternion) {
+  return os << glm::to_string(quaternion);
+}
 
 // clang-format off
 #define CK_ENGINE_TRACE(...) ::ck::Log::GetEngineLogger()->trace(__VA_ARGS__)

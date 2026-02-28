@@ -174,6 +174,19 @@ static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
     out << YAML::EndMap;
   }
 
+  // ----------------------------------------------------------------------------: CircleRenderer
+  if (entity.HasComponent<CircleRendererComponent>()) {
+    out << YAML::Key << "CircleRendererComponent";
+    out << YAML::BeginMap;
+
+    auto& circle = entity.GetComponent<CircleRendererComponent>();
+    out << YAML::Key << "Color" << YAML::Value << circle.color;
+    out << YAML::Key << "Thickness" << YAML::Value << circle.thickness;
+    out << YAML::Key << "Fade" << YAML::Value << circle.fade;
+
+    out << YAML::EndMap;
+  }
+
   // ----------------------------------------------------------------------------: Rigidbody2D
   if (entity.HasComponent<Rigidbody2DComponent>()) {
     out << YAML::Key << "Rigidbody2DComponent";
@@ -290,6 +303,14 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
       if (sprite_renderer_comp) {
         auto& src = deserialized_entity.AddComponent<SpriteRendererComponent>();
         src.color = sprite_renderer_comp["Color"].as<glm::vec4>();
+      }
+
+      auto circle_renderer_comp = entity["CircleRendererComponent"];
+      if (circle_renderer_comp) {
+        auto& crc = deserialized_entity.AddComponent<CircleRendererComponent>();
+        crc.color = circle_renderer_comp["Color"].as<glm::vec4>();
+        crc.thickness = circle_renderer_comp["Thickness"].as<float>();
+        crc.fade = circle_renderer_comp["Fade"].as<float>();
       }
 
       auto rigidbody2d_comp = entity["Rigidbody2DComponent"];

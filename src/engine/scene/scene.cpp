@@ -77,6 +77,7 @@ Ref<Scene> Scene::Copy(Ref<Scene> other) {
   // Copy components (except IDComponent and TagComponent)
   CopyComponent<TransformComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<SpriteRendererComponent>(dst_registry, src_registry, entt_map);
+  CopyComponent<CircleRendererComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<CameraComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<NativeScriptComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<Rigidbody2DComponent>(dst_registry, src_registry, entt_map);
@@ -199,12 +200,27 @@ void Scene::OnUpdateRuntime(DeltaTime dt) {
   if (main_camera) {
     Renderer2D::BeginScene(*main_camera, camera_transform);
 
-    auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-    for (auto entity : group) {
-      const auto& [Transform, Sprite] =
-          group.get<TransformComponent, SpriteRendererComponent>(entity);
+    // Draw sprites
+    {
+      auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+      for (auto entity : group) {
+        const auto& [Transform, Sprite] =
+            group.get<TransformComponent, SpriteRendererComponent>(entity);
 
-      Renderer2D::DrawSprite(Transform.GetTransform(), Sprite, (int)entity);
+        Renderer2D::DrawSprite(Transform.GetTransform(), Sprite, (int)entity);
+      }
+    }
+
+    // Draw circles
+    {
+      auto view = registry_.view<TransformComponent, CircleRendererComponent>();
+      for (auto entity : view) {
+        auto [transform, circle] =
+            view.get<TransformComponent, CircleRendererComponent>(entity);
+
+        Renderer2D::DrawCircle(transform.GetTransform(), circle.color, circle.thickness,
+                               circle.fade, (int)entity);
+      }
     }
 
     Renderer2D::EndScene();
@@ -213,11 +229,28 @@ void Scene::OnUpdateRuntime(DeltaTime dt) {
 
 void Scene::OnUpdateEditor(DeltaTime dt, EditorCamera& camera) {
   Renderer2D::BeginScene(camera);
-  auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-  for (auto entity : group) {
-    auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-    Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+
+  // Draw sprites
+  {
+    auto group = registry_.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+    for (auto entity : group) {
+      auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+      Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+    }
   }
+
+  // Draw circles
+  {
+    auto view = registry_.view<TransformComponent, CircleRendererComponent>();
+    for (auto entity : view) {
+      auto [transform, circle] =
+          view.get<TransformComponent, CircleRendererComponent>(entity);
+
+      Renderer2D::DrawCircle(transform.GetTransform(), circle.color, circle.thickness,
+                             circle.fade, (int)entity);
+    }
+  }
+
   Renderer2D::EndScene();
 }
 
@@ -241,6 +274,7 @@ void Scene::DuplicateEntity(Entity entity) {
 
   CopyComponentIfExists<TransformComponent>(new_entity, entity);
   CopyComponentIfExists<SpriteRendererComponent>(new_entity, entity);
+  CopyComponentIfExists<CircleRendererComponent>(new_entity, entity);
   CopyComponentIfExists<CameraComponent>(new_entity, entity);
   CopyComponentIfExists<NativeScriptComponent>(new_entity, entity);
   CopyComponentIfExists<Rigidbody2DComponent>(new_entity, entity);
@@ -276,6 +310,10 @@ void Scene::OnComponentAdded<CameraComponent>(const Entity& entity, CameraCompon
 template <>
 void Scene::OnComponentAdded<SpriteRendererComponent>(const Entity& entity,
                                                       SpriteRendererComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<CircleRendererComponent>(const Entity& entity,
+                                                      CircleRendererComponent& component) {}
 
 template <>
 void Scene::OnComponentAdded<IDComponent>(const Entity& entity, IDComponent& component) {}

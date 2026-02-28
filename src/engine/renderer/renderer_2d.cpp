@@ -35,6 +35,17 @@ struct QuadVertex {
   int entity_id;
 };
 
+struct CircleVertex {
+  glm::vec3 world_position;
+  glm::vec3 local_position;
+  glm::vec4 color;
+  float thickness;
+  float fade;
+
+  // Editor-only
+  int entity_id;
+};
+
 struct Renderer2DData {
   static const uint32_t kMaxQuads = 20000;
   static const uint32_t kMaxVertices = kMaxQuads * 4;
@@ -43,12 +54,20 @@ struct Renderer2DData {
 
   Ref<VertexArray> quad_vertex_array;
   Ref<VertexBuffer> quad_vertex_buffer;
-  Ref<Shader> texture_shader;
+  Ref<Shader> quad_shader;
   Ref<Texture2D> white_texture;
+
+  Ref<VertexArray> circle_vertex_array;
+  Ref<VertexBuffer> circle_vertex_buffer;
+  Ref<Shader> circle_shader;
 
   uint32_t quad_index_count = 0;
   QuadVertex* quad_vertex_buffer_base = nullptr;
   QuadVertex* quad_vertex_buffer_ptr = nullptr;
+
+  uint32_t circle_index_count = 0;
+  CircleVertex* circle_vertex_buffer_base = nullptr;
+  CircleVertex* circle_vertex_buffer_ptr = nullptr;
 
   std::array<Ref<Texture2D>, kMaxTextureSlots> texture_slots;
   uint32_t texture_slot_index = 1;  // 0 = white texture
@@ -100,6 +119,23 @@ void Renderer2D::Init() {
   s_data.quad_vertex_array->SetIndexBuffer(quad_index_buffer);
   delete[] quad_indices;
 
+  // Circles
+  s_data.circle_vertex_array = VertexArray::Create();
+
+  s_data.circle_vertex_buffer =
+      VertexBuffer::Create(s_data.kMaxVertices * sizeof(CircleVertex));
+  s_data.circle_vertex_buffer->SetLayout({
+      {ShaderDataType::kFloat3, "a_world_position"},
+      {ShaderDataType::kFloat3, "a_local_position"},
+      {ShaderDataType::kFloat4, "a_color"},
+      {ShaderDataType::kFloat, "a_thickness"},
+      {ShaderDataType::kFloat, "a_fade"},
+      {ShaderDataType::kInt, "a_entity_id"},
+  });
+  s_data.circle_vertex_array->AddVertexBuffer(s_data.circle_vertex_buffer);
+  s_data.circle_vertex_array->SetIndexBuffer(quad_index_buffer);  // Use quad IB
+  s_data.circle_vertex_buffer_base = new CircleVertex[s_data.kMaxVertices];
+
   // White Texture
   s_data.white_texture = Texture2D::Create(1, 1);
   uint32_t white_texture_data = 0xffffffff;
@@ -110,7 +146,8 @@ void Renderer2D::Init() {
     samplers[i] = (int32_t)i;
   }
 
-  s_data.texture_shader = Shader::Create("assets/shaders/texture.glsl");
+  s_data.quad_shader = Shader::Create("assets/shaders/renderer_2d_quad.glsl");
+  s_data.circle_shader = Shader::Create("assets/shaders/renderer_2d_circle.glsl");
 
   // Initialize Texture Slots
   for (uint32_t i = 0; i < s_data.kMaxTextureSlots; i++) {
@@ -130,6 +167,7 @@ void Renderer2D::Init() {
 void Renderer2D::Shutdown() {
   CK_PROFILE_FUNCTION();
   delete[] s_data.quad_vertex_buffer_base;
+  delete[] s_data.circle_vertex_buffer_base;
 }
 
 void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform) {
@@ -169,22 +207,30 @@ void Renderer2D::EndScene() {
 }
 
 void Renderer2D::Flush() {
-  if (s_data.quad_index_count == 0) {
-    return;
+  if (s_data.quad_index_count) {
+    uint32_t data_size =
+        (uint8_t*)s_data.quad_vertex_buffer_ptr - (uint8_t*)s_data.quad_vertex_buffer_base;
+    s_data.quad_vertex_buffer->SetData(s_data.quad_vertex_buffer_base, data_size);
+
+    // Bind Textures
+    for (uint32_t i = 0; i < s_data.texture_slot_index; i++) {
+      s_data.texture_slots[i]->Bind(i);
+    }
+
+    s_data.quad_shader->Bind();
+    RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
+    s_data.stats.draw_calls++;
   }
 
-  uint32_t data_size =
-      (uint8_t*)s_data.quad_vertex_buffer_ptr - (uint8_t*)s_data.quad_vertex_buffer_base;
-  s_data.quad_vertex_buffer->SetData(s_data.quad_vertex_buffer_base, data_size);
+  if (s_data.circle_index_count) {
+    uint32_t data_size =
+        (uint8_t*)s_data.circle_vertex_buffer_ptr - (uint8_t*)s_data.circle_vertex_buffer_base;
+    s_data.circle_vertex_buffer->SetData(s_data.circle_vertex_buffer_base, data_size);
 
-  // Bind Textures
-  for (uint32_t i = 0; i < s_data.texture_slot_index; i++) {
-    s_data.texture_slots[i]->Bind(i);
+    s_data.circle_shader->Bind();
+    RenderCommand::DrawIndexed(s_data.circle_vertex_array.get(), s_data.circle_index_count);
+    s_data.stats.draw_calls++;
   }
-
-  s_data.texture_shader->Bind();
-  RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
-  s_data.stats.draw_calls++;
 }
 
 // ----------------------------------------------------------------------------: Primitives
@@ -341,6 +387,26 @@ void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent&
     DrawQuad(transform, src.color, entity_id);
 }
 
+void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness,
+                             float fade, int entity_id) {
+  CK_PROFILE_FUNCTION();
+
+  // TODO: implement batch overflow for circles
+  for (size_t i = 0; i < 4; i++) {
+    s_data.circle_vertex_buffer_ptr->world_position = transform * s_data.quad_vertex_position[i];
+    s_data.circle_vertex_buffer_ptr->local_position = s_data.quad_vertex_position[i] * 2.0f;
+    s_data.circle_vertex_buffer_ptr->color = color;
+    s_data.circle_vertex_buffer_ptr->thickness = thickness;
+    s_data.circle_vertex_buffer_ptr->fade = fade;
+    s_data.circle_vertex_buffer_ptr->entity_id = entity_id;
+    s_data.circle_vertex_buffer_ptr++;
+  }
+
+  s_data.circle_index_count += 6;
+
+  s_data.stats.quad_count++;
+}
+
 // ----------------------------------------------------------------------------: Stats
 
 void Renderer2D::ResetStats() {
@@ -354,6 +420,9 @@ Renderer2D::Statistics Renderer2D::GetStats() {
 void Renderer2D::StartBatch() {
   s_data.quad_index_count = 0;
   s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
+
+  s_data.circle_index_count = 0;
+  s_data.circle_vertex_buffer_ptr = s_data.circle_vertex_buffer_base;
 
   s_data.texture_slot_index = 1;
 }

@@ -28,9 +28,9 @@ void OpenGLRendererAPI::SetClearColor(const glm::vec4& color) {
 }
 
 void OpenGLRendererAPI::DrawIndexed(const VertexArray* vertex_array, uint32_t index_count) {
+  vertex_array->Bind();
   uint32_t count = index_count ? index_count : vertex_array->GetIndexBuffer()->Count();
   glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
-  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 }  // namespace ck

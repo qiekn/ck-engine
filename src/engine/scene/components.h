@@ -70,6 +70,16 @@ struct SpriteRendererComponent {
   explicit SpriteRendererComponent(const glm::vec4& _color) : color(_color) {}
 };
 
+// ----------------------------------------------------------------------------: CircleRenderer
+struct CircleRendererComponent {
+  glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+  float thickness = 1.0f;
+  float fade = 0.005f;
+
+  CircleRendererComponent() = default;
+  CircleRendererComponent(const CircleRendererComponent&) = default;
+};
+
 // ----------------------------------------------------------------------------: Camera
 struct CameraComponent {
   SceneCamera camera;

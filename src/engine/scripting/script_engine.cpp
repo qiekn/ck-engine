@@ -93,7 +93,7 @@ void ScriptEngine::InitMono() {
   mono_domain_set(s_data->app_domain, true);
 
   // Load C# core assembly
-  s_data->core_assembly = LoadCSharpAssembly("resources/scripts/CK-ScriptCore.dll");
+  s_data->core_assembly = LoadCSharpAssembly("assets/scripts/CK-ScriptCore.dll");
   PrintAssemblyTypes(s_data->core_assembly);
 
   // --- Test: create object and call methods ---

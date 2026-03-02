@@ -78,7 +78,7 @@ void OpenGLTexture2D::Bind(uint32_t slot) const {
 }
 
 bool OpenGLTexture2D::operator==(const Texture& other) const {
-  return renderer_id_ == ((OpenGLTexture2D&)other).renderer_id_;
+  return renderer_id_ == other.GetRendererID();
 }
 
 void OpenGLTexture2D::SetData(void* data, size_t size) const {

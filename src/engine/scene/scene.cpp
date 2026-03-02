@@ -82,6 +82,7 @@ Ref<Scene> Scene::Copy(Ref<Scene> other) {
   CopyComponent<NativeScriptComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<Rigidbody2DComponent>(dst_registry, src_registry, entt_map);
   CopyComponent<BoxCollider2DComponent>(dst_registry, src_registry, entt_map);
+  CopyComponent<CircleCollider2DComponent>(dst_registry, src_registry, entt_map);
 
   return new_scene;
 }
@@ -135,6 +136,20 @@ void Scene::OnRuntimeStart() {
       shape_def.material.friction = bc2d.friction;
       shape_def.material.restitution = bc2d.restitution;
       b2CreatePolygonShape(body_id, &shape_def, &box);
+    }
+
+    if (entity.HasComponent<CircleCollider2DComponent>()) {
+      auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
+
+      b2Circle circle;
+      circle.center = {cc2d.offset.x, cc2d.offset.y};
+      circle.radius = cc2d.radius * transform.scale.x;
+
+      b2ShapeDef shape_def = b2DefaultShapeDef();
+      shape_def.density = cc2d.density;
+      shape_def.material.friction = cc2d.friction;
+      shape_def.material.restitution = cc2d.restitution;
+      b2CreateCircleShape(body_id, &shape_def, &circle);
     }
 
     rb2d.runtime_body_id = b2StoreBodyId(body_id);
@@ -279,6 +294,7 @@ void Scene::DuplicateEntity(Entity entity) {
   CopyComponentIfExists<NativeScriptComponent>(new_entity, entity);
   CopyComponentIfExists<Rigidbody2DComponent>(new_entity, entity);
   CopyComponentIfExists<BoxCollider2DComponent>(new_entity, entity);
+  CopyComponentIfExists<CircleCollider2DComponent>(new_entity, entity);
 }
 
 Entity Scene::GetPrimaryCameraEntity() {
@@ -332,5 +348,9 @@ void Scene::OnComponentAdded<Rigidbody2DComponent>(const Entity& entity,
 template <>
 void Scene::OnComponentAdded<BoxCollider2DComponent>(const Entity& entity,
                                                      BoxCollider2DComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<CircleCollider2DComponent>(const Entity& entity,
+                                                        CircleCollider2DComponent& component) {}
 
 }  // namespace ck

@@ -215,6 +215,22 @@ static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
     out << YAML::EndMap;
   }
 
+  // ----------------------------------------------------------------------------: CircleCollider2D
+  if (entity.HasComponent<CircleCollider2DComponent>()) {
+    out << YAML::Key << "CircleCollider2DComponent";
+    out << YAML::BeginMap;
+
+    auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
+    out << YAML::Key << "Offset" << YAML::Value << cc2d.offset;
+    out << YAML::Key << "Radius" << YAML::Value << cc2d.radius;
+    out << YAML::Key << "Density" << YAML::Value << cc2d.density;
+    out << YAML::Key << "Friction" << YAML::Value << cc2d.friction;
+    out << YAML::Key << "Restitution" << YAML::Value << cc2d.restitution;
+    out << YAML::Key << "RestitutionThreshold" << YAML::Value << cc2d.restitution_threshold;
+
+    out << YAML::EndMap;
+  }
+
   // ----------------------------------------------------------------------------: Entity End
   out << YAML::EndMap;  // Entity
 }
@@ -329,6 +345,18 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
         bc2d.friction = box_collider2d_comp["Friction"].as<float>();
         bc2d.restitution = box_collider2d_comp["Restitution"].as<float>();
         bc2d.restitution_threshold = box_collider2d_comp["RestitutionThreshold"].as<float>();
+      }
+
+      auto circle_collider2d_comp = entity["CircleCollider2DComponent"];
+      if (circle_collider2d_comp) {
+        auto& cc2d = deserialized_entity.AddComponent<CircleCollider2DComponent>();
+        cc2d.offset = circle_collider2d_comp["Offset"].as<glm::vec2>();
+        cc2d.radius = circle_collider2d_comp["Radius"].as<float>();
+        cc2d.density = circle_collider2d_comp["Density"].as<float>();
+        cc2d.friction = circle_collider2d_comp["Friction"].as<float>();
+        cc2d.restitution = circle_collider2d_comp["Restitution"].as<float>();
+        cc2d.restitution_threshold =
+            circle_collider2d_comp["RestitutionThreshold"].as<float>();
       }
     }
   }

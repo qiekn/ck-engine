@@ -671,6 +671,12 @@ void EditorLayer::OnOverlayRender() {
     }
   }
 
+  // Draw selected entity outline
+  if (Entity selected_entity = scene_hierarachy_panel_.GetSelectedEntity()) {
+    const auto& transform = selected_entity.GetComponent<TransformComponent>();
+    Renderer2D::DrawRect(transform.GetTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+  }
+
   Renderer2D::EndScene();
 }
 

@@ -37,6 +37,8 @@ private:
   bool OnKeyPressed(KeyPressedEvent& e);
   bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
+  void OnOverlayRender();
+
   void NewScene();
 
   void OpenScene();
@@ -84,6 +86,8 @@ private:
   glm::vec4 quare_color_{0.2f, 0.3f, 0.8f, 1.0f};
 
   int gizmo_type = -1;
+
+  bool show_physics_colliders_ = false;
 
   enum class SceneState { Edit = 0, Play = 1 };
   SceneState scene_state_ = SceneState::Edit;

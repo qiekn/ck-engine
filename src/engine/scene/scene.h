@@ -31,6 +31,11 @@ public:
 
   Entity GetPrimaryCameraEntity();
 
+  template <typename... Components>
+  auto GetAllEntitiesWith() {
+    return registry_.view<Components...>();
+  }
+
 private:
   template <typename T>
   void OnComponentAdded(const Entity& entity, T& component);

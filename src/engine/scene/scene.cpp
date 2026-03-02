@@ -358,7 +358,7 @@ void Scene::RenderScene(EditorCamera& camera) {
 
 template <typename T>
 void Scene::OnComponentAdded(const Entity& entity, T& component) {
-  static_assert(false);
+  static_assert(sizeof(T) == 0);
 }
 
 template <>

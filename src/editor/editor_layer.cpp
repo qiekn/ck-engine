@@ -46,6 +46,7 @@ void EditorLayer::OnAttach() {
 
   checkerboard_texture_ = Texture2D::Create("assets/textures/checkerboard.png");
   icon_play_ = Texture2D::Create("resources/icons/play_button.png");
+  icon_simulate_ = Texture2D::Create("resources/icons/simulate_button.png");
   icon_stop_ = Texture2D::Create("resources/icons/stop_button.png");
 
   FrameBufferSpecification fb_spec;
@@ -142,6 +143,12 @@ void EditorLayer::OnUpdate(DeltaTime dt) {
       editor_camera_.OnUpdate(dt);
 
       active_scene_->OnUpdateEditor(dt, editor_camera_);
+      break;
+    }
+    case SceneState::Simulate: {
+      editor_camera_.OnUpdate(dt);
+
+      active_scene_->OnUpdateSimulation(dt, editor_camera_);
       break;
     }
     case SceneState::Play: {
@@ -523,16 +530,50 @@ void EditorLayer::UI_Toolbar() {
 
   HideDockNodeTabBar();
 
+  bool toolbar_enabled = (bool)active_scene_;
+
+  ImVec4 tint_color = ImVec4(1, 1, 1, 1);
+  if (!toolbar_enabled)
+    tint_color.w = 0.5f;
+
   float size = std::min(ImGui::GetContentRegionAvail().y, 32.0f);
-  Ref<Texture2D> icon = scene_state_ == SceneState::Edit ? icon_play_ : icon_stop_;
-  ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (ImGui::GetContentRegionAvail().y - size) * 0.5f);
-  if (ImGui::ImageButton("##play_stop", (ImTextureID)(uint64_t)icon->GetRendererID(),
-                          ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
-    if (scene_state_ == SceneState::Edit)
-      OnScenePlay();
-    else if (scene_state_ == SceneState::Play)
-      OnSceneStop();
+  float y_pos = ImGui::GetCursorPosY() + (ImGui::GetContentRegionAvail().y - size) * 0.5f;
+
+  // Play button
+  {
+    Ref<Texture2D> icon = (scene_state_ == SceneState::Edit || scene_state_ == SceneState::Simulate)
+                              ? icon_play_
+                              : icon_stop_;
+    ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f) - size - 4.0f);
+    ImGui::SetCursorPosY(y_pos);
+    if (ImGui::ImageButton("##play_stop", (ImTextureID)(uint64_t)icon->GetRendererID(),
+                            ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+                            ImVec4(0, 0, 0, 0), tint_color) &&
+        toolbar_enabled) {
+      if (scene_state_ == SceneState::Edit || scene_state_ == SceneState::Simulate)
+        OnScenePlay();
+      else if (scene_state_ == SceneState::Play)
+        OnSceneStop();
+    }
+  }
+
+  ImGui::SameLine();
+
+  // Simulate button
+  {
+    Ref<Texture2D> icon = (scene_state_ == SceneState::Edit || scene_state_ == SceneState::Play)
+                              ? icon_simulate_
+                              : icon_stop_;
+    ImGui::SetCursorPosY(y_pos);
+    if (ImGui::ImageButton("##simulate_stop", (ImTextureID)(uint64_t)icon->GetRendererID(),
+                            ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+                            ImVec4(0, 0, 0, 0), tint_color) &&
+        toolbar_enabled) {
+      if (scene_state_ == SceneState::Edit || scene_state_ == SceneState::Play)
+        OnSceneSimulate();
+      else if (scene_state_ == SceneState::Simulate)
+        OnSceneStop();
+    }
   }
   ImGui::PopStyleVar(3);
   ImGui::PopStyleColor(3);
@@ -540,6 +581,9 @@ void EditorLayer::UI_Toolbar() {
 }
 
 void EditorLayer::OnScenePlay() {
+  if (scene_state_ == SceneState::Simulate)
+    OnSceneStop();
+
   scene_state_ = SceneState::Play;
 
   active_scene_ = Scene::Copy(editor_scene_);
@@ -548,10 +592,29 @@ void EditorLayer::OnScenePlay() {
   scene_hierarachy_panel_.SetContext(active_scene_);
 }
 
+void EditorLayer::OnSceneSimulate() {
+  if (scene_state_ == SceneState::Play)
+    OnSceneStop();
+
+  scene_state_ = SceneState::Simulate;
+
+  active_scene_ = Scene::Copy(editor_scene_);
+  active_scene_->OnSimulationStart();
+
+  scene_hierarachy_panel_.SetContext(active_scene_);
+}
+
 void EditorLayer::OnSceneStop() {
+  CK_ENGINE_ASSERT(scene_state_ == SceneState::Play || scene_state_ == SceneState::Simulate,
+                   "OnSceneStop called in invalid state");
+
+  if (scene_state_ == SceneState::Play)
+    active_scene_->OnRuntimeStop();
+  else if (scene_state_ == SceneState::Simulate)
+    active_scene_->OnSimulationStop();
+
   scene_state_ = SceneState::Edit;
 
-  active_scene_->OnRuntimeStop();
   active_scene_ = editor_scene_;
 
   scene_hierarachy_panel_.SetContext(active_scene_);

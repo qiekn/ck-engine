@@ -50,6 +50,7 @@ private:
   void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
   void OnScenePlay();
+  void OnSceneSimulate();
   void OnSceneStop();
 
   void OnDuplicateEntity();
@@ -89,7 +90,7 @@ private:
 
   bool show_physics_colliders_ = false;
 
-  enum class SceneState { Edit = 0, Play = 1 };
+  enum class SceneState { Edit = 0, Play = 1, Simulate = 2 };
   SceneState scene_state_ = SceneState::Edit;
 
   Entity hovered_entity_;
@@ -104,7 +105,7 @@ private:
   ContentBrowserPanel content_browser_panel_;
 
   // Editor resources
-  Ref<Texture2D> icon_play_, icon_stop_;
+  Ref<Texture2D> icon_play_, icon_simulate_, icon_stop_;
 };
 
 }  // namespace ck

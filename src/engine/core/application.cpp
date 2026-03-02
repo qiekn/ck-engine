@@ -4,6 +4,7 @@
 #include "events/application_event.h"
 #include "events/event.h"
 #include "renderer/renderer.h"
+#include "scripting/script_engine.h"
 
 #include "glad/gl.h"
 
@@ -26,6 +27,7 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
   Renderer::Init();
+  ScriptEngine::Init();
 
   auto imgui_layer = std::make_unique<ImGuiLayer>();
   imgui_layer_ = imgui_layer.get();  // 只要我们不 PopOverlay, imgui_layer_ 就不会悬空
@@ -34,6 +36,7 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
 
 Application::~Application() {
   CK_PROFILE_FUNCTION();
+  ScriptEngine::Shutdown();
 }
 
 void Application::Run() {

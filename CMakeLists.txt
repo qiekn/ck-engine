@@ -7,9 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Clangd Lsp Support for nvim
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# GDB
-set(CMAKE_BUILD_TYPE DEBUG)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -gdwarf-4")
+# Debug symbols
+if(NOT MSVC)
+  set(CMAKE_BUILD_TYPE DEBUG)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -gdwarf-4")
+endif()
 
 # Default to a release build
 if(NOT CMAKE_BUILD_TYPE)
@@ -19,6 +21,37 @@ endif()
 
 # Variables
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
+
+# Mono (C# scripting runtime) — vendored in deps/mono/
+set(MONO_DIR "${CMAKE_SOURCE_DIR}/deps/mono")
+set(MONO_INCLUDE_DIR "${MONO_DIR}/include")
+set(MONO_LIB_DIR "${MONO_DIR}/lib")
+set(MONO_BIN_DIR "${MONO_DIR}/bin")
+
+if(WIN32)
+  if(MSVC)
+    set(MONO_IMPORT_LIB "${MONO_LIB_DIR}/monosgen-2.0.lib")
+  else()
+    set(MONO_IMPORT_LIB "${MONO_LIB_DIR}/libmonosgen-2.0.dll.a")
+  endif()
+  set(MONO_SYSTEM_LIBS ws2_32 winmm version bcrypt)
+
+  # Copy Mono runtime DLL to build directory
+  file(COPY "${MONO_BIN_DIR}/libmonosgen-2.0.dll" DESTINATION "${CMAKE_BINARY_DIR}")
+  if(MSVC)
+    # MSVC multi-config generators put executables in build/<Config>/
+    file(COPY "${MONO_BIN_DIR}/libmonosgen-2.0.dll" DESTINATION "${CMAKE_BINARY_DIR}/Debug")
+    file(COPY "${MONO_BIN_DIR}/libmonosgen-2.0.dll" DESTINATION "${CMAKE_BINARY_DIR}/Release")
+  endif()
+elseif(APPLE)
+  # macOS: use system-installed Mono from Homebrew or Mono framework
+  find_library(MONO_IMPORT_LIB NAMES monosgen-2.0 REQUIRED)
+  set(MONO_SYSTEM_LIBS pthread)
+else()
+  # Linux: use system-installed Mono
+  find_library(MONO_IMPORT_LIB NAMES monosgen-2.0 REQUIRED)
+  set(MONO_SYSTEM_LIBS pthread dl m)
+endif()
 
 #---------------------------------------------------------------------3
 #                              CK Engine                              |
@@ -46,6 +79,10 @@ target_include_directories(ck
   PUBLIC
     "${CMAKE_SOURCE_DIR}/deps/spdlog/include"
     "${CMAKE_SOURCE_DIR}/deps/entt/include"
+
+  # Mono (C# scripting)
+  PUBLIC
+    "${MONO_INCLUDE_DIR}"
 )
 
 # Precompiled Headers
@@ -72,6 +109,8 @@ target_link_libraries(ck PUBLIC
   yaml-cpp
   imguizmo
   box2d
+  ${MONO_IMPORT_LIB}
+  ${MONO_SYSTEM_LIBS}
 )
 
 #---------------------------------------------------------------------3

@@ -18,20 +18,21 @@ protected:
 
 class KeyPressedEvent : public KeyEvent {
 public:
-  KeyPressedEvent(int keycode, int repeat_count) : KeyEvent(keycode), repeat_count_(repeat_count) {}
+  KeyPressedEvent(int keycode, bool is_repeat = false)
+      : KeyEvent(keycode), is_repeat_(is_repeat) {}
 
-  inline int GetRepeatCount() const { return repeat_count_; }
+  bool IsRepeat() const { return is_repeat_; }
 
   std::string ToString() const override {
     std::stringstream ss;
-    ss << "KeyPressEvent: " << keycode_ << "(" << repeat_count_ << " Repeats)";
+    ss << "KeyPressEvent: " << keycode_ << " (repeat = " << is_repeat_ << ")";
     return ss.str();
   }
 
   EVENT_CLASS_TYPE(KeyPressed)
 
 private:
-  int repeat_count_;
+  bool is_repeat_;
 };
 
 class KeyReleasedEvent : public KeyEvent {

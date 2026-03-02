@@ -394,7 +394,7 @@ void EditorLayer::OnEvent(Event& event) {
 
 bool EditorLayer::OnKeyPressed(KeyPressedEvent& e) {
   // Shortcuts
-  if (e.GetRepeatCount() > 0) {
+  if (e.IsRepeat()) {
     return false;
   }
 

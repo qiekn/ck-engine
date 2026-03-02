@@ -9,10 +9,17 @@ namespace ck {
 
 class Editor : public ck::Application {
 public:
-  Editor() { PushLayer(std::make_unique<EditorLayer>()); }
+  explicit Editor(const ApplicationSpecification& spec) : Application(spec) {
+    PushLayer(std::make_unique<EditorLayer>());
+  }
 
   ~Editor() {}
 };
 }  // namespace ck
 
-MAKE_APPLICATION(Editor)
+ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) {
+  ck::ApplicationSpecification spec;
+  spec.name = "CK Editor";
+  spec.command_line_args = args;
+  return new ck::Editor(spec);
+}

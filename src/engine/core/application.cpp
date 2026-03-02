@@ -1,24 +1,28 @@
 #include "application.h"
-
-#include <memory>
-
 #include "core/deltatime.h"
 #include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
-#include "glad/gl.h"
-#include "imgui/imgui_layer.h"
 #include "renderer/renderer.h"
+
+#include "glad/gl.h"
+
+#include <filesystem>
+#include <memory>
 
 namespace ck {
 
 Application* Application::instance_ = nullptr;
 
-Application::Application(const std::string& name) {
+Application::Application(const ApplicationSpecification& spec) : specification_(spec) {
   CK_PROFILE_FUNCTION();
   CK_ENGINE_ASSERT(Application::instance_ == nullptr, "application already exists");
   instance_ = this;
-  window_ = Window::Create(WindowProps(name));
+
+  if (!specification_.working_directory.empty())
+    std::filesystem::current_path(specification_.working_directory);
+
+  window_ = Window::Create(WindowProps(specification_.name));
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
   Renderer::Init();

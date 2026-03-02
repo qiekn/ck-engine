@@ -8,13 +8,25 @@
 #include "deltatime.h"
 #include "events/application_event.h"
 #include "imgui/imgui_layer.h"
-#include "layer_stack.h"
-#include "window.h"
 
 namespace ck {
+
+struct ApplicationCommandLineArgs {
+  int count = 0;
+  char** args = nullptr;
+
+  const char* operator[](int index) const { return args[index]; }
+};
+
+struct ApplicationSpecification {
+  std::string name = "CK Engine";
+  std::string working_directory;
+  ApplicationCommandLineArgs command_line_args;
+};
+
 class Application {
 public:
-  explicit Application(const std::string& name = "QIEKN ENGINE");
+  explicit Application(const ApplicationSpecification& spec);
   virtual ~Application();
 
   void Run();
@@ -31,11 +43,14 @@ public:
 
   inline static Application& Get() { return *instance_; }
 
+  const ApplicationSpecification& GetSpecification() const { return specification_; }
+
 private:
   bool OnWindowCloseEvent(WindowCloseEvent& e);
   bool OnWindowResizeEvent(WindowResizeEvent& e);
 
 private:
+  ApplicationSpecification specification_;
   bool running_ = true;
   bool minimized_ = false;
   Scope<Window> window_;
@@ -49,10 +64,10 @@ private:
 };
 
 // To be defined in CLIENT
-extern Application* CreateApplication();
+extern Application* CreateApplication(ApplicationCommandLineArgs args);
 }  // namespace ck
 
-#define MAKE_APPLICATION(ClassName)          \
-  ck::Application* ck::CreateApplication() { \
-    return new ClassName();                  \
+#define MAKE_APPLICATION(ClassName)                                        \
+  ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) { \
+    return new ClassName(args);                                            \
   }

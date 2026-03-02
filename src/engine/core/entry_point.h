@@ -8,7 +8,7 @@ int main(int argc, char** argv) {  // NOLINT (clang-diagnostic-odr)
   ck::Log::Init();
 
   CK_PROFILE_BEGIN_SESSION("Startup", "CkProfile-Startup.json");
-  auto app = ck::CreateApplication();
+  auto app = ck::CreateApplication({argc, argv});
   CK_PROFILE_END_SESSION();
 
   CK_PROFILE_BEGIN_SESSION("Runtime", "CkProfile-Runtime.json");

@@ -87,6 +87,10 @@ void main() {
     case 30: tex_color *= texture(u_textures[30], Input.tex_coord * Input.tiling_factor); break;
     case 31: tex_color *= texture(u_textures[31], Input.tex_coord * Input.tiling_factor); break;
   }
+
+  if (tex_color.a == 0.0)
+    discard;
+
   o_color = tex_color;
   o_entity_id = v_entity_id;
 }

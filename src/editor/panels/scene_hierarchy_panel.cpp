@@ -233,42 +233,12 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
   }
 
   if (ImGui::BeginPopup("AddComponent")) {
-    if (!selection_context_.HasComponent<CameraComponent>()) {
-      if (ImGui::MenuItem("Camera")) {
-        selection_context_.AddComponent<CameraComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
-    if (!selection_context_.HasComponent<SpriteRendererComponent>()) {
-      if (ImGui::MenuItem("Sprite Renderer")) {
-        selection_context_.AddComponent<SpriteRendererComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
-    if (!selection_context_.HasComponent<CircleRendererComponent>()) {
-      if (ImGui::MenuItem("Circle Renderer")) {
-        selection_context_.AddComponent<CircleRendererComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
-    if (!selection_context_.HasComponent<Rigidbody2DComponent>()) {
-      if (ImGui::MenuItem("Rigidbody 2D")) {
-        selection_context_.AddComponent<Rigidbody2DComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
-    if (!selection_context_.HasComponent<BoxCollider2DComponent>()) {
-      if (ImGui::MenuItem("Box Collider 2D")) {
-        selection_context_.AddComponent<BoxCollider2DComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
-    if (!selection_context_.HasComponent<CircleCollider2DComponent>()) {
-      if (ImGui::MenuItem("Circle Collider 2D")) {
-        selection_context_.AddComponent<CircleCollider2DComponent>();
-        ImGui::CloseCurrentPopup();
-      }
-    }
+    DisplayAddComponentEntry<CameraComponent>("Camera");
+    DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
+    DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
+    DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
+    DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
+    DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 
     ImGui::EndPopup();
   }
@@ -408,4 +378,15 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
     ImGui::DragFloat("Restitution Threshold", &component.restitution_threshold, 0.01f, 0.0f);
   });
 }
+
+template <typename T>
+void SceneHierarchyPanel::DisplayAddComponentEntry(const std::string& entry_name) {
+  if (!selection_context_.HasComponent<T>()) {
+    if (ImGui::MenuItem(entry_name.c_str())) {
+      selection_context_.AddComponent<T>();
+      ImGui::CloseCurrentPopup();
+    }
+  }
+}
+
 }  // namespace ck

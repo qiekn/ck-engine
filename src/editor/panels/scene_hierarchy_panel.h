@@ -18,6 +18,9 @@ public:
   void SetSelectedEntity(Entity entity);
 
 private:
+  template <typename T>
+  void DisplayAddComponentEntry(const std::string& entry_name);
+
   void DrawEntityNode(const Entity& entity);
   void DrawComponents(Entity& entity);
 

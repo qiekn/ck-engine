@@ -62,50 +62,8 @@ void EditorLayer::OnAttach() {
   active_scene_ = editor_scene_;
 
   editor_camera_ = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+  Renderer2D::SetLineWidth(4.0f);
 
-#if 0
-  auto square = active_scene_->CreateEntity("Green Square");
-  square.AddComponent<SpriteRendererComponent>(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-  square_entity_ = square;
-
-  auto red_square = active_scene_->CreateEntity("Red Square");
-  red_square.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
-
-  main_camera_ = active_scene_->CreateEntity("Camera A");
-  main_camera_.AddComponent<CameraComponent>();
-
-  second_camera_ = active_scene_->CreateEntity("Camera B");
-  auto& cc = second_camera_.AddComponent<CameraComponent>();
-  cc.is_primary = false;
-
-  // Native Script
-  class CameraController : public ScriptableEntity {
-    void OnCreate() {}
-
-    void OnDestroy() {}
-
-    void OnUpdate(DeltaTime dt) {
-      auto& position = GetComponent<TransformComponent>().position;
-      float speed = 5.0f;
-
-      if (Input::IsKeyPressed(KeyCode::A)) {
-        position.x -= speed * dt;
-      }
-      if (Input::IsKeyPressed(KeyCode::D)) {
-        position.x += speed * dt;
-      }
-      if (Input::IsKeyPressed(KeyCode::W)) {
-        position.y += speed * dt;
-      }
-      if (Input::IsKeyPressed(KeyCode::S)) {
-        position.y -= speed * dt;
-      }
-    }
-  };
-
-  main_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-  second_camera_.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-#endif
   scene_hierarachy_panel_.SetContext(editor_scene_);
 }
 

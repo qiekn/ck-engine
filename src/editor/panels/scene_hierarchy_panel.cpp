@@ -1,18 +1,20 @@
 #include "scene_hierarchy_panel.h"
-#include <sec_api/string_s.h>
-#include <cstdint>
-#include <cstring>
-#include <filesystem>
-#include <string>
+#include "renderer/texture.h"
+#include "scene/components.h"
+#include "scene/entity.h"
+#include "scene/scene.h"
+
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/trigonometric.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "renderer/texture.h"
-#include "scene/components.h"
-#include "scene/entity.h"
-#include "scene/scene.h"
+
+#include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <sec_api/string_s.h>
+#include <string>
 
 namespace ck {
 

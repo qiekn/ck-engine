@@ -1,14 +1,16 @@
 #include "scene.h"
-#include <algorithm>
-#include <vector>
-#include "box2d/box2d.h"
-#include "box2d/math_functions.h"
-#include "glm/ext/matrix_float4x4.hpp"
-#include "renderer/camera.h"
-#include "renderer/renderer_2d.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scriptable_entity.h"
+#include "renderer/camera.h"
+#include "renderer/renderer_2d.h"
+
+#include "box2d/box2d.h"
+#include "box2d/math_functions.h"
+#include "glm/ext/matrix_float4x4.hpp"
+
+#include <algorithm>
+#include <vector>
 
 namespace ck {
 // ----------------------------------------------------------------------------: Static Func

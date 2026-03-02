@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include "core/core.h"
+
+#include <string>
 
 namespace ck {
 class Texture {

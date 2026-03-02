@@ -1,6 +1,4 @@
 #include "windows_window.h"
-
-#include "GLFW/glfw3.h"
 #include "core/log.h"
 #include "core/window.h"
 #include "debug/profiler.h"
@@ -8,6 +6,8 @@
 #include "events/key_event.h"
 #include "events/mouse_event.h"
 #include "platform/opengl/opengl_context.h"
+
+#include "GLFW/glfw3.h"
 
 namespace ck {
 static bool is_glfw_initialized = false;

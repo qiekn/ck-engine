@@ -2,6 +2,7 @@
 
 #include "events/key_codes.h"
 #include "events/mouse_codes.h"
+
 #include "glm/ext/vector_float2.hpp"
 
 namespace ck {

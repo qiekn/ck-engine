@@ -1,11 +1,12 @@
-#include <string>
 #include "core/application.h"
 #include "utils/platform_utils.h"
 
 #include <GLFW/glfw3.h>
-#include <commdlg.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+#include <commdlg.h>
+
+#include <string>
 
 namespace ck {
 std::string FileDialogs::OpenFile(const char* filter) {

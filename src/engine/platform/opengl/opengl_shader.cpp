@@ -1,4 +1,8 @@
 #include "opengl_shader.h"
+#include "core/log.h"
+
+#include "glad/gl.h"
+#include "glm/gtc/type_ptr.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -6,10 +10,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "core/log.h"
-#include "glad/gl.h"
-#include "glm/gtc/type_ptr.hpp"
 
 namespace ck {
 

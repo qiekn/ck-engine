@@ -1,6 +1,4 @@
 #include "editor_layer.h"
-#include <algorithm>
-#include <string>
 #include "core/application.h"
 #include "core/core.h"
 #include "core/deltatime.h"
@@ -11,12 +9,6 @@
 #include "events/key_codes.h"
 #include "events/key_event.h"
 #include "events/mouse_codes.h"
-#include "glm/ext/matrix_float4x4.hpp"
-#include "glm/ext/matrix_transform.hpp"
-#include "glm/ext/vector_float2.hpp"
-#include "glm/fwd.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "imgui.h"
 #include "math/math.h"
 #include "renderer/editor_camera.h"
 #include "renderer/frame_buffer.h"
@@ -30,8 +22,17 @@
 #include "scene/scene_serializer.h"
 #include "utils/platform_utils.h"
 
-#include "imgui_internal.h"
 #include "ImGuizmo.h"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float2.hpp"
+#include "glm/fwd.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "imgui.h"
+#include "imgui_internal.h"
+
+#include <algorithm>
+#include <string>
 
 namespace ck {
 

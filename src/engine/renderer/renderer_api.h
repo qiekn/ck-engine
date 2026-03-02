@@ -1,10 +1,11 @@
 #pragma once
 
-#include <cstdint>
-
 #include "core/core.h"
-#include "glm/fwd.hpp"
 #include "renderer/vertex_array.h"
+
+#include "glm/fwd.hpp"
+
+#include <cstdint>
 namespace ck {
 
 class RendererAPI {

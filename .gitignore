@@ -3,6 +3,7 @@ build/
 
 .clangd
 /refs/
+/docs/
 
 # use at ui.perfetto.dev for visual profiling
 CkProfile-*.json

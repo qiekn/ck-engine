@@ -13,6 +13,8 @@ public:
   virtual uint32_t Height() const = 0;
   virtual uint32_t GetRendererID() const = 0;
 
+  virtual const std::string& GetPath() const = 0;
+
   virtual void SetData(void* data, size_t size) const = 0;
 
   virtual void Bind(uint32_t slot = 0) const = 0;

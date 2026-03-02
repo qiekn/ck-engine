@@ -170,6 +170,10 @@ static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
 
     auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
     out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.color;
+    if (spriteRendererComponent.texture)
+      out << YAML::Key << "TexturePath" << YAML::Value
+          << spriteRendererComponent.texture->GetPath();
+    out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.tiling_factor;
 
     out << YAML::EndMap;
   }
@@ -319,6 +323,10 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
       if (sprite_renderer_comp) {
         auto& src = deserialized_entity.AddComponent<SpriteRendererComponent>();
         src.color = sprite_renderer_comp["Color"].as<glm::vec4>();
+        if (sprite_renderer_comp["TexturePath"])
+          src.texture = Texture2D::Create(sprite_renderer_comp["TexturePath"].as<std::string>());
+        if (sprite_renderer_comp["TilingFactor"])
+          src.tiling_factor = sprite_renderer_comp["TilingFactor"].as<float>();
       }
 
       auto circle_renderer_comp = entity["CircleRendererComponent"];

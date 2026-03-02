@@ -16,6 +16,8 @@ public:
   uint32_t Height() const override { return height_; };
   uint32_t GetRendererID() const override { return renderer_id_; };
 
+  const std::string& GetPath() const override { return path_; }
+
   void SetData(void* data, size_t size) const override;
 
   void Bind(uint32_t slot = 0) const override;

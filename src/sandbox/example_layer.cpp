@@ -158,23 +158,23 @@ void ExampleLayer::OnUpdate(ck::DeltaTime dt) {
     for (int x = 0; x < 20; x++) {
       auto position = glm::vec3(x * 0.11f, y * 0.11f, 0.0f);
       auto transform = glm::translate(glm::mat4(1.0f), position) * scale;
-      ck::Renderer::Submit(flat_color_shader_.get(), square_va_.get(), transform);
+      ck::Renderer::Submit(flat_color_shader_, square_va_, transform);
     }
   }
 
   auto texture_shader = shader_library_.Get("texture");
   cat_texture_->Bind();
-  ck::Renderer::Submit(texture_shader.get(), square_va_.get(),
+  ck::Renderer::Submit(texture_shader, square_va_,
                        glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
                            glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
   apple_texture_->Bind();
-  ck::Renderer::Submit(texture_shader.get(), square_va_.get(),
+  ck::Renderer::Submit(texture_shader, square_va_,
                        glm::translate(glm::mat4(1.0f), glm::vec3(-0.8f, 0.0f, 0.0f)) *
                            glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
   // Triangle
-  // ck::Renderer::Submit(shader_.get(), vertex_array_.get());
+  // ck::Renderer::Submit(shader_, vertex_array_);
 
   ck::Renderer::EndScene();
 }

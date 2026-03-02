@@ -19,9 +19,15 @@ public:
 
   inline static void Clear() { renderer_api_->Clear(); }
 
-  inline static void DrawIndexed(const VertexArray* vertex_array, uint32_t count = 0) {
-    renderer_api_->DrawIndexed(vertex_array, count);
+  inline static void DrawIndexed(const Ref<VertexArray>& vertex_array, uint32_t index_count = 0) {
+    renderer_api_->DrawIndexed(vertex_array, index_count);
   }
+
+  inline static void DrawLines(const Ref<VertexArray>& vertex_array, uint32_t vertex_count) {
+    renderer_api_->DrawLines(vertex_array, vertex_count);
+  }
+
+  inline static void SetLineWidth(float width) { renderer_api_->SetLineWidth(width); }
 
 private:
   static RendererAPI* renderer_api_;

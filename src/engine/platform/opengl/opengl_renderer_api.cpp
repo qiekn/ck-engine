@@ -14,6 +14,7 @@ void OpenGLRendererAPI::Init() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_LINE_SMOOTH);
 }
 
 void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
@@ -27,10 +28,19 @@ void OpenGLRendererAPI::SetClearColor(const glm::vec4& color) {
   glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void OpenGLRendererAPI::DrawIndexed(const VertexArray* vertex_array, uint32_t index_count) {
+void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertex_array, uint32_t index_count) {
   vertex_array->Bind();
   uint32_t count = index_count ? index_count : vertex_array->GetIndexBuffer()->Count();
   glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+}
+
+void OpenGLRendererAPI::DrawLines(const Ref<VertexArray>& vertex_array, uint32_t vertex_count) {
+  vertex_array->Bind();
+  glDrawArrays(GL_LINES, 0, vertex_count);
+}
+
+void OpenGLRendererAPI::SetLineWidth(float width) {
+  glLineWidth(width);
 }
 
 }  // namespace ck

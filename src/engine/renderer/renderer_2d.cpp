@@ -46,6 +46,14 @@ struct CircleVertex {
   int entity_id;
 };
 
+struct LineVertex {
+  glm::vec3 position;
+  glm::vec4 color;
+
+  // Editor-only
+  int entity_id;
+};
+
 struct Renderer2DData {
   static const uint32_t kMaxQuads = 20000;
   static const uint32_t kMaxVertices = kMaxQuads * 4;
@@ -61,6 +69,10 @@ struct Renderer2DData {
   Ref<VertexBuffer> circle_vertex_buffer;
   Ref<Shader> circle_shader;
 
+  Ref<VertexArray> line_vertex_array;
+  Ref<VertexBuffer> line_vertex_buffer;
+  Ref<Shader> line_shader;
+
   uint32_t quad_index_count = 0;
   QuadVertex* quad_vertex_buffer_base = nullptr;
   QuadVertex* quad_vertex_buffer_ptr = nullptr;
@@ -68,6 +80,12 @@ struct Renderer2DData {
   uint32_t circle_index_count = 0;
   CircleVertex* circle_vertex_buffer_base = nullptr;
   CircleVertex* circle_vertex_buffer_ptr = nullptr;
+
+  uint32_t line_vertex_count = 0;
+  LineVertex* line_vertex_buffer_base = nullptr;
+  LineVertex* line_vertex_buffer_ptr = nullptr;
+
+  float line_width = 2.0f;
 
   std::array<Ref<Texture2D>, kMaxTextureSlots> texture_slots;
   uint32_t texture_slot_index = 1;  // 0 = white texture
@@ -136,6 +154,18 @@ void Renderer2D::Init() {
   s_data.circle_vertex_array->SetIndexBuffer(quad_index_buffer);  // Use quad IB
   s_data.circle_vertex_buffer_base = new CircleVertex[s_data.kMaxVertices];
 
+  // Lines
+  s_data.line_vertex_array = VertexArray::Create();
+
+  s_data.line_vertex_buffer = VertexBuffer::Create(s_data.kMaxVertices * sizeof(LineVertex));
+  s_data.line_vertex_buffer->SetLayout({
+      {ShaderDataType::kFloat3, "a_position"},
+      {ShaderDataType::kFloat4, "a_color"},
+      {ShaderDataType::kInt, "a_entity_id"},
+  });
+  s_data.line_vertex_array->AddVertexBuffer(s_data.line_vertex_buffer);
+  s_data.line_vertex_buffer_base = new LineVertex[s_data.kMaxVertices];
+
   // White Texture
   s_data.white_texture = Texture2D::Create(1, 1);
   uint32_t white_texture_data = 0xffffffff;
@@ -148,6 +178,7 @@ void Renderer2D::Init() {
 
   s_data.quad_shader = Shader::Create("assets/shaders/renderer_2d_quad.glsl");
   s_data.circle_shader = Shader::Create("assets/shaders/renderer_2d_circle.glsl");
+  s_data.line_shader = Shader::Create("assets/shaders/renderer_2d_line.glsl");
 
   // Initialize Texture Slots
   for (uint32_t i = 0; i < s_data.kMaxTextureSlots; i++) {
@@ -168,6 +199,7 @@ void Renderer2D::Shutdown() {
   CK_PROFILE_FUNCTION();
   delete[] s_data.quad_vertex_buffer_base;
   delete[] s_data.circle_vertex_buffer_base;
+  delete[] s_data.line_vertex_buffer_base;
 }
 
 void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform) {
@@ -218,7 +250,7 @@ void Renderer2D::Flush() {
     }
 
     s_data.quad_shader->Bind();
-    RenderCommand::DrawIndexed(s_data.quad_vertex_array.get(), s_data.quad_index_count);
+    RenderCommand::DrawIndexed(s_data.quad_vertex_array, s_data.quad_index_count);
     s_data.stats.draw_calls++;
   }
 
@@ -228,7 +260,18 @@ void Renderer2D::Flush() {
     s_data.circle_vertex_buffer->SetData(s_data.circle_vertex_buffer_base, data_size);
 
     s_data.circle_shader->Bind();
-    RenderCommand::DrawIndexed(s_data.circle_vertex_array.get(), s_data.circle_index_count);
+    RenderCommand::DrawIndexed(s_data.circle_vertex_array, s_data.circle_index_count);
+    s_data.stats.draw_calls++;
+  }
+
+  if (s_data.line_vertex_count) {
+    uint32_t data_size =
+        (uint8_t*)s_data.line_vertex_buffer_ptr - (uint8_t*)s_data.line_vertex_buffer_base;
+    s_data.line_vertex_buffer->SetData(s_data.line_vertex_buffer_base, data_size);
+
+    s_data.line_shader->Bind();
+    RenderCommand::SetLineWidth(s_data.line_width);
+    RenderCommand::DrawLines(s_data.line_vertex_array, s_data.line_vertex_count);
     s_data.stats.draw_calls++;
   }
 }
@@ -407,6 +450,45 @@ void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, 
   s_data.stats.quad_count++;
 }
 
+void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color,
+                           int entity_id) {
+  s_data.line_vertex_buffer_ptr->position = p0;
+  s_data.line_vertex_buffer_ptr->color = color;
+  s_data.line_vertex_buffer_ptr->entity_id = entity_id;
+  s_data.line_vertex_buffer_ptr++;
+
+  s_data.line_vertex_buffer_ptr->position = p1;
+  s_data.line_vertex_buffer_ptr->color = color;
+  s_data.line_vertex_buffer_ptr->entity_id = entity_id;
+  s_data.line_vertex_buffer_ptr++;
+
+  s_data.line_vertex_count += 2;
+}
+
+void Renderer2D::DrawRect(const glm::vec3& position, const glm::vec2& size,
+                           const glm::vec4& color, int entity_id) {
+  glm::vec3 p0 = glm::vec3(position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+  glm::vec3 p1 = glm::vec3(position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+  glm::vec3 p2 = glm::vec3(position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z);
+  glm::vec3 p3 = glm::vec3(position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z);
+
+  DrawLine(p0, p1, color, entity_id);
+  DrawLine(p1, p2, color, entity_id);
+  DrawLine(p2, p3, color, entity_id);
+  DrawLine(p3, p0, color, entity_id);
+}
+
+void Renderer2D::DrawRect(const glm::mat4& transform, const glm::vec4& color, int entity_id) {
+  glm::vec3 line_vertices[4];
+  for (size_t i = 0; i < 4; i++)
+    line_vertices[i] = transform * s_data.quad_vertex_position[i];
+
+  DrawLine(line_vertices[0], line_vertices[1], color, entity_id);
+  DrawLine(line_vertices[1], line_vertices[2], color, entity_id);
+  DrawLine(line_vertices[2], line_vertices[3], color, entity_id);
+  DrawLine(line_vertices[3], line_vertices[0], color, entity_id);
+}
+
 // ----------------------------------------------------------------------------: Stats
 
 void Renderer2D::ResetStats() {
@@ -417,12 +499,23 @@ Renderer2D::Statistics Renderer2D::GetStats() {
   return s_data.stats;
 }
 
+float Renderer2D::GetLineWidth() {
+  return s_data.line_width;
+}
+
+void Renderer2D::SetLineWidth(float width) {
+  s_data.line_width = width;
+}
+
 void Renderer2D::StartBatch() {
   s_data.quad_index_count = 0;
   s_data.quad_vertex_buffer_ptr = s_data.quad_vertex_buffer_base;
 
   s_data.circle_index_count = 0;
   s_data.circle_vertex_buffer_ptr = s_data.circle_vertex_buffer_base;
+
+  s_data.line_vertex_count = 0;
+  s_data.line_vertex_buffer_ptr = s_data.line_vertex_buffer_base;
 
   s_data.texture_slot_index = 1;
 }

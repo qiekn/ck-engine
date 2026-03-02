@@ -385,7 +385,9 @@ void EditorLayer::OnImGuiRender() {
 
 void EditorLayer::OnEvent(Event& event) {
   camera_controller_.OnEvent(event);
-  editor_camera_.OnEvent(event);
+  if (scene_state_ == SceneState::Edit || scene_state_ == SceneState::Simulate) {
+    editor_camera_.OnEvent(event);
+  }
 
   EventDispatcher dispatcher(event);
   dispatcher.DispatchEvent<KeyPressedEvent>(CK_BIND_EVENT(EditorLayer::OnKeyPressed));

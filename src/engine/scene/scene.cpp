@@ -36,24 +36,39 @@ Scene::~Scene() {
     b2DestroyWorld(physics_world_);
 }
 
-template <typename Component>
+template <typename... Component>
 static void CopyComponent(entt::registry& dst, entt::registry& src,
                            const std::unordered_map<UUID, entt::entity>& entt_map) {
-  auto view = src.view<Component>();
-  for (auto e : view) {
-    UUID uuid = src.get<IDComponent>(e).id;
-    CK_ENGINE_ASSERT(entt_map.find(uuid) != entt_map.end(), "UUID not found in entt map");
-    entt::entity dst_entt_id = entt_map.at(uuid);
+  ([&]() {
+    auto view = src.view<Component>();
+    for (auto src_entity : view) {
+      entt::entity dst_entity = entt_map.at(src.get<IDComponent>(src_entity).id);
 
-    auto& component = src.get<Component>(e);
-    dst.emplace_or_replace<Component>(dst_entt_id, component);
-  }
+      auto& src_component = src.get<Component>(src_entity);
+      dst.emplace_or_replace<Component>(dst_entity, src_component);
+    }
+  }(),
+   ...);
 }
 
-template <typename Component>
+template <typename... Component>
+static void CopyComponent(ComponentGroup<Component...>, entt::registry& dst, entt::registry& src,
+                           const std::unordered_map<UUID, entt::entity>& entt_map) {
+  CopyComponent<Component...>(dst, src, entt_map);
+}
+
+template <typename... Component>
 static void CopyComponentIfExists(Entity dst, Entity src) {
-  if (src.HasComponent<Component>())
-    dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+  ([&]() {
+    if (src.HasComponent<Component>())
+      dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+  }(),
+   ...);
+}
+
+template <typename... Component>
+static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src) {
+  CopyComponentIfExists<Component...>(dst, src);
 }
 
 Ref<Scene> Scene::Copy(Ref<Scene> other) {
@@ -78,14 +93,7 @@ Ref<Scene> Scene::Copy(Ref<Scene> other) {
   }
 
   // Copy components (except IDComponent and TagComponent)
-  CopyComponent<TransformComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<SpriteRendererComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<CircleRendererComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<CameraComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<NativeScriptComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<Rigidbody2DComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<BoxCollider2DComponent>(dst_registry, src_registry, entt_map);
-  CopyComponent<CircleCollider2DComponent>(dst_registry, src_registry, entt_map);
+  CopyComponent(AllComponents{}, dst_registry, src_registry, entt_map);
 
   return new_scene;
 }
@@ -247,17 +255,8 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height) {
 }
 
 void Scene::DuplicateEntity(Entity entity) {
-  std::string name = entity.GetName();
-  Entity new_entity = CreateEntity(name);
-
-  CopyComponentIfExists<TransformComponent>(new_entity, entity);
-  CopyComponentIfExists<SpriteRendererComponent>(new_entity, entity);
-  CopyComponentIfExists<CircleRendererComponent>(new_entity, entity);
-  CopyComponentIfExists<CameraComponent>(new_entity, entity);
-  CopyComponentIfExists<NativeScriptComponent>(new_entity, entity);
-  CopyComponentIfExists<Rigidbody2DComponent>(new_entity, entity);
-  CopyComponentIfExists<BoxCollider2DComponent>(new_entity, entity);
-  CopyComponentIfExists<CircleCollider2DComponent>(new_entity, entity);
+  Entity new_entity = CreateEntity(entity.GetName());
+  CopyComponentIfExists(AllComponents{}, new_entity, entity);
 }
 
 Entity Scene::GetPrimaryCameraEntity() {

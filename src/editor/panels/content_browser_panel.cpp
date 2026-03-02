@@ -33,8 +33,7 @@ void ContentBrowserPanel::OnImGuiRender() {
 
   for (auto& directory_entry : std::filesystem::directory_iterator(current_directory_)) {
     const auto& path = directory_entry.path();
-    auto relative_path = std::filesystem::relative(path, g_asset_path);
-    std::string filename_string = relative_path.filename().string();
+    std::string filename_string = path.filename().string();
 
     ImGui::PushID(filename_string.c_str());
     Ref<Texture2D> icon = directory_entry.is_directory() ? directory_icon_ : file_icon_;
@@ -43,6 +42,7 @@ void ContentBrowserPanel::OnImGuiRender() {
                        {thumbnail_size, thumbnail_size}, {0, 1}, {1, 0});
 
     if (ImGui::BeginDragDropSource()) {
+      auto relative_path = std::filesystem::relative(path, g_asset_path);
       auto item_path = relative_path.string();
       ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", item_path.c_str(),
                                 item_path.size() + 1);

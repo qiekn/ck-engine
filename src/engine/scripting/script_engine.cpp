@@ -77,6 +77,12 @@ struct ScriptEngineData {
   MonoImage* core_assembly_image = nullptr;
 
   ScriptClass entity_class;
+
+  std::unordered_map<std::string, Ref<ScriptClass>> entity_classes;
+  std::unordered_map<UUID, Ref<ScriptInstance>> entity_instances;
+
+  // Runtime
+  Scene* scene_context = nullptr;
 };
 
 static ScriptEngineData* s_data = nullptr;
@@ -86,33 +92,13 @@ void ScriptEngine::Init() {
 
   InitMono();
   LoadAssembly("assets/scripts/CK-ScriptCore.dll");
+  LoadAssemblyClasses(s_data->core_assembly);
 
+  ScriptGlue::RegisterComponents();
   ScriptGlue::RegisterFunctions();
 
   // Retrieve and instantiate class
   s_data->entity_class = ScriptClass("CK", "Entity");
-
-  MonoObject* instance = s_data->entity_class.Instantiate();
-
-  // Call method
-  MonoMethod* print_message_func = s_data->entity_class.GetMethod("PrintMessage", 0);
-  s_data->entity_class.InvokeMethod(instance, print_message_func);
-
-  // Call method with param
-  MonoMethod* print_int_func = s_data->entity_class.GetMethod("PrintInt", 1);
-  int value = 5;
-  void* param = &value;
-  s_data->entity_class.InvokeMethod(instance, print_int_func, &param);
-
-  MonoMethod* print_ints_func = s_data->entity_class.GetMethod("PrintInts", 2);
-  int value2 = 508;
-  void* params[2] = {&value, &value2};
-  s_data->entity_class.InvokeMethod(instance, print_ints_func, params);
-
-  MonoString* mono_string = mono_string_new(s_data->app_domain, "Hello World from C++!");
-  MonoMethod* print_custom_message_func = s_data->entity_class.GetMethod("PrintCustomMessage", 1);
-  void* string_param = mono_string;
-  s_data->entity_class.InvokeMethod(instance, print_custom_message_func, &string_param);
 }
 
 void ScriptEngine::Shutdown() {
@@ -145,7 +131,79 @@ void ScriptEngine::LoadAssembly(const std::filesystem::path& filepath) {
 
   s_data->core_assembly = utils::LoadMonoAssembly(filepath);
   s_data->core_assembly_image = mono_assembly_get_image(s_data->core_assembly);
-  // utils::PrintAssemblyTypes(s_data->core_assembly);
+}
+
+void ScriptEngine::OnRuntimeStart(Scene* scene) {
+  s_data->scene_context = scene;
+}
+
+bool ScriptEngine::EntityClassExists(const std::string& full_class_name) {
+  return s_data->entity_classes.find(full_class_name) != s_data->entity_classes.end();
+}
+
+void ScriptEngine::OnCreateEntity(Entity entity) {
+  const auto& sc = entity.GetComponent<ScriptComponent>();
+  if (ScriptEngine::EntityClassExists(sc.class_name)) {
+    Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_data->entity_classes[sc.class_name], entity);
+    s_data->entity_instances[entity.GetUUID()] = instance;
+    instance->InvokeOnCreate();
+  }
+}
+
+void ScriptEngine::OnUpdateEntity(Entity entity, DeltaTime ts) {
+  UUID entity_uuid = entity.GetUUID();
+  CK_ENGINE_ASSERT(s_data->entity_instances.find(entity_uuid) != s_data->entity_instances.end(), "ScriptInstance not found for entity");
+
+  Ref<ScriptInstance> instance = s_data->entity_instances[entity_uuid];
+  instance->InvokeOnUpdate((float)ts);
+}
+
+Scene* ScriptEngine::GetSceneContext() {
+  return s_data->scene_context;
+}
+
+void ScriptEngine::OnRuntimeStop() {
+  s_data->scene_context = nullptr;
+  s_data->entity_instances.clear();
+}
+
+std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses() {
+  return s_data->entity_classes;
+}
+
+void ScriptEngine::LoadAssemblyClasses(MonoAssembly* assembly) {
+  s_data->entity_classes.clear();
+
+  MonoImage* image = mono_assembly_get_image(assembly);
+  const MonoTableInfo* type_def_table = mono_image_get_table_info(image, MONO_TABLE_TYPEDEF);
+  int32_t num_types = mono_table_info_get_rows(type_def_table);
+  MonoClass* entity_class = mono_class_from_name(image, "CK", "Entity");
+
+  for (int32_t i = 0; i < num_types; i++) {
+    uint32_t cols[MONO_TYPEDEF_SIZE];
+    mono_metadata_decode_row(type_def_table, i, cols, MONO_TYPEDEF_SIZE);
+
+    const char* name_space = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAMESPACE]);
+    const char* name = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAME]);
+    std::string full_name;
+    if (strlen(name_space) != 0)
+      full_name = fmt::format("{}.{}", name_space, name);
+    else
+      full_name = name;
+
+    MonoClass* mono_class = mono_class_from_name(image, name_space, name);
+
+    if (mono_class == entity_class)
+      continue;
+
+    bool is_entity = mono_class_is_subclass_of(mono_class, entity_class, false);
+    if (is_entity)
+      s_data->entity_classes[full_name] = CreateRef<ScriptClass>(name_space, name);
+  }
+}
+
+MonoImage* ScriptEngine::GetCoreAssemblyImage() {
+  return s_data->core_assembly_image;
 }
 
 MonoObject* ScriptEngine::InstantiateClass(MonoClass* mono_class) {
@@ -171,6 +229,36 @@ MonoMethod* ScriptClass::GetMethod(const std::string& name, int parameter_count)
 
 MonoObject* ScriptClass::InvokeMethod(MonoObject* instance, MonoMethod* method, void** params) {
   return mono_runtime_invoke(method, instance, params, nullptr);
+}
+
+// --- ScriptInstance ---
+
+ScriptInstance::ScriptInstance(Ref<ScriptClass> script_class, Entity entity)
+    : script_class_(script_class) {
+  instance_ = script_class_->Instantiate();
+
+  constructor_ = s_data->entity_class.GetMethod(".ctor", 1);
+  on_create_method_ = script_class_->GetMethod("OnCreate", 0);
+  on_update_method_ = script_class_->GetMethod("OnUpdate", 1);
+
+  // Call Entity constructor with UUID
+  {
+    UUID entity_id = entity.GetUUID();
+    void* param = &entity_id;
+    script_class_->InvokeMethod(instance_, constructor_, &param);
+  }
+}
+
+void ScriptInstance::InvokeOnCreate() {
+  if (on_create_method_)
+    script_class_->InvokeMethod(instance_, on_create_method_);
+}
+
+void ScriptInstance::InvokeOnUpdate(float ts) {
+  if (on_update_method_) {
+    void* param = &ts;
+    script_class_->InvokeMethod(instance_, on_update_method_, &param);
+  }
 }
 
 }  // namespace ck

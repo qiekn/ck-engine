@@ -1,76 +1,64 @@
 using System;
-using System.Runtime.CompilerServices;
+using CK;
 
-namespace CK
+namespace Sandbox
 {
-    public struct Vector3
+    public class Player : Entity
     {
-        public float X, Y, Z;
+        private TransformComponent m_Transform;
+        private Rigidbody2DComponent m_Rigidbody;
 
-        public Vector3(float x, float y, float z)
+        void OnCreate()
         {
-            X = x;
-            Y = y;
-            Z = z;
+            Console.WriteLine($"Player.OnCreate - {ID}");
+
+            m_Transform = GetComponent<TransformComponent>();
+            m_Rigidbody = GetComponent<Rigidbody2DComponent>();
+        }
+
+        void OnUpdate(float ts)
+        {
+            float speed = 0.01f;
+            Vector3 velocity = Vector3.Zero;
+
+            if (Input.IsKeyDown(KeyCode.W))
+                velocity.Y = 1.0f;
+            else if (Input.IsKeyDown(KeyCode.S))
+                velocity.Y = -1.0f;
+
+            if (Input.IsKeyDown(KeyCode.A))
+                velocity.X = -1.0f;
+            else if (Input.IsKeyDown(KeyCode.D))
+                velocity.X = 1.0f;
+
+            velocity *= speed;
+
+            m_Rigidbody.ApplyLinearImpulse(velocity.XY, true);
         }
     }
 
-    public static class InternalCalls
+    public class Camera : Entity
     {
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog(string text, int parameter);
-
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void NativeLog_Vector(ref Vector3 parameter, out Vector3 result);
-
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static float NativeLog_VectorDot(ref Vector3 parameter);
-    }
-
-    public class Entity
-    {
-        public float FloatVar { get; set; }
-
-        public Entity()
+        void OnUpdate(float ts)
         {
-            Console.WriteLine("Entity constructor!");
-            Log("AAstroPhysiC", 8058);
+            float speed = 1.0f;
+            Vector3 velocity = Vector3.Zero;
 
-            Vector3 pos = new Vector3(5, 2.5f, 1);
-            Vector3 result = Log(pos);
-            Console.WriteLine($"{result.X}, {result.Y}, {result.Z}");
-            Console.WriteLine("{0}", InternalCalls.NativeLog_VectorDot(ref pos));
-        }
+            if (Input.IsKeyDown(KeyCode.Up))
+                velocity.Y = 1.0f;
+            else if (Input.IsKeyDown(KeyCode.Down))
+                velocity.Y = -1.0f;
 
-        public void PrintMessage()
-        {
-            Console.WriteLine("Hello World from C#!");
-        }
+            if (Input.IsKeyDown(KeyCode.Left))
+                velocity.X = -1.0f;
+            else if (Input.IsKeyDown(KeyCode.Right))
+                velocity.X = 1.0f;
 
-        public void PrintInt(int value)
-        {
-            Console.WriteLine($"C# says: {value}");
-        }
+            velocity *= speed;
 
-        public void PrintInts(int value1, int value2)
-        {
-            Console.WriteLine($"C# says: {value1} and {value2}");
-        }
-
-        public void PrintCustomMessage(string message)
-        {
-            Console.WriteLine($"C# says: {message}");
-        }
-
-        private void Log(string text, int parameter)
-        {
-            InternalCalls.NativeLog(text, parameter);
-        }
-
-        private Vector3 Log(Vector3 parameter)
-        {
-            InternalCalls.NativeLog_Vector(ref parameter, out Vector3 result);
-            return result;
+            Vector3 translation = Translation;
+            translation += velocity * ts;
+            Translation = translation;
         }
     }
 }

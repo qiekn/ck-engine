@@ -88,6 +88,14 @@ struct CameraComponent {
   bool is_fixed_aspect_ratio = false;
 };
 
+// ----------------------------------------------------------------------------: Script (C#)
+struct ScriptComponent {
+  std::string class_name;
+
+  ScriptComponent() = default;
+  ScriptComponent(const ScriptComponent&) = default;
+};
+
 // ----------------------------------------------------------------------------: Native Script
 struct NativeScriptComponent {
   ScriptableEntity* instance = nullptr;
@@ -155,7 +163,7 @@ struct ComponentGroup {};
 
 using AllComponents =
     ComponentGroup<TransformComponent, SpriteRendererComponent, CircleRendererComponent,
-                   CameraComponent, NativeScriptComponent, Rigidbody2DComponent,
-                   BoxCollider2DComponent, CircleCollider2DComponent>;
+                   CameraComponent, ScriptComponent, NativeScriptComponent,
+                   Rigidbody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>;
 
 }  // namespace ck

@@ -2,6 +2,7 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scriptable_entity.h"
+#include "scripting/script_engine.h"
 #include "renderer/camera.h"
 #include "renderer/renderer_2d.h"
 
@@ -110,19 +111,36 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name) {
   entity.AddComponent<TransformComponent>();
   auto& tag = entity.AddComponent<TagComponent>();
   tag.name = name.empty() ? "Entity" : name;
+
+  entity_map_[uuid] = entity.GetID();
+
   return entity;
 }
 
 void Scene::DestroyEntity(const Entity& entity) {
+  entity_map_.erase(entity.GetUUID());
   registry_.destroy(entity.GetID());
 }
 
 void Scene::OnRuntimeStart() {
   OnPhysics2DStart();
+
+  // Scripting
+  {
+    ScriptEngine::OnRuntimeStart(this);
+
+    auto view = registry_.view<ScriptComponent>();
+    for (auto e : view) {
+      Entity entity = {e, this};
+      ScriptEngine::OnCreateEntity(entity);
+    }
+  }
 }
 
 void Scene::OnRuntimeStop() {
   OnPhysics2DStop();
+
+  ScriptEngine::OnRuntimeStop();
 }
 
 void Scene::OnSimulationStart() {
@@ -136,6 +154,13 @@ void Scene::OnSimulationStop() {
 void Scene::OnUpdateRuntime(DeltaTime dt) {
   // Update Scripts
   {
+    // C# Entity OnUpdate
+    auto view = registry_.view<ScriptComponent>();
+    for (auto e : view) {
+      Entity entity = {e, this};
+      ScriptEngine::OnUpdateEntity(entity, dt);
+    }
+
     registry_.view<NativeScriptComponent>().each([=, this](auto entity, auto& nsc) {
       // TODO(qiekn): Move to Scene::OnScenePlay
       if (!nsc.instance) {
@@ -272,6 +297,13 @@ Entity Scene::GetPrimaryCameraEntity() {
   return {};
 }
 
+Entity Scene::GetEntityByUUID(UUID uuid) {
+  if (entity_map_.find(uuid) != entity_map_.end())
+    return {entity_map_.at(uuid), this};
+
+  return {};
+}
+
 void Scene::OnPhysics2DStart() {
   b2WorldDef world_def = b2DefaultWorldDef();
   world_def.gravity = {0.0f, -9.8f};
@@ -384,6 +416,9 @@ void Scene::OnComponentAdded<IDComponent>(const Entity& entity, IDComponent& com
 
 template <>
 void Scene::OnComponentAdded<TagComponent>(const Entity& entity, TagComponent& component) {}
+
+template <>
+void Scene::OnComponentAdded<ScriptComponent>(const Entity& entity, ScriptComponent& component) {}
 
 template <>
 void Scene::OnComponentAdded<NativeScriptComponent>(const Entity& entity,

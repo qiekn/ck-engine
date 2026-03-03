@@ -163,6 +163,16 @@ static void SerializeEntity(YAML::Emitter& out, const Entity& entity) {
     out << YAML::EndMap;
   }
 
+  // ----------------------------------------------------------------------------: Script
+  if (entity.HasComponent<ScriptComponent>()) {
+    auto& script = entity.GetComponent<ScriptComponent>();
+
+    out << YAML::Key << "ScriptComponent";
+    out << YAML::BeginMap;
+    out << YAML::Key << "ClassName" << YAML::Value << script.class_name;
+    out << YAML::EndMap;
+  }
+
   // ----------------------------------------------------------------------------: SpriteRenderer
   if (entity.HasComponent<SpriteRendererComponent>()) {
     out << YAML::Key << "SpriteRendererComponent";
@@ -317,6 +327,12 @@ bool SceneSerializer::Deserialize(const std::string& filepath) {
 
         cc.is_primary = camera_comp["Primary"].as<bool>();
         cc.is_fixed_aspect_ratio = camera_comp["FixedAspectRatio"].as<bool>();
+      }
+
+      auto script_comp = entity["ScriptComponent"];
+      if (script_comp) {
+        auto& sc = deserialized_entity.AddComponent<ScriptComponent>();
+        sc.class_name = script_comp["ClassName"].as<std::string>();
       }
 
       auto sprite_renderer_comp = entity["SpriteRendererComponent"];

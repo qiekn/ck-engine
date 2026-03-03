@@ -33,6 +33,8 @@ public:
 
   void DuplicateEntity(Entity entity);
 
+  Entity GetEntityByUUID(UUID uuid);
+
   Entity GetPrimaryCameraEntity();
 
   template <typename... Components>
@@ -54,6 +56,8 @@ private:
   uint32_t viewport_width = 0, viewport_height = 0;
 
   b2WorldId physics_world_ = {};
+
+  std::unordered_map<UUID, entt::entity> entity_map_;
 
   friend class Entity;
   friend class SceneSerializer;

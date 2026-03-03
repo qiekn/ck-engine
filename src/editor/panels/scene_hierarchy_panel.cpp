@@ -3,6 +3,7 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
+#include "scripting/script_engine.h"
 
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -236,6 +237,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
 
   if (ImGui::BeginPopup("AddComponent")) {
     DisplayAddComponentEntry<CameraComponent>("Camera");
+    DisplayAddComponentEntry<ScriptComponent>("Script");
     DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
     DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
     DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
@@ -314,6 +316,22 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity) {
 
       ImGui::Checkbox("Fixed Aspect Ratio", &component.is_fixed_aspect_ratio);
     }
+  });
+
+  DrawComponent<ScriptComponent>("Script", entity, [](auto& component) {
+    bool script_class_exists = ScriptEngine::EntityClassExists(component.class_name);
+
+    static char buffer[64];
+    strcpy(buffer, component.class_name.c_str());
+
+    if (!script_class_exists)
+      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
+
+    if (ImGui::InputText("Class", buffer, sizeof(buffer)))
+      component.class_name = buffer;
+
+    if (!script_class_exists)
+      ImGui::PopStyleColor();
   });
 
   DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component) {

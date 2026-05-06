@@ -1,5 +1,6 @@
 ﻿#include "renderer.h"
 
+#include "shader/slang_compiler.h"
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
 
@@ -55,6 +56,12 @@ Renderer::Renderer(Window& window) : window_(window) {
   vk::SemaphoreCreateInfo sem_ci{};
   render_finished_.resize(swapchain_->image_count());
   for (auto& s : render_finished_) s = context_->device().createSemaphore(sem_ci);
+
+  slang_ = CreateScope<vulkan::SlangCompiler>();
+  auto spirv = slang_->CompileToSpirv("assets/shaders/triangle.slang");
+  CK_ENGINE_ASSERT(!spirv.empty(), "triangle.slang failed to compile");
+  CK_ENGINE_INFO("Slang compiled triangle.slang ({} bytes SPIR-V)",
+                 spirv.size() * sizeof(uint32_t));
 }
 
 Renderer::~Renderer() {

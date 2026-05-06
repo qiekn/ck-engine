@@ -16,6 +16,7 @@ class Window;
 namespace ck::vulkan {
 class Context;
 class Swapchain;
+class SlangCompiler;
 }
 
 namespace ck {
@@ -47,6 +48,8 @@ private:
   bool frame_active_ = false;
   bool resize_pending_ = false;
   std::chrono::steady_clock::time_point start_time_;
+
+  Scope<vulkan::SlangCompiler> slang_;
 };
 
 }  // namespace ck

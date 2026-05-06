@@ -1,4 +1,4 @@
-﻿#include "renderer.h"
+#include "renderer.h"
 
 #include "shader/graphics_pipeline.h"
 #include "shader/shader_module.h"
@@ -166,6 +166,15 @@ void Renderer::BeginFrame() {
   rendering.colorAttachmentCount = 1;
   rendering.pColorAttachments = &color_att;
   cmd.beginRendering(rendering);
+
+  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_->handle());
+  vk::Extent2D extent = swapchain_->extent();
+  vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(extent.width),
+                        static_cast<float>(extent.height), 0.0f, 1.0f};
+  cmd.setViewport(0, viewport);
+  vk::Rect2D scissor{vk::Offset2D{0, 0}, extent};
+  cmd.setScissor(0, scissor);
+  cmd.draw(3, 1, 0, 0);
 
   frame_active_ = true;
 }

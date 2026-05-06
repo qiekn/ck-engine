@@ -31,19 +31,20 @@ public:
 
   void BeginFrame();
   void EndFrame();
-
   void OnResize(uint32_t width, uint32_t height);
 
 private:
+  void RecreateSwapchain();
+
   Window& window_;
   Scope<vulkan::Context> context_;
   Scope<vulkan::Swapchain> swapchain_;
   std::array<Scope<vulkan::Frame>, vulkan::kFramesInFlight> frames_;
-  // Per-swapchain-image render_finished semaphores (binary semaphore reuse rules).
-  std::vector<vk::Semaphore> render_finished_;
+  std::vector<vk::Semaphore> render_finished_;  // per-image
   uint32_t current_frame_ = 0;
   uint32_t image_index_ = 0;
   bool frame_active_ = false;
+  bool resize_pending_ = false;
 };
 
 }  // namespace ck

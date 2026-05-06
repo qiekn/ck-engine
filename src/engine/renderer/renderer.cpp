@@ -50,7 +50,6 @@ Renderer::Renderer(Window& window) : window_(window) {
   swapchain_ = CreateScope<vulkan::Swapchain>(*context_, window_);
   for (auto& f : frames_) f = CreateScope<vulkan::Frame>(*context_);
 
-  // One render_finished per swapchain image (binary semaphore reuse rule).
   vk::SemaphoreCreateInfo sem_ci{};
   render_finished_.resize(swapchain_->image_count());
   for (auto& s : render_finished_) s = context_->device().createSemaphore(sem_ci);
@@ -65,20 +64,54 @@ Renderer::~Renderer() {
 }
 
 void Renderer::OnResize(uint32_t /*width*/, uint32_t /*height*/) {
-  // Phase 3.5.
+  resize_pending_ = true;
+}
+
+void Renderer::RecreateSwapchain() {
+  CK_PROFILE_FUNCTION();
+  // Skip if window is minimized — Application's run loop already skips render in that case,
+  // but acquire/present can still trigger us before the minimize event lands.
+  if (window_.GetWidth() == 0 || window_.GetHeight() == 0) return;
+
+  vk::Device dev = context_->device();
+  dev.waitIdle();
+
+  // Image count may change across recreate -> rebuild render_finished_.
+  for (auto s : render_finished_) dev.destroySemaphore(s);
+  render_finished_.clear();
+
+  swapchain_->Recreate();
+
+  vk::SemaphoreCreateInfo sem_ci{};
+  render_finished_.resize(swapchain_->image_count());
+  for (auto& s : render_finished_) s = dev.createSemaphore(sem_ci);
+
+  resize_pending_ = false;
 }
 
 void Renderer::BeginFrame() {
   CK_PROFILE_FUNCTION();
+  if (resize_pending_) RecreateSwapchain();
+
   vk::Device dev = context_->device();
   vulkan::Frame& fr = *frames_[current_frame_];
 
+  // Wait for previous use of this slot to finish; do NOT reset fence yet, so we can
+  // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
-  dev.resetFences(fr.in_flight());
 
-  auto acquire = dev.acquireNextImageKHR(
-      swapchain_->handle(), UINT64_MAX, fr.image_available(), nullptr);
-  image_index_ = acquire.value;
+  uint32_t image_index = 0;
+  try {
+    auto r = dev.acquireNextImageKHR(swapchain_->handle(), UINT64_MAX,
+                                     fr.image_available(), nullptr);
+    if (r.result == vk::Result::eSuboptimalKHR) resize_pending_ = true;
+    image_index = r.value;
+  } catch (const vk::OutOfDateKHRError&) {
+    RecreateSwapchain();
+    return;  // skip this frame; fence stays signalled
+  }
+  image_index_ = image_index;
+  dev.resetFences(fr.in_flight());
 
   vk::CommandBuffer cmd = fr.command_buffer();
   cmd.reset();
@@ -157,7 +190,13 @@ void Renderer::EndFrame() {
   vk::SwapchainKHR sc = swapchain_->handle();
   present.pSwapchains = &sc;
   present.pImageIndices = &image_index_;
-  (void)context_->graphics_queue().presentKHR(present);
+
+  try {
+    auto pres_res = context_->graphics_queue().presentKHR(present);
+    if (pres_res == vk::Result::eSuboptimalKHR) resize_pending_ = true;
+  } catch (const vk::OutOfDateKHRError&) {
+    resize_pending_ = true;
+  }
 
   current_frame_ = (current_frame_ + 1) % vulkan::kFramesInFlight;
 }

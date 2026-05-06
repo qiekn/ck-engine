@@ -84,6 +84,7 @@ bool Application::OnWindowResizeEvent(WindowResizeEvent& e) {
     return false;
   }
   minimized_ = false;
+  if (renderer_) renderer_->OnResize(e.GetWindowWidth(), e.GetWindowHeight());
   return false;
 }
 

@@ -34,4 +34,10 @@ target_link_libraries(ck PUBLIC
   box2d
   spdlog_headers
   entt_headers
+
+  # Vulkan stack (consumers will start using these in Phase 3+)
+  Vulkan::volk
+  Vulkan::cppm
+  Vulkan::vma
+  Slang::slang
 )

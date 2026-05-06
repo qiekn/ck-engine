@@ -16,6 +16,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Keep all executables at build/<preset>/ so run scripts and asset paths stay simple
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# - -----------------------------------------------------------------------------: Vulkan stack (volk + Vulkan-Hpp module + VMA + Slang)
+include(${CMAKE_SOURCE_DIR}/cmake/Vulkan.cmake)
+
 # - -----------------------------------------------------------------------------: Subdirectories
 add_subdirectory(deps)
 add_subdirectory(src/engine)

@@ -4,10 +4,6 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "deps/imgui"]
-	path = deps/imgui
-	url = git@github.com:qiekn/imgui.git
-	branch = cmake
 [submodule "deps/glm"]
 	path = deps/glm
 	url = https://github.com/g-truc/glm.git
@@ -20,3 +16,7 @@
 [submodule "deps/box2d"]
 	path = deps/box2d
 	url = https://github.com/erincatto/box2d
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

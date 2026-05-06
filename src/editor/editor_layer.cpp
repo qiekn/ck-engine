@@ -46,9 +46,9 @@ void EditorLayer::OnAttach() {
   CK_PROFILE_FUNCTION();
 
   checkerboard_texture_ = Texture2D::Create("assets/textures/checkerboard.png");
-  icon_play_ = Texture2D::Create("resources/icons/play_button.png");
-  icon_simulate_ = Texture2D::Create("resources/icons/simulate_button.png");
-  icon_stop_ = Texture2D::Create("resources/icons/stop_button.png");
+  icon_play_ = Texture2D::Create("assets/icons/toolbar/play_button.png");
+  icon_simulate_ = Texture2D::Create("assets/icons/toolbar/simulate_button.png");
+  icon_stop_ = Texture2D::Create("assets/icons/toolbar/stop_button.png");
 
   FrameBufferSpecification fb_spec;
   fb_spec.attachments = {

@@ -6,9 +6,7 @@
 #include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
-#include "renderer/vulkan/context.h"
-#include "renderer/vulkan/frame.h"
-#include "renderer/vulkan/swapchain.h"
+#include "renderer/renderer.h"
 
 namespace ck {
 
@@ -25,11 +23,7 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
   window_ = Window::Create(WindowProps(specification_.name));
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
-  vk_context_ = CreateScope<vulkan::Context>(*window_);
-  vk_swapchain_ = CreateScope<vulkan::Swapchain>(*vk_context_, *window_);
-  for (auto& f : vk_frames_) {
-    f = CreateScope<vulkan::Frame>(*vk_context_);
-  }
+  renderer_ = CreateScope<Renderer>(*window_);
 }
 
 Application::~Application() {
@@ -45,10 +39,16 @@ void Application::Run() {
     auto timestep = DeltaTime(diff);
 
     if (!minimized_) {
-      CK_PROFILE_SCOPE("LayerStack OnUpdate");
-      for (auto& layer : layer_stack_) {
-        layer->OnUpdate(timestep);
+      renderer_->BeginFrame();
+
+      {
+        CK_PROFILE_SCOPE("LayerStack OnUpdate");
+        for (auto& layer : layer_stack_) {
+          layer->OnUpdate(timestep);
+        }
       }
+
+      renderer_->EndFrame();
     }
 
     window_->OnUpdate();

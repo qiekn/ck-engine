@@ -11,12 +11,14 @@ inline constexpr uint32_t kFramesInFlight = 2;
 
 class Context;
 
-// Per-frame resources for a frame-in-flight slot:
+// Per-frame-in-flight resources:
 //   - dedicated command pool + primary command buffer
 //   - image_available  : signalled by acquire, waited on by submit
-//   - render_finished  : signalled by submit,  waited on by present
-//   - in_flight        : CPU-GPU sync; created in signalled state so the very
-//                        first BeginFrame's waitForFences returns immediately
+//   - in_flight        : CPU-GPU sync; signalled at submit, waited on next BeginFrame
+//                        (created in signalled state so first BeginFrame returns immediately)
+//
+// render_finished must be per-swapchain-image (not per-frame-in-flight) per Vulkan binary
+// semaphore reuse rules; it lives in Renderer.
 class Frame {
 public:
   explicit Frame(Context& ctx);
@@ -30,7 +32,6 @@ public:
   vk::CommandPool   command_pool()    const { return command_pool_; }
   vk::CommandBuffer command_buffer()  const { return command_buffer_; }
   vk::Semaphore     image_available() const { return image_available_; }
-  vk::Semaphore     render_finished() const { return render_finished_; }
   vk::Fence         in_flight()       const { return in_flight_; }
 
 private:
@@ -38,7 +39,6 @@ private:
   vk::CommandPool command_pool_;
   vk::CommandBuffer command_buffer_;
   vk::Semaphore image_available_;
-  vk::Semaphore render_finished_;
   vk::Fence in_flight_;
 };
 

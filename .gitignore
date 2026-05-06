@@ -1,4 +1,4 @@
-.cache/
+﻿.cache/
 build/
 
 .clangd
@@ -8,3 +8,4 @@ build/
 # use at ui.perfetto.dev for visual profiling
 CkProfile-*.json
 .claude/
+*.tmp

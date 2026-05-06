@@ -1,4 +1,4 @@
-# User's Notes
+﻿# User's Notes
 
 ## Code style
 
@@ -21,11 +21,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine series.
 The codebase is **mid-migration from OpenGL to Vulkan** (branch `3d`):
 
-- Build infrastructure (CMake 3.30, C++23, libc++, `import std`, presets) is already in
-- OpenGL backend in `src/engine/platform/opengl/` is still present and still builds
-- Vulkan backend, VMA, volk, slang shader pipeline are pending (Phase 2+)
+- Build infrastructure: CMake 3.30, C++23, libc++, `import std`, presets — done (Phase 0/1)
+- OpenGL backend dropped (Phase 2a, commit `0c76c3b`); engine reduced to a bare GLFW window with `GLFW_NO_API`
+- Vulkan stack wired (Phase 2b, commit `91959cb`): volk + `Vulkan::cppm` (Vulkan-Hpp module) + VMA + Slang from the SDK; imgui switched to ocornut docking upstream
+- No rendering yet — next milestone is Phase 3 (instance/device/swapchain → clear-color)
 
-EnTT-backed scene/component system, ImGui editor (`editor`), example client (`sandbox`).
+Editor (`editor`) and sandbox (`sandbox`) currently just open an empty Application + LayerStack — the editor panels, scene/ECS, and Renderer/Renderer2D were deleted in Phase 2a and will be rebuilt against Vulkan in Phase 5+.
 
 ## Current Learning Context
 
@@ -75,29 +76,29 @@ All targets globbed with `CONFIGURE_DEPENDS`. `CMAKE_RUNTIME_OUTPUT_DIRECTORY` k
 
 Both executables include `core/entry_point.h` exactly once. That header defines `main()`, calls `ck::Log::Init()`, then expects the client to provide `ck::CreateApplication(args)` (see `src/editor/editor.cpp` and `src/sandbox/sandbox.cpp`).
 
-## Architecture (current, OpenGL-era — being replaced)
+## Architecture (post-Phase-2a, bare window)
 
-The engine follows the early Hazel layered design:
+What survived the Phase 2a pruning — the early-Hazel layered skeleton, no rendering or content systems:
 
-- **Application** (`core/application.{h,cpp}`) — singleton (`Application::Get()`). Owns the `Window`, an `ImGuiLayer` overlay, and a `LayerStack`. Run loop ticks layers, runs `OnImGuiRender` between `imgui_layer_->Begin()`/`End()`, then `window_->OnUpdate()`.
+- **Application** (`core/application.{h,cpp}`) — singleton (`Application::Get()`). Owns a `Window` and a `LayerStack`. Run loop ticks layers then `window_->OnUpdate()` (just `glfwPollEvents()` now — present is the future Vulkan renderer's job).
 - **Layer / LayerStack** (`core/layer.h`, `core/layer_stack.{h,cpp}`) — `OnAttach/OnDetach/OnUpdate(DeltaTime)/OnEvent/OnImGuiRender`. Overlays after regular layers; reverse iteration for events (stop on `IsHandled`).
 - **Events** (`events/`) — `EventDispatcher::DispatchEvent<T>(fn)` + `CK_BIND_EVENT(method)` macro.
-- **Window / Input** (`core/window.h`, `platform/windows/`) — GLFW-backed. The `windows_*` directory name is misleading: it is the GLFW path used on every platform.
-- **Renderer** (`renderer/`) — API-agnostic interfaces (`Renderer`, `Renderer2D`, `RendererAPI`, `Shader`, `Buffer`, `VertexArray`, `FrameBuffer`, `UniformBuffer`, `Texture`) + OpenGL impl in `platform/opengl/`. **The `RendererAPI::Type` enum and the `kOpenGL` impl will be deleted in Phase 2.**
-- **Scene / ECS** (`scene/`) — `Scene` wraps `entt::registry`. Components in `components.h`. Runtime/simulation/editor modes. Owns Box2D `b2WorldId`.
-- **Serialization** — `scene/scene_serializer.{h,cpp}` (yaml-cpp). Scenes at `assets/scenes/*.scene`.
-- **ImGui integration** — `imgui/imgui_layer.{h,cpp}` is pushed as the first overlay. `imgui_build.cpp` is the unity-style backend cpp (will be replaced by `imgui_impl_vulkan` + `imgui_impl_glfw` in Phase 2).
+- **Window / Input** (`core/window.h`, `platform/windows/`) — GLFW-backed (`GLFW_NO_API`, no GL context). The `windows_*` directory name is GLFW path used on every OS, not Win32-specific.
+- **Logging / profiling / math / utils** (`core/log.h`, `debug/profiler.h`, `math/`, `utils/`) — unchanged.
+
+Deleted in Phase 2a (will be rebuilt against Vulkan): renderer abstractions (`Renderer`/`Renderer2D`/`RendererAPI`/`Shader`/`Buffer`/`VertexArray`/`FrameBuffer`/`UniformBuffer`/`Texture`), OpenGL impl (`platform/opengl/`), Scene + ECS + components (`scene/`, `components.h`), yaml-cpp scene serializer, ImGui integration, editor panels.
 
 ## Vulkan Migration Plan
 
 Roadmap (one phase = one commit):
 
-- **Phase 0** ✅ CMake 3.30 + C++23 + libc++ + `import std` + presets
-- **Phase 1** ✅ Split CMakeLists into per-target subdirectories
-- **Phase 2** — Drop OpenGL, add Vulkan SDK / VMA / volk / official imgui docking / `Vulkan::cppm`
-- **Phase 3** — Vulkan instance / device / swapchain + clear-color milestone
+- **Phase 0** ✅ CMake 3.30 + C++23 + libc++ + `import std` + presets — `bf65295`
+- **Phase 1** ✅ Split CMakeLists into per-target subdirectories — `e12282a`
+- **Phase 2a** ✅ Drop OpenGL backend; engine reduced to bare window — `0c76c3b`
+- **Phase 2b** ✅ Add Vulkan stack (volk + `Vulkan::cppm` + VMA + Slang); switch imgui to upstream docking — `91959cb`
+- **Phase 3** ⏳ Vulkan instance / device / swapchain + clear-color milestone (every-frame color cycle)
 - **Phase 4** — Slang runtime compile + first graphics pipeline + hello-triangle
-- **Phase 5+** — Renderer / Material / RenderPass abstractions, Renderer2D rebuild, modules-based public API
+- **Phase 5+** — Renderer / Material / RenderPass abstractions, Renderer2D rebuild, modules-based public API (`import ck` replaces the umbrella header)
 
 ## Conventions
 
@@ -127,11 +128,28 @@ Public engine API: clients `#include <ck.h>` (umbrella in `src/engine/include/ck
 
 ## Dependencies
 
-Vendored as git submodules under `deps/`, added via `add_subdirectory` (centralized in `deps/CMakeLists.txt`):
+Vendored as git submodules under `deps/`, wired in `deps/CMakeLists.txt`:
 
-`spdlog`, `glfw`, `glm`, `imgui` (qiekn fork — to be replaced by official docking branch), `imguizmo`, `yaml-cpp`, `box2d`, plus in-tree `glad` (Phase 2 deletion) and `stb_image`. EnTT header-only at `deps/entt/include`. Spdlog and EnTT exposed as INTERFACE targets `spdlog_headers` / `entt_headers`.
+`spdlog`, `glfw`, `glm`, `imgui` (ocornut upstream, docking branch — `imgui` target inlined directly in `deps/CMakeLists.txt` because upstream ships no CMakeLists), `imguizmo`, `yaml-cpp`, `box2d`, in-tree `stb_image`. EnTT header-only at `deps/entt/include`. spdlog + EnTT exposed as INTERFACE targets `spdlog_headers` / `entt_headers`.
 
-Pending additions in Phase 2: `deps/vma`, `deps/volk`, official `imgui` (docking branch), Slang runtime via `find_package(Vulkan COMPONENTS SLANG)`.
+Vulkan stack lives outside `deps/` — pulled from the Vulkan SDK by `cmake/Vulkan.cmake`:
+
+- `Vulkan::Vulkan` + `Vulkan::volk` (loader)
+- `Vulkan::cppm` — alias of `VulkanCppModule`, the C++23 module built from `vulkan.cppm` / `vulkan_video.cppm`
+- `Vulkan::vma` — INTERFACE wrapper around `vk_mem_alloc.h` shipped with the SDK
+- `Slang::slang` — runtime shader compiler
+
+imgui's `imgui_impl_vulkan` is built with `IMGUI_IMPL_VULKAN_USE_VOLK` so engine and imgui share one Vulkan loader.
+
+## Documentation Strategy
+
+Working context here is constrained — keep messages tight (~30k tokens). Externalize anything that risks growing the conversation:
+
+- **`./docs/src/*.md`** — long-form notes (design rationale, API tours, Vulkan walkthroughs, learning notes). Independent mdBook on the `docs` orphan branch (separate `docs/.git`); commit there independently, not in engine commits.
+- **`CLAUDE.md`** — durable project rules and conventions. Edit when something changes about *how* we work (style, layout, build, phase completion). Not for transient state.
+- **Memory** (`~/.claude/projects/<project>/memory/`) — user/feedback/project/reference per the auto-memory system.
+
+Default: if explaining something at length, write to `docs/src/` instead and link. Whenever phase status, dependency list, or architecture changes, update CLAUDE.md in the same commit.
 
 ## Commits
 

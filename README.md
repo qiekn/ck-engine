@@ -1,55 +1,65 @@
-# ck-engine (Yet Another Hazel Engine)
+# ck-engine
 
-A learning-oriented 2D game engine, following the
+A learning-oriented game engine following the
 [game engine](https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT)
 series by [TheCherno](https://www.youtube.com/user/TheChernoProject).
 
+> Currently migrating from OpenGL to Vulkan. Branch [`3d`](../../tree/3d).
+
 <a href="https://qiekn.github.io/ck-engine/" target="_blank">WIP: docs</a>
 
-## Quickstart
+## Compile
 
-### Prerequisites
+This project uses:
 
-- C++20 compiler (clang, gcc, MSVC, etc.)
-- CMake 3.24+
-- Git
+- CMake 3.30+
+- Ninja
+- Clang / Clang++ (with libc++)
+- [Vulkan SDK](https://vulkan.lunarg.com/) (for `slangc`, validation layers)
 
-<details>
-<summary>MSYS2 UCRT64 setup (Windows)</summary>
+### Windows PowerShell
 
-Install [MSYS2](https://www.msys2.org/), then open **UCRT64** terminal and run:
+Install dependencies with [Scoop](https://scoop.sh/):
 
-```bash
-pacman -S --needed \
-  mingw-w64-ucrt-x86_64-cmake \
-  mingw-w64-ucrt-x86_64-clang \
-  mingw-w64-ucrt-x86_64-make \
-  mingw-w64-ucrt-x86_64-gdb \
-  git
+```powershell
+# Install Scoop package manager
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+scoop install llvm ninja cmake
 ```
 
-</details>
+Install the [Vulkan SDK](https://vulkan.lunarg.com/) separately.
 
-### Build & Run
+Clone with submodules:
 
-```bash
+```powershell
 git clone --recursive https://github.com/qiekn/ck-engine.git
 cd ck-engine
 ```
 
-**MSYS2 UCRT64 Terminal:**
-
-```bash
-./run.sh
-```
-
-**PowerShell:**
+Then run:
 
 ```powershell
 .\run.ps1
 ```
 
-The script will automatically configure the CMake build directory on first run, then build and launch the editor.
+Or manually:
+
+```powershell
+cmake --preset debug
+cmake --build --preset debug
+.\build\debug\editor.exe
+```
+
+### Linux / macOS / WSL / MSYS2
+
+Install Clang (with libc++), Ninja, CMake 3.30+, and the Vulkan SDK from your package manager. Then:
+
+```bash
+./run.sh           # build and launch editor
+./run.sh debug     # launch under gdb
+```
 
 ## Commit Convention
 
@@ -60,6 +70,6 @@ The script will automatically configure the CMake build directory on first run, 
 | add      | add third party library             |
 | update   | make some progress                  |
 | fix      | fix a bug                           |
-| docs     | documents (readme or some comments) |
+| docs     | documents (readme or comments)      |
 | refactor | refactor code                       |
-| chores   | some little changes                 |
+| chore    | small changes                       |

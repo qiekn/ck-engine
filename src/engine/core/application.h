@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <array>
 #include <chrono>
 #include <string>
 
@@ -7,6 +8,7 @@
 #include "core/window.h"
 #include "deltatime.h"
 #include "events/application_event.h"
+#include "renderer/vulkan/frame.h"  // for kFramesInFlight (constant only)
 
 namespace ck::vulkan {
 class Context;
@@ -56,10 +58,11 @@ private:
   bool running_ = true;
   bool minimized_ = false;
   Scope<Window> window_;
-  // Order matters: vk_swapchain_ depends on vk_context_ depends on window_.
+  // Order matters: dependencies are window_ -> vk_context_ -> {vk_swapchain_, vk_frames_}.
   // Reverse-declaration-order destruction handles teardown correctly.
   Scope<vulkan::Context> vk_context_;
   Scope<vulkan::Swapchain> vk_swapchain_;
+  std::array<Scope<vulkan::Frame>, vulkan::kFramesInFlight> vk_frames_;
   LayerStack layer_stack_;
   DeltaTime timestep_;
   std::chrono::time_point<std::chrono::steady_clock> last_frame_time_ =

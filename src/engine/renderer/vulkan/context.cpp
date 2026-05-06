@@ -1,4 +1,4 @@
-﻿#include "context.h"
+#include "context.h"
 
 #include <volk.h>
 
@@ -183,11 +183,18 @@ Context::Context(Window& window) {
 
   graphics_queue_ = device_.getQueue(graphics_family_, 0);
 
+  // Engine-wide pipeline cache: every GraphicsPipeline build feeds and
+  // reuses this cache so the driver can short-circuit repeated compile
+  // work within a process.
+  pipeline_cache_ = device_.createPipelineCache({});
+  CK_ENGINE_INFO("Pipeline cache ready");
+
   CK_ENGINE_INFO("Vulkan context ready");
 }
 
 Context::~Context() {
   CK_PROFILE_FUNCTION();
+  if (device_ && pipeline_cache_) device_.destroyPipelineCache(pipeline_cache_);
   if (device_) device_.destroy();
   if (instance_) {
     if (surface_) instance_.destroySurfaceKHR(surface_);

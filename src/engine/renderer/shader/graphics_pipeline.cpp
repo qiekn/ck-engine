@@ -12,7 +12,8 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
                                    const ShaderModule& shader,
                                    vk::Format color_format,
                                    const VertexInput& vertex_input,
-                                   std::span<const vk::DescriptorSetLayout> set_layouts)
+                                   std::span<const vk::DescriptorSetLayout> set_layouts,
+                                   vk::PipelineCache cache)
     : device_(ctx.device()) {
   vk::PipelineLayoutCreateInfo layout_info{};
   layout_info.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
@@ -86,7 +87,7 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
   info.pDynamicState = &dynamic_state;
   info.layout = layout_;
 
-  auto rv = device_.createGraphicsPipeline({}, info);
+  auto rv = device_.createGraphicsPipeline(cache, info);
   pipeline_ = rv.value;
 }
 

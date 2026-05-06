@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <vulkan/vulkan.hpp>
 
@@ -28,6 +28,7 @@ public:
   vk::SurfaceKHR     surface()         const { return surface_; }
   uint32_t           graphics_family() const { return graphics_family_; }
   vk::Queue          graphics_queue()  const { return graphics_queue_; }
+  vk::PipelineCache  pipeline_cache()  const { return pipeline_cache_; }
 
 private:
   vk::Instance instance_;
@@ -37,6 +38,7 @@ private:
   vk::Device device_;
   uint32_t graphics_family_ = ~0u;
   vk::Queue graphics_queue_;
+  vk::PipelineCache pipeline_cache_;
 };
 
 }  // namespace ck::vulkan

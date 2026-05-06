@@ -27,7 +27,8 @@ class GraphicsPipeline {
 public:
   GraphicsPipeline(Context& ctx, const ShaderModule& shader, vk::Format color_format,
                    const VertexInput& vertex_input,
-                   std::span<const vk::DescriptorSetLayout> set_layouts = {});
+                   std::span<const vk::DescriptorSetLayout> set_layouts = {},
+                   vk::PipelineCache cache = {});
   ~GraphicsPipeline();
 
   GraphicsPipeline(const GraphicsPipeline&) = delete;

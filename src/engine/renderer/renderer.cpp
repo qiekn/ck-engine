@@ -160,7 +160,8 @@ Renderer::Renderer(Window& window) : window_(window) {
   vk::DescriptorSetLayout set_layout = descriptor_set_layout_->handle();
   quad_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
       *context_, *quad_shader_, swapchain_->format(), vertex_input,
-      std::span{&set_layout, 1});
+      std::span{&set_layout, 1},
+      context_->pipeline_cache());
   CK_ENGINE_INFO("Pipeline ready");
 
   // Per-frame descriptor sets: each UBO slot binds into its own set so we

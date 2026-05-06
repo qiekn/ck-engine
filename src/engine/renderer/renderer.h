@@ -18,6 +18,8 @@ class Context;
 class Swapchain;
 class Allocator;
 class Buffer;
+class Image;
+class Sampler;
 class SlangCompiler;
 class ShaderModule;
 class GraphicsPipeline;
@@ -58,6 +60,8 @@ private:
   Scope<vulkan::ShaderModule> triangle_shader_;
   Scope<vulkan::GraphicsPipeline> triangle_pipeline_;
   Scope<vulkan::Buffer> vertex_buffer_;
+  Scope<vulkan::Image> texture_;
+  Scope<vulkan::Sampler> sampler_;
 };
 
 }  // namespace ck

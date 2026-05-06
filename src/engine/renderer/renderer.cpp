@@ -6,6 +6,8 @@
 #include "vulkan/allocator.h"
 #include "vulkan/buffer.h"
 #include "vulkan/context.h"
+#include "vulkan/image.h"
+#include "vulkan/sampler.h"
 #include "vulkan/swapchain.h"
 
 #include <array>
@@ -110,6 +112,14 @@ Renderer::Renderer(Window& window) : window_(window) {
   triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
       *context_, *triangle_shader_, swapchain_->format(), vertex_input);
   CK_ENGINE_INFO("Pipeline ready");
+
+  texture_ = vulkan::Image::FromFile(*context_, *allocator_,
+                                     "assets/textures/checkerboard.png");
+  CK_ENGINE_ASSERT(texture_, "checkerboard.png failed to load");
+  CK_ENGINE_INFO("Texture loaded: checkerboard.png {}x{}",
+                 texture_->extent().width, texture_->extent().height);
+
+  sampler_ = CreateScope<vulkan::Sampler>(*context_);
 }
 
 Renderer::~Renderer() {

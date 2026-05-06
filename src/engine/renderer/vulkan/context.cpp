@@ -1,8 +1,6 @@
 ﻿#include "context.h"
 
-#define VK_NO_PROTOTYPES
 #include <volk.h>
-#include <vulkan/vulkan.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -74,26 +72,7 @@ vk::PhysicalDevice PickPhysicalDevice(vk::Instance inst) {
 
 }  // namespace
 
-struct Context::Impl {
-  vk::Instance instance;
-  vk::DebugUtilsMessengerEXT debug_messenger;
-  vk::SurfaceKHR surface;
-  vk::PhysicalDevice physical_device;
-  vk::Device device;
-  uint32_t graphics_family = ~0u;
-  vk::Queue graphics_queue;
-
-  ~Impl() {
-    if (device) device.destroy();
-    if (instance) {
-      if (surface) instance.destroySurfaceKHR(surface);
-      if (debug_messenger) instance.destroyDebugUtilsMessengerEXT(debug_messenger);
-      instance.destroy();
-    }
-  }
-};
-
-Context::Context(Window& window) : impl_(CreateScope<Impl>()) {
+Context::Context(Window& window) {
   CK_PROFILE_FUNCTION();
 
   // 1. volk -> dispatcher
@@ -134,9 +113,9 @@ Context::Context(Window& window) : impl_(CreateScope<Impl>()) {
   ici.enabledExtensionCount = static_cast<uint32_t>(instance_exts.size());
   ici.ppEnabledExtensionNames = instance_exts.data();
 
-  impl_->instance = vk::createInstance(ici);
-  VULKAN_HPP_DEFAULT_DISPATCHER.init(impl_->instance);
-  volkLoadInstance(impl_->instance);
+  instance_ = vk::createInstance(ici);
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(instance_);
+  volkLoadInstance(instance_);
 
   // 4. Debug messenger (only if validation layer is on)
   if (!layers.empty()) {
@@ -146,36 +125,36 @@ Context::Context(Window& window) : impl_(CreateScope<Impl>()) {
     dmi.messageSeverity = Sev::eVerbose | Sev::eInfo | Sev::eWarning | Sev::eError;
     dmi.messageType = Type::eGeneral | Type::eValidation | Type::ePerformance;
     dmi.pfnUserCallback = VkDebugCallback;
-    impl_->debug_messenger = impl_->instance.createDebugUtilsMessengerEXT(dmi);
+    debug_messenger_ = instance_.createDebugUtilsMessengerEXT(dmi);
   }
 
   // 5. Surface (GLFW does the platform-specific call)
   VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
   auto* glfw_window = static_cast<GLFWwindow*>(window.GetNativeWindow());
-  if (glfwCreateWindowSurface(impl_->instance, glfw_window, nullptr, &raw_surface) != VK_SUCCESS) {
+  if (glfwCreateWindowSurface(instance_, glfw_window, nullptr, &raw_surface) != VK_SUCCESS) {
     CK_ENGINE_FATAL("glfwCreateWindowSurface failed");
     return;
   }
-  impl_->surface = raw_surface;
+  surface_ = raw_surface;
 
   // 6. Physical device
-  impl_->physical_device = PickPhysicalDevice(impl_->instance);
-  if (!impl_->physical_device) return;
-  auto props = impl_->physical_device.getProperties();
+  physical_device_ = PickPhysicalDevice(instance_);
+  if (!physical_device_) return;
+  auto props = physical_device_.getProperties();
   CK_ENGINE_INFO("GPU: {}", static_cast<const char*>(props.deviceName));
 
   // 7. Queue family (single family, graphics + present)
-  impl_->graphics_family = FindGraphicsFamily(impl_->physical_device, impl_->surface);
-  if (impl_->graphics_family == ~0u) {
+  graphics_family_ = FindGraphicsFamily(physical_device_, surface_);
+  if (graphics_family_ == ~0u) {
     CK_ENGINE_FATAL("No graphics+present queue family found");
     return;
   }
-  CK_ENGINE_INFO("Queue family (graphics+present): {}", impl_->graphics_family);
+  CK_ENGINE_INFO("Queue family (graphics+present): {}", graphics_family_);
 
   // 8. Logical device with Vulkan 1.3 dynamic rendering + sync2
   float queue_priority = 1.0f;
   vk::DeviceQueueCreateInfo qci{};
-  qci.queueFamilyIndex = impl_->graphics_family;
+  qci.queueFamilyIndex = graphics_family_;
   qci.queueCount = 1;
   qci.pQueuePriorities = &queue_priority;
 
@@ -192,17 +171,23 @@ Context::Context(Window& window) : impl_(CreateScope<Impl>()) {
   dci.enabledExtensionCount = static_cast<uint32_t>(device_exts.size());
   dci.ppEnabledExtensionNames = device_exts.data();
 
-  impl_->device = impl_->physical_device.createDevice(dci);
-  VULKAN_HPP_DEFAULT_DISPATCHER.init(impl_->device);
-  volkLoadDevice(impl_->device);
+  device_ = physical_device_.createDevice(dci);
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(device_);
+  volkLoadDevice(device_);
 
-  impl_->graphics_queue = impl_->device.getQueue(impl_->graphics_family, 0);
+  graphics_queue_ = device_.getQueue(graphics_family_, 0);
 
   CK_ENGINE_INFO("Vulkan context ready");
 }
 
 Context::~Context() {
   CK_PROFILE_FUNCTION();
+  if (device_) device_.destroy();
+  if (instance_) {
+    if (surface_) instance_.destroySurfaceKHR(surface_);
+    if (debug_messenger_) instance_.destroyDebugUtilsMessengerEXT(debug_messenger_);
+    instance_.destroy();
+  }
 }
 
 }  // namespace ck::vulkan

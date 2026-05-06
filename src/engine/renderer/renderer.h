@@ -17,6 +17,8 @@ namespace ck::vulkan {
 class Context;
 class Swapchain;
 class SlangCompiler;
+class ShaderModule;
+class GraphicsPipeline;
 }
 
 namespace ck {
@@ -50,6 +52,8 @@ private:
   std::chrono::steady_clock::time_point start_time_;
 
   Scope<vulkan::SlangCompiler> slang_;
+  Scope<vulkan::ShaderModule> triangle_shader_;
+  Scope<vulkan::GraphicsPipeline> triangle_pipeline_;
 };
 
 }  // namespace ck

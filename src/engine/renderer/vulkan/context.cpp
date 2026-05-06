@@ -160,7 +160,13 @@ Context::Context(Window& window) {
 
   std::vector<const char*> device_exts = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+  // Vulkan 1.1: shaderDrawParameters is required because Slang's SPIR-V backend
+  // declares the DrawParameters capability when translating SV_VertexID.
+  vk::PhysicalDeviceVulkan11Features features11{};
+  features11.shaderDrawParameters = VK_TRUE;
+
   vk::PhysicalDeviceVulkan13Features features13{};
+  features13.pNext = &features11;
   features13.dynamicRendering = VK_TRUE;
   features13.synchronization2 = VK_TRUE;
 

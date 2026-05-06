@@ -1,5 +1,7 @@
 ﻿#include "renderer.h"
 
+#include "shader/graphics_pipeline.h"
+#include "shader/shader_module.h"
 #include "shader/slang_compiler.h"
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
@@ -62,6 +64,11 @@ Renderer::Renderer(Window& window) : window_(window) {
   CK_ENGINE_ASSERT(!spirv.empty(), "triangle.slang failed to compile");
   CK_ENGINE_INFO("Slang compiled triangle.slang ({} bytes SPIR-V)",
                  spirv.size() * sizeof(uint32_t));
+
+  triangle_shader_ = CreateScope<vulkan::ShaderModule>(*context_, std::span{spirv});
+  triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
+      *context_, *triangle_shader_, swapchain_->format());
+  CK_ENGINE_INFO("Pipeline ready");
 }
 
 Renderer::~Renderer() {

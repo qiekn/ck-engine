@@ -69,50 +69,6 @@ Renderer::Renderer(Window& window) : window_(window) {
   for (auto& s : render_finished_) s = context_->device().createSemaphore(sem_ci);
 
   slang_ = CreateScope<vulkan::SlangCompiler>();
-  auto spirv = slang_->CompileToSpirv("assets/shaders/triangle.slang");
-  CK_ENGINE_ASSERT(!spirv.empty(), "triangle.slang failed to compile");
-  CK_ENGINE_INFO("Slang compiled triangle.slang ({} bytes SPIR-V)",
-                 spirv.size() * sizeof(uint32_t));
-
-  triangle_shader_ = CreateScope<vulkan::ShaderModule>(*context_, std::span{spirv});
-
-  struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
-  };
-  static constexpr std::array<Vertex, 3> kTriangleVertices = {{
-      {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-      {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-      {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
-  }};
-  vertex_buffer_ = vulkan::Buffer::CreateDeviceLocal(
-      *allocator_, kTriangleVertices.data(),
-      sizeof(kTriangleVertices), vk::BufferUsageFlagBits::eVertexBuffer);
-  CK_ENGINE_INFO("Vertex buffer ready: {} bytes", vertex_buffer_->size());
-
-  vk::VertexInputBindingDescription binding{};
-  binding.binding = 0;
-  binding.stride = sizeof(Vertex);
-  binding.inputRate = vk::VertexInputRate::eVertex;
-
-  std::array<vk::VertexInputAttributeDescription, 2> attributes{};
-  attributes[0].location = 0;
-  attributes[0].binding = 0;
-  attributes[0].format = vk::Format::eR32G32Sfloat;
-  attributes[0].offset = offsetof(Vertex, pos);
-  attributes[1].location = 1;
-  attributes[1].binding = 0;
-  attributes[1].format = vk::Format::eR32G32B32Sfloat;
-  attributes[1].offset = offsetof(Vertex, color);
-
-  vulkan::VertexInput vertex_input{
-      .bindings = std::span{&binding, 1},
-      .attributes = std::span{attributes.data(), attributes.size()},
-  };
-
-  triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
-      *context_, *triangle_shader_, swapchain_->format(), vertex_input);
-  CK_ENGINE_INFO("Pipeline ready");
 
   texture_ = vulkan::Image::FromFile(*context_, *allocator_,
                                      "assets/textures/checkerboard.png");
@@ -123,10 +79,11 @@ Renderer::Renderer(Window& window) : window_(window) {
   sampler_ = CreateScope<vulkan::Sampler>(*context_);
 
   std::array<vulkan::DescriptorPool::PoolSize, 2> pool_sizes{{
-      {vk::DescriptorType::eUniformBuffer, 1},
+      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight},
       {vk::DescriptorType::eCombinedImageSampler, 1},
   }};
-  descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(*context_, pool_sizes, 1);
+  descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(
+      *context_, pool_sizes, vulkan::kFramesInFlight);
 
   std::array<vk::DescriptorSetLayoutBinding, 2> set_bindings{};
   set_bindings[0].binding = 0;
@@ -140,12 +97,84 @@ Renderer::Renderer(Window& window) : window_(window) {
   descriptor_set_layout_ =
       CreateScope<vulkan::DescriptorSetLayout>(*context_, set_bindings);
 
-  descriptor_set_ = descriptor_pool_->Allocate(descriptor_set_layout_->handle());
-  CK_ENGINE_INFO("Descriptor pool ready (1 UBO + 1 sampler slot)");
+  for (auto& set : descriptor_sets_) {
+    set = descriptor_pool_->Allocate(descriptor_set_layout_->handle());
+  }
+  CK_ENGINE_INFO("Descriptor pool ready ({} sets, 1 UBO + 1 sampler each)",
+                 vulkan::kFramesInFlight);
 
   camera_ubo_ = CreateScope<vulkan::UniformBuffer<CameraData>>(
       *allocator_, vulkan::kFramesInFlight);
   CK_ENGINE_INFO("UBO ring ready ({} frames)", vulkan::kFramesInFlight);
+
+  // Compile the textured-quad shader.
+  auto spirv = slang_->CompileToSpirv("assets/shaders/textured_quad.slang");
+  CK_ENGINE_ASSERT(!spirv.empty(), "textured_quad.slang failed to compile");
+  CK_ENGINE_INFO("Slang compiled textured_quad.slang ({} bytes SPIR-V)",
+                 spirv.size() * sizeof(uint32_t));
+  quad_shader_ = CreateScope<vulkan::ShaderModule>(*context_, std::span{spirv});
+
+  // Quad geometry (centered at origin, 1x1 in world space). UVs span the full
+  // texture; (0,0) at top-left consistent with Vulkan Y-down NDC.
+  struct QuadVertex {
+    glm::vec2 pos;
+    glm::vec2 uv;
+  };
+  static constexpr std::array<QuadVertex, 4> kQuadVertices = {{
+      {{-0.5f, -0.5f}, {0.0f, 0.0f}},
+      {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
+      {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
+      {{-0.5f,  0.5f}, {0.0f, 1.0f}},
+  }};
+  static constexpr std::array<uint16_t, 6> kQuadIndices = {0, 1, 2, 2, 3, 0};
+
+  quad_vbo_ = vulkan::Buffer::CreateDeviceLocal(
+      *allocator_, kQuadVertices.data(), sizeof(kQuadVertices),
+      vk::BufferUsageFlagBits::eVertexBuffer);
+  quad_ibo_ = vulkan::Buffer::CreateDeviceLocal(
+      *allocator_, kQuadIndices.data(), sizeof(kQuadIndices),
+      vk::BufferUsageFlagBits::eIndexBuffer);
+  CK_ENGINE_INFO("Quad VBO {} bytes / IBO {} bytes",
+                 quad_vbo_->size(), quad_ibo_->size());
+
+  vk::VertexInputBindingDescription binding{};
+  binding.binding = 0;
+  binding.stride = sizeof(QuadVertex);
+  binding.inputRate = vk::VertexInputRate::eVertex;
+
+  std::array<vk::VertexInputAttributeDescription, 2> attributes{};
+  attributes[0].location = 0;
+  attributes[0].binding = 0;
+  attributes[0].format = vk::Format::eR32G32Sfloat;
+  attributes[0].offset = offsetof(QuadVertex, pos);
+  attributes[1].location = 1;
+  attributes[1].binding = 0;
+  attributes[1].format = vk::Format::eR32G32Sfloat;
+  attributes[1].offset = offsetof(QuadVertex, uv);
+
+  vulkan::VertexInput vertex_input{
+      .bindings = std::span{&binding, 1},
+      .attributes = std::span{attributes.data(), attributes.size()},
+  };
+
+  vk::DescriptorSetLayout set_layout = descriptor_set_layout_->handle();
+  quad_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
+      *context_, *quad_shader_, swapchain_->format(), vertex_input,
+      std::span{&set_layout, 1});
+  CK_ENGINE_INFO("Pipeline ready");
+
+  // Per-frame descriptor sets: each UBO slot binds into its own set so we
+  // can bindDescriptorSets(set[current_frame_]) without touching a set the
+  // GPU is still using. Texture/sampler are shared (read-only).
+  for (uint32_t i = 0; i < vulkan::kFramesInFlight; ++i) {
+    vulkan::DescriptorWriter writer;
+    writer.WriteBuffer(0, camera_ubo_->Handle(i), 0, sizeof(CameraData),
+                       vk::DescriptorType::eUniformBuffer);
+    writer.WriteImage(1, texture_->view(), sampler_->handle(),
+                      vk::ImageLayout::eShaderReadOnlyOptimal,
+                      vk::DescriptorType::eCombinedImageSampler);
+    writer.Update(*context_, descriptor_sets_[i]);
+  }
 }
 
 Renderer::~Renderer() {
@@ -193,10 +222,15 @@ void Renderer::BeginFrame() {
   // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
 
-  // 5.2.3: write camera UBO for the current slot. Identity matrix for now;
-  // shader doesn't sample this until 5.2.4 (textured quad).
+  // Write camera UBO for the current slot. glm::ortho is a GL-style
+  // projection (Y up); Vulkan NDC has Y down, so flip the Y scale on
+  // the projection matrix's diagonal.
+  vk::Extent2D extent = swapchain_->extent();
+  float aspect = static_cast<float>(extent.width) /
+                 static_cast<float>(extent.height);
   CameraData cam{};
-  cam.view_proj = glm::mat4(1.0f);
+  cam.view_proj = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
+  cam.view_proj[1][1] *= -1.0f;
   camera_ubo_->Write(current_frame_, cam);
 
   uint32_t image_index = 0;
@@ -250,17 +284,20 @@ void Renderer::BeginFrame() {
   rendering.pColorAttachments = &color_att;
   cmd.beginRendering(rendering);
 
-  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_->handle());
-  vk::Buffer vbo = vertex_buffer_->handle();
+  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, quad_pipeline_->handle());
+  cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                         quad_pipeline_->layout(), 0,
+                         descriptor_sets_[current_frame_], {});
+  vk::Buffer vbo = quad_vbo_->handle();
   vk::DeviceSize vbo_offset = 0;
   cmd.bindVertexBuffers(0, 1, &vbo, &vbo_offset);
-  vk::Extent2D extent = swapchain_->extent();
+  cmd.bindIndexBuffer(quad_ibo_->handle(), 0, vk::IndexType::eUint16);
   vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(extent.width),
                         static_cast<float>(extent.height), 0.0f, 1.0f};
   cmd.setViewport(0, viewport);
   vk::Rect2D scissor{vk::Offset2D{0, 0}, extent};
   cmd.setScissor(0, scissor);
-  cmd.draw(3, 1, 0, 0);
+  cmd.drawIndexed(6, 1, 0, 0, 0);
 
   frame_active_ = true;
 }

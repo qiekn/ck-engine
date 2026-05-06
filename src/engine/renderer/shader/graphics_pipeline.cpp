@@ -11,9 +11,12 @@ namespace ck::vulkan {
 GraphicsPipeline::GraphicsPipeline(Context& ctx,
                                    const ShaderModule& shader,
                                    vk::Format color_format,
-                                   const VertexInput& vertex_input)
+                                   const VertexInput& vertex_input,
+                                   std::span<const vk::DescriptorSetLayout> set_layouts)
     : device_(ctx.device()) {
   vk::PipelineLayoutCreateInfo layout_info{};
+  layout_info.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+  layout_info.pSetLayouts = set_layouts.data();
   layout_ = device_.createPipelineLayout(layout_info);
 
   std::array<vk::PipelineShaderStageCreateInfo, 2> stages{};

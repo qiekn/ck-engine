@@ -26,7 +26,8 @@ struct VertexInput {
 class GraphicsPipeline {
 public:
   GraphicsPipeline(Context& ctx, const ShaderModule& shader, vk::Format color_format,
-                   const VertexInput& vertex_input);
+                   const VertexInput& vertex_input,
+                   std::span<const vk::DescriptorSetLayout> set_layouts = {});
   ~GraphicsPipeline();
 
   GraphicsPipeline(const GraphicsPipeline&) = delete;

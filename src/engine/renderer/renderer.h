@@ -65,15 +65,16 @@ private:
   std::chrono::steady_clock::time_point start_time_;
 
   Scope<vulkan::SlangCompiler> slang_;
-  Scope<vulkan::ShaderModule> triangle_shader_;
-  Scope<vulkan::GraphicsPipeline> triangle_pipeline_;
-  Scope<vulkan::Buffer> vertex_buffer_;
   Scope<vulkan::Image> texture_;
   Scope<vulkan::Sampler> sampler_;
   Scope<vulkan::DescriptorPool> descriptor_pool_;
   Scope<vulkan::DescriptorSetLayout> descriptor_set_layout_;
-  vk::DescriptorSet descriptor_set_;
+  std::array<vk::DescriptorSet, vulkan::kFramesInFlight> descriptor_sets_;
   Scope<vulkan::UniformBuffer<CameraData>> camera_ubo_;
+  Scope<vulkan::ShaderModule> quad_shader_;
+  Scope<vulkan::GraphicsPipeline> quad_pipeline_;
+  Scope<vulkan::Buffer> quad_vbo_;
+  Scope<vulkan::Buffer> quad_ibo_;
 };
 
 }  // namespace ck

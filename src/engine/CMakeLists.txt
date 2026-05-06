@@ -26,7 +26,6 @@ target_precompile_headers(ck PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 
 target_link_libraries(ck PUBLIC
   glfw
-  glad
   glm
   imgui
   stb_image

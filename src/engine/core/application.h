@@ -7,7 +7,6 @@
 #include "core/window.h"
 #include "deltatime.h"
 #include "events/application_event.h"
-#include "imgui/imgui_layer.h"
 
 namespace ck {
 
@@ -39,8 +38,6 @@ public:
 
   inline auto& GetWindow() { return window_; }
 
-  ImGuiLayer* GetImGuiLayer() { return imgui_layer_; }
-
   inline static Application& Get() { return *instance_; }
 
   const ApplicationSpecification& GetSpecification() const { return specification_; }
@@ -54,7 +51,6 @@ private:
   bool running_ = true;
   bool minimized_ = false;
   Scope<Window> window_;
-  ImGuiLayer* imgui_layer_;
   LayerStack layer_stack_;
   DeltaTime timestep_;
   std::chrono::time_point<std::chrono::steady_clock> last_frame_time_ =
@@ -67,7 +63,7 @@ private:
 extern Application* CreateApplication(ApplicationCommandLineArgs args);
 }  // namespace ck
 
-#define MAKE_APPLICATION(ClassName)                                        \
+#define MAKE_APPLICATION(ClassName)                                             \
   ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) { \
-    return new ClassName(args);                                            \
+    return new ClassName(args);                                                 \
   }

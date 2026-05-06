@@ -1,20 +1,15 @@
 #include <ck.h>
 
-#include <memory>
-
 #include "core/entry_point.h"  // IWYU pragma: keep
-#include "editor_layer.h"
 
 namespace ck {
 
-class Editor : public ck::Application {
+class Editor : public Application {
 public:
-  explicit Editor(const ApplicationSpecification& spec) : Application(spec) {
-    PushLayer(std::make_unique<EditorLayer>());
-  }
-
+  explicit Editor(const ApplicationSpecification& spec) : Application(spec) {}
   ~Editor() {}
 };
+
 }  // namespace ck
 
 ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) {

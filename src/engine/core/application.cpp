@@ -1,14 +1,11 @@
 #include "application.h"
+
+#include <filesystem>
+
 #include "core/deltatime.h"
 #include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
-#include "renderer/renderer.h"
-
-#include "glad/gl.h"
-
-#include <filesystem>
-#include <memory>
 
 namespace ck {
 
@@ -24,12 +21,6 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
 
   window_ = Window::Create(WindowProps(specification_.name));
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
-
-  Renderer::Init();
-
-  auto imgui_layer = std::make_unique<ImGuiLayer>();
-  imgui_layer_ = imgui_layer.get();  // 只要我们不 PopOverlay, imgui_layer_ 就不会悬空
-  PushOverlay(std::move(imgui_layer));
 }
 
 Application::~Application() {
@@ -51,15 +42,6 @@ void Application::Run() {
       }
     }
 
-    imgui_layer_->Begin();  // this is dirty, but it works
-    {
-      CK_PROFILE_SCOPE("LayerStack OnImGuiRender");
-      for (auto& layer : layer_stack_) {
-        layer->OnImGuiRender();
-      }
-    }
-    imgui_layer_->End();
-
     window_->OnUpdate();
     last_frame_time_ = time;
   }
@@ -76,9 +58,7 @@ void Application::OnEvent(Event& e) {
   dispatcher.DispatchEvent<WindowResizeEvent>(CK_BIND_EVENT(Application::OnWindowResizeEvent));
 
   for (auto it = layer_stack_.rbegin(); it != layer_stack_.rend(); it++) {
-    if (e.IsHandled()) {
-      break;
-    }
+    if (e.IsHandled()) break;
     (*it)->OnEvent(e);
   }
 }
@@ -94,9 +74,7 @@ bool Application::OnWindowResizeEvent(WindowResizeEvent& e) {
     minimized_ = true;
     return false;
   }
-
   minimized_ = false;
-  Renderer::OnWindowResize(e.GetWindowWidth(), e.GetWindowHeight());
   return false;
 }
 
@@ -111,4 +89,5 @@ void Application::PushOverlay(Scope<Layer> layer) {
   layer->OnAttach();
   layer_stack_.push_overlay(std::move(layer));
 }
+
 }  // namespace ck

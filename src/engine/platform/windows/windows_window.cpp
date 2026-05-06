@@ -1,11 +1,11 @@
 #include "windows_window.h"
+
 #include "core/log.h"
 #include "core/window.h"
 #include "debug/profiler.h"
 #include "events/application_event.h"
 #include "events/key_event.h"
 #include "events/mouse_event.h"
-#include "platform/opengl/opengl_context.h"
 
 #include "GLFW/glfw3.h"
 
@@ -44,23 +44,11 @@ void WindowsWindow::Init(const WindowProps& props) {
     CK_ENGINE_ASSERT(success, "Could not initialize GLFW");
     glfwSetErrorCallback(GLFWErrorCallback);
     is_glfw_initialized = true;
-    // Set all the required options for GLFW
-
-    // NOTE: OpenGL on MacOS has effectively been deprecated since 2011.
-    // It's stuck on an ancient version (4.1)
-
-    // If you are using MacOS, make sure to do these
-    // 1. Uncomment blow lines of codes
-    // 2. Go to https://gen.glad.sh/ generate gl4.1 and replace core/deps/glad
-    // 3. Disable `opengl_debug.hh & .cc`
-
-    /*
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    */
   }
+
+  // Vulkan: ask GLFW NOT to create an OpenGL context.
+  // The actual VkSurfaceKHR will be created later by the renderer.
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   {
     CK_PROFILE_SCOPE("glfwCreateWindow");
@@ -77,8 +65,6 @@ void WindowsWindow::Init(const WindowProps& props) {
     window_ = glfwCreateWindow((int)props.width, (int)props.height, data_.title.c_str(), nullptr,
                                nullptr);
   }
-  context_ = std::make_unique<OpenGlContext>(window_);
-  context_->Init();
 
   glfwSetWindowUserPointer(window_, &data_);
   SetVSync(true);
@@ -87,7 +73,6 @@ void WindowsWindow::Init(const WindowProps& props) {
     WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
     data.width = width;
     data.height = height;
-
     WindowResizeEvent event(width, height);
     data.event_callback(event);
   });
@@ -155,16 +140,13 @@ void WindowsWindow::Init(const WindowProps& props) {
 void WindowsWindow::OnUpdate() {
   CK_PROFILE_FUNCTION();
   glfwPollEvents();
-  glfwSwapBuffers(window_);
+  // No glfwSwapBuffers: under Vulkan, present is driven by vkQueuePresentKHR.
 }
 
 void WindowsWindow::SetVSync(bool enabled) {
   CK_PROFILE_FUNCTION();
-  if (enabled) {
-    glfwSwapInterval(1);
-  } else {
-    glfwSwapInterval(0);
-  }
+  // Under Vulkan, vsync is controlled by the swapchain present mode (Phase 3+).
+  // This flag is recorded for the renderer to read.
   data_.vsync = enabled;
 }
 

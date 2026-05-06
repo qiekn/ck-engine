@@ -21,7 +21,6 @@ set(BOX2D_DOCS            OFF CACHE BOOL "" FORCE)
 
 # - -----------------------------------------------------------------------------: Library deps with own CMakeLists
 add_subdirectory(glfw      EXCLUDE_FROM_ALL)
-add_subdirectory(glad      EXCLUDE_FROM_ALL)
 add_subdirectory(glm       EXCLUDE_FROM_ALL)
 add_subdirectory(imgui     EXCLUDE_FROM_ALL)
 add_subdirectory(imguizmo  EXCLUDE_FROM_ALL)

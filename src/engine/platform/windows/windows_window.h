@@ -1,9 +1,7 @@
 #pragma once
 
 #include "core/window.h"
-#include "glad/gl.h"
 #include "GLFW/glfw3.h"
-#include "renderer/graphics_context.h"
 
 namespace ck {
 class WindowsWindow : public Window {
@@ -29,7 +27,6 @@ private:
   virtual void Shutdown();
 
   GLFWwindow* window_;
-  Scope<GraphicContext> context_;
 
   struct WindowData {
     std::string title;

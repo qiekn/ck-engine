@@ -23,10 +23,10 @@ The codebase is **mid-migration from OpenGL to Vulkan** (branch `3d`):
 
 - Build infrastructure: CMake 3.30, C++23, libc++, `import std`, presets — done (Phase 0/1)
 - OpenGL backend dropped (Phase 2a, commit `0c76c3b`); engine reduced to a bare GLFW window with `GLFW_NO_API`
-- Vulkan stack wired (Phase 2b, commit `91959cb`): volk + `Vulkan::cppm` (Vulkan-Hpp module) + VMA + Slang from the SDK; imgui switched to ocornut docking upstream
-- No rendering yet — next milestone is Phase 3 (instance/device/swapchain → clear-color)
+- Vulkan stack wired (Phase 2b, commit `91959cb`): volk (built from SDK source via `cmake/Vulkan.cmake`) + Vulkan-Hpp header + VMA + Slang from the SDK; imgui on ocornut docking upstream
+- Vulkan bring-up done (Phase 3): `Renderer` drives BeginFrame/EndFrame on a Vulkan 1.3 dynamic-rendering loop with a time-cycled clear color; resize / out-of-date / suboptimal handled
 
-Editor (`editor`) and sandbox (`sandbox`) currently just open an empty Application + LayerStack — the editor panels, scene/ECS, and Renderer/Renderer2D were deleted in Phase 2a and will be rebuilt against Vulkan in Phase 5+.
+Editor (`editor`) and sandbox (`sandbox`) open a window with the Vulkan clear-color loop running — no scene/ECS or 2D content yet (those will be rebuilt in Phase 5+).
 
 ## Current Learning Context
 
@@ -76,9 +76,16 @@ All targets globbed with `CONFIGURE_DEPENDS`. `CMAKE_RUNTIME_OUTPUT_DIRECTORY` k
 
 Both executables include `core/entry_point.h` exactly once. That header defines `main()`, calls `ck::Log::Init()`, then expects the client to provide `ck::CreateApplication(args)` (see `src/editor/editor.cpp` and `src/sandbox/sandbox.cpp`).
 
-## Architecture (post-Phase-2a, bare window)
+## Architecture (post-Phase-3, clear-color renderer)
 
-What survived the Phase 2a pruning — the early-Hazel layered skeleton, no rendering or content systems:
+The early-Hazel layered skeleton plus a thin Vulkan-only renderer:
+
+- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context`, `vulkan::Swapchain`, and `std::array<Frame, kFramesInFlight>`. `BeginFrame` / `EndFrame` drive the dynamic-rendering frame loop; `OnResize` defers swapchain recreate to next BeginFrame.
+- **`vulkan::Context`** (`renderer/vulkan/context.{h,cpp}`) — volk init, Vulkan-Hpp dynamic dispatcher, validation layer + debug messenger, GLFW surface, physical device pick, logical device with vk1.3 dynamic rendering + sync2.
+- **`vulkan::Swapchain`** (`renderer/vulkan/swapchain.{h,cpp}`) — surface format / present mode (vsync via `Window::IsVSync`), HiDPI extent, per-image views; `Recreate()`.
+- **`vulkan::Frame`** (`renderer/vulkan/frame.{h,cpp}`) — per-frame-in-flight: command pool/buffer + `image_available` semaphore + `in_flight` fence (signalled init). `render_finished` is per-swapchain-image and lives in `Renderer` (binary semaphore reuse rule).
+
+Everything else survived the Phase 2a pruning — the early-Hazel layered skeleton, no scene/ECS or content systems yet:
 
 - **Application** (`core/application.{h,cpp}`) — singleton (`Application::Get()`). Owns a `Window` and a `LayerStack`. Run loop ticks layers then `window_->OnUpdate()` (just `glfwPollEvents()` now — present is the future Vulkan renderer's job).
 - **Layer / LayerStack** (`core/layer.h`, `core/layer_stack.{h,cpp}`) — `OnAttach/OnDetach/OnUpdate(DeltaTime)/OnEvent/OnImGuiRender`. Overlays after regular layers; reverse iteration for events (stop on `IsHandled`).
@@ -96,8 +103,8 @@ Roadmap (one phase = one commit):
 - **Phase 1** ✅ Split CMakeLists into per-target subdirectories — `e12282a`
 - **Phase 2a** ✅ Drop OpenGL backend; engine reduced to bare window — `0c76c3b`
 - **Phase 2b** ✅ Add Vulkan stack (volk + `Vulkan::cppm` + VMA + Slang); switch imgui to upstream docking — `91959cb`
-- **Phase 3** ⏳ Vulkan instance / device / swapchain + clear-color milestone (every-frame color cycle)
-- **Phase 4** — Slang runtime compile + first graphics pipeline + hello-triangle
+- **Phase 3** ✅ Vulkan bring-up: instance/device/swapchain → time-based clear-color (dynamic rendering, sync2, 2 frames in flight, resize handling) — `b29641c`..`14ea163`
+- **Phase 4** ⏳ Slang runtime compile + first graphics pipeline + hello-triangle
 - **Phase 5+** — Renderer / Material / RenderPass abstractions, Renderer2D rebuild, modules-based public API (`import ck` replaces the umbrella header)
 
 ## Conventions

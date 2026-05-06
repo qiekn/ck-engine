@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 namespace ck {
 class UUID {
@@ -16,14 +17,9 @@ private:
 };
 }  // namespace ck
 
-namespace std {
-template <typename T>
-struct hash;
-
 template <>
-struct hash<ck::UUID> {
+struct std::hash<ck::UUID> {
   std::size_t operator()(const ck::UUID& uuid) const {
     return (uint64_t)uuid;
   }
 };
-}  // namespace std

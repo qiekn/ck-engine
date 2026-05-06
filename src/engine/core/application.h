@@ -8,7 +8,10 @@
 #include "deltatime.h"
 #include "events/application_event.h"
 
-namespace ck::vulkan { class Context; }
+namespace ck::vulkan {
+class Context;
+class Swapchain;
+}
 
 namespace ck {
 
@@ -53,7 +56,10 @@ private:
   bool running_ = true;
   bool minimized_ = false;
   Scope<Window> window_;
-  Scope<vulkan::Context> vk_context_;  // depends on window_; declared after so it dies first
+  // Order matters: vk_swapchain_ depends on vk_context_ depends on window_.
+  // Reverse-declaration-order destruction handles teardown correctly.
+  Scope<vulkan::Context> vk_context_;
+  Scope<vulkan::Swapchain> vk_swapchain_;
   LayerStack layer_stack_;
   DeltaTime timestep_;
   std::chrono::time_point<std::chrono::steady_clock> last_frame_time_ =

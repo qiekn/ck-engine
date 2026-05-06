@@ -7,6 +7,7 @@
 #include "events/application_event.h"
 #include "events/event.h"
 #include "renderer/vulkan/context.h"
+#include "renderer/vulkan/swapchain.h"
 
 namespace ck {
 
@@ -24,6 +25,7 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
   vk_context_ = CreateScope<vulkan::Context>(*window_);
+  vk_swapchain_ = CreateScope<vulkan::Swapchain>(*vk_context_, *window_);
 }
 
 Application::~Application() {

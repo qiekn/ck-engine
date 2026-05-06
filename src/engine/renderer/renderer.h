@@ -4,10 +4,12 @@
 #include <chrono>
 #include <cstdint>
 #include <vector>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
 #include "core/core.h"
 #include "renderer/vulkan/frame.h"  // for kFramesInFlight
+#include "renderer/vulkan/uniform_buffer.h"
 
 namespace ck {
 class Window;
@@ -44,6 +46,10 @@ public:
   void OnResize(uint32_t width, uint32_t height);
 
 private:
+  struct CameraData {
+    glm::mat4 view_proj;
+  };
+
   void RecreateSwapchain();
 
   Window& window_;
@@ -67,6 +73,7 @@ private:
   Scope<vulkan::DescriptorPool> descriptor_pool_;
   Scope<vulkan::DescriptorSetLayout> descriptor_set_layout_;
   vk::DescriptorSet descriptor_set_;
+  Scope<vulkan::UniformBuffer<CameraData>> camera_ubo_;
 };
 
 }  // namespace ck

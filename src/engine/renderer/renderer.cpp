@@ -142,6 +142,10 @@ Renderer::Renderer(Window& window) : window_(window) {
 
   descriptor_set_ = descriptor_pool_->Allocate(descriptor_set_layout_->handle());
   CK_ENGINE_INFO("Descriptor pool ready (1 UBO + 1 sampler slot)");
+
+  camera_ubo_ = CreateScope<vulkan::UniformBuffer<CameraData>>(
+      *allocator_, vulkan::kFramesInFlight);
+  CK_ENGINE_INFO("UBO ring ready ({} frames)", vulkan::kFramesInFlight);
 }
 
 Renderer::~Renderer() {
@@ -188,6 +192,12 @@ void Renderer::BeginFrame() {
   // Wait for previous use of this slot to finish; do NOT reset fence yet, so we can
   // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
+
+  // 5.2.3: write camera UBO for the current slot. Identity matrix for now;
+  // shader doesn't sample this until 5.2.4 (textured quad).
+  CameraData cam{};
+  cam.view_proj = glm::mat4(1.0f);
+  camera_ubo_->Write(current_frame_, cam);
 
   uint32_t image_index = 0;
   try {

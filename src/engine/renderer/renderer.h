@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <vector>
 #include <vulkan/vulkan.hpp>
@@ -45,6 +46,7 @@ private:
   uint32_t image_index_ = 0;
   bool frame_active_ = false;
   bool resize_pending_ = false;
+  std::chrono::steady_clock::time_point start_time_;
 };
 
 }  // namespace ck

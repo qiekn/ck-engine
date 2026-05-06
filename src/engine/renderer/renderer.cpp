@@ -3,6 +3,9 @@
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
 
+#include <cmath>
+#include <numbers>
+
 #include <volk.h>
 
 #include "core/log.h"
@@ -12,8 +15,6 @@
 namespace ck {
 
 namespace {
-
-constexpr vk::ClearColorValue kClearColor{std::array<float, 4>{0.10f, 0.18f, 0.24f, 1.0f}};
 
 void TransitionImage(vk::CommandBuffer cmd,
                      vk::Image image,
@@ -46,6 +47,7 @@ void TransitionImage(vk::CommandBuffer cmd,
 
 Renderer::Renderer(Window& window) : window_(window) {
   CK_PROFILE_FUNCTION();
+  start_time_ = std::chrono::steady_clock::now();
   context_ = CreateScope<vulkan::Context>(window_);
   swapchain_ = CreateScope<vulkan::Swapchain>(*context_, window_);
   for (auto& f : frames_) f = CreateScope<vulkan::Frame>(*context_);
@@ -126,12 +128,22 @@ void Renderer::BeginFrame() {
                   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                   vk::AccessFlagBits2::eColorAttachmentWrite);
 
+  // Time-based RGB cycle: each channel is a sine offset by 120 degrees.
+  float t = std::chrono::duration<float>(
+      std::chrono::steady_clock::now() - start_time_).count();
+  constexpr float kTwoThirdsPi = 2.0f * std::numbers::pi_v<float> / 3.0f;
+  vk::ClearColorValue clear_color{std::array<float, 4>{
+      0.5f + 0.5f * std::sin(t),
+      0.5f + 0.5f * std::sin(t + kTwoThirdsPi),
+      0.5f + 0.5f * std::sin(t + 2.0f * kTwoThirdsPi),
+      1.0f}};
+
   vk::RenderingAttachmentInfo color_att{};
   color_att.imageView = swapchain_->image_views()[image_index_];
   color_att.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
   color_att.loadOp = vk::AttachmentLoadOp::eClear;
   color_att.storeOp = vk::AttachmentStoreOp::eStore;
-  color_att.clearValue.color = kClearColor;
+  color_att.clearValue.color = clear_color;
 
   vk::RenderingInfo rendering{};
   rendering.renderArea.offset = vk::Offset2D{0, 0};

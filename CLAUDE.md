@@ -1,4 +1,4 @@
-﻿# User's Notes
+# User's Notes
 
 ## Code style
 
@@ -25,8 +25,9 @@ The codebase is **mid-migration from OpenGL to Vulkan** (branch `3d`):
 - OpenGL backend dropped (Phase 2a, commit `0c76c3b`); engine reduced to a bare GLFW window with `GLFW_NO_API`
 - Vulkan stack wired (Phase 2b, commit `91959cb`): volk (built from SDK source via `cmake/Vulkan.cmake`) + Vulkan-Hpp header + VMA + Slang from the SDK; imgui on ocornut docking upstream
 - Vulkan bring-up done (Phase 3): `Renderer` drives BeginFrame/EndFrame on a Vulkan 1.3 dynamic-rendering loop with a time-cycled clear color; resize / out-of-date / suboptimal handled
+- Hello-triangle done (Phase 4): runtime Slang→SPIR-V compile + a dynamic-rendering graphics pipeline; `BeginFrame` records `bind + setViewport/Scissor + draw(3,1,0,0)`. Triangle positions/colors come from `SV_VertexID` — no vertex/index buffer yet (that lands in Phase 5)
 
-Editor (`editor`) and sandbox (`sandbox`) open a window with the Vulkan clear-color loop running — no scene/ECS or 2D content yet (those will be rebuilt in Phase 5+).
+Editor (`editor`) and sandbox (`sandbox`) open a window with the Vulkan clear-color loop running and an RGB vertex-interp triangle on top — no scene/ECS, geometry, materials, or 2D batches yet (those land in Phase 5+).
 
 ## Current Learning Context
 
@@ -76,14 +77,17 @@ All targets globbed with `CONFIGURE_DEPENDS`. `CMAKE_RUNTIME_OUTPUT_DIRECTORY` k
 
 Both executables include `core/entry_point.h` exactly once. That header defines `main()`, calls `ck::Log::Init()`, then expects the client to provide `ck::CreateApplication(args)` (see `src/editor/editor.cpp` and `src/sandbox/sandbox.cpp`).
 
-## Architecture (post-Phase-3, clear-color renderer)
+## Architecture (post-Phase-4, hello-triangle renderer)
 
 The early-Hazel layered skeleton plus a thin Vulkan-only renderer:
 
-- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context`, `vulkan::Swapchain`, and `std::array<Frame, kFramesInFlight>`. `BeginFrame` / `EndFrame` drive the dynamic-rendering frame loop; `OnResize` defers swapchain recreate to next BeginFrame.
-- **`vulkan::Context`** (`renderer/vulkan/context.{h,cpp}`) — volk init, Vulkan-Hpp dynamic dispatcher, validation layer + debug messenger, GLFW surface, physical device pick, logical device with vk1.3 dynamic rendering + sync2.
+- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context`, `vulkan::Swapchain`, `std::array<Frame, kFramesInFlight>`, plus the hello-triangle's `SlangCompiler` / `ShaderModule` / `GraphicsPipeline`. `BeginFrame` records `beginRendering` + bind triangle pipeline + dynamic viewport/scissor + `draw(3,1,0,0)`; `EndFrame` does layout transition + submit2 + present. `OnResize` defers swapchain recreate to next BeginFrame.
+- **`vulkan::Context`** (`renderer/vulkan/context.{h,cpp}`) — volk init, Vulkan-Hpp dynamic dispatcher, validation layer + debug messenger, GLFW surface, physical device pick, logical device with vk1.3 dynamic rendering + sync2 + vk1.1 shaderDrawParameters (Slang's SV_VertexID translation declares the DrawParameters capability).
 - **`vulkan::Swapchain`** (`renderer/vulkan/swapchain.{h,cpp}`) — surface format / present mode (vsync via `Window::IsVSync`), HiDPI extent, per-image views; `Recreate()`.
 - **`vulkan::Frame`** (`renderer/vulkan/frame.{h,cpp}`) — per-frame-in-flight: command pool/buffer + `image_available` semaphore + `in_flight` fence (signalled init). `render_finished` is per-swapchain-image and lives in `Renderer` (binary semaphore reuse rule).
+- **`vulkan::SlangCompiler`** (`renderer/shader/slang_compiler.{h,cpp}`) — runtime Slang→SPIR-V compiler. Owns `slang::IGlobalSession` + a `slang::ISession` configured for SPIR-V 1.4 / EmitSpirvDirectly / column-major matrices. `CompileToSpirv(path)` slurps and compiles a `.slang` file with vert+frag entry points.
+- **`vulkan::ShaderModule`** (`renderer/shader/shader_module.{h,cpp}`) — RAII over `vk::ShaderModule`; one module hosts both vert and frag entry points, pipeline picks via `(stage, "main")`.
+- **`vulkan::GraphicsPipeline`** (`renderer/shader/graphics_pipeline.{h,cpp}`) — dynamic-rendering pipeline (no vertex input, no descriptors, dynamic viewport+scissor) wired to the swapchain color format via `vk::PipelineRenderingCreateInfo`.
 
 Everything else survived the Phase 2a pruning — the early-Hazel layered skeleton, no scene/ECS or content systems yet:
 
@@ -104,7 +108,7 @@ Roadmap (one phase = one commit):
 - **Phase 2a** ✅ Drop OpenGL backend; engine reduced to bare window — `0c76c3b`
 - **Phase 2b** ✅ Add Vulkan stack (volk + `Vulkan::cppm` + VMA + Slang); switch imgui to upstream docking — `91959cb`
 - **Phase 3** ✅ Vulkan bring-up: instance/device/swapchain → time-based clear-color (dynamic rendering, sync2, 2 frames in flight, resize handling) — `b29641c`..`14ea163`
-- **Phase 4** ⏳ Slang runtime compile + first graphics pipeline + hello-triangle
+- **Phase 4** ✅ Slang runtime compile + first graphics pipeline + hello-triangle (RGB vertex-interp triangle on the time-cycled clear) — `36d816e`..`b52bc90`
 - **Phase 5+** — Renderer / Material / RenderPass abstractions, Renderer2D rebuild, modules-based public API (`import ck` replaces the umbrella header)
 
 ## Conventions

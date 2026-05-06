@@ -150,7 +150,7 @@ imgui's `imgui_impl_vulkan` is built with `IMGUI_IMPL_VULKAN_USE_VOLK` so engine
 
 ## Documentation Strategy
 
-Working context here is constrained — keep messages tight (~30k tokens). Externalize anything that risks growing the conversation:
+Working context here is constrained — keep messages tight (~300k tokens). Externalize anything that risks growing the conversation:
 
 - **`./docs/src/*.md`** — long-form notes (design rationale, API tours, Vulkan walkthroughs, learning notes). Independent mdBook on the `docs` orphan branch (separate `docs/.git`); commit there independently, not in engine commits.
 - **`CLAUDE.md`** — durable project rules and conventions. Edit when something changes about *how* we work (style, layout, build, phase completion). Not for transient state.

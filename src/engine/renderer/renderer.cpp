@@ -3,6 +3,7 @@
 #include "shader/graphics_pipeline.h"
 #include "shader/shader_module.h"
 #include "shader/slang_compiler.h"
+#include "vulkan/allocator.h"
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
 
@@ -52,6 +53,7 @@ Renderer::Renderer(Window& window) : window_(window) {
   CK_PROFILE_FUNCTION();
   start_time_ = std::chrono::steady_clock::now();
   context_ = CreateScope<vulkan::Context>(window_);
+  allocator_ = CreateScope<vulkan::Allocator>(*context_);
   swapchain_ = CreateScope<vulkan::Swapchain>(*context_, window_);
   for (auto& f : frames_) f = CreateScope<vulkan::Frame>(*context_);
 

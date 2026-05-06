@@ -24,6 +24,16 @@ target_compile_options(ck PRIVATE $<$<CONFIG:Debug>:-g>)
 
 target_precompile_headers(ck PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 
+# VMA implementation TU stays out of the engine PCH so VMA's macro
+# pollution (VMA_IMPLEMENTATION + dynamic-functions defines) doesn't leak
+# into precompiled state. Also silence vk_mem_alloc.h's nullability
+# annotations (clang -Wnullability-completeness fires on every PFN entry).
+set_source_files_properties(
+  "${CMAKE_CURRENT_SOURCE_DIR}/renderer/vulkan/vma.cpp"
+  PROPERTIES
+    SKIP_PRECOMPILE_HEADERS ON
+    COMPILE_OPTIONS "-Wno-nullability-completeness;-Wno-nullability-extension")
+
 target_link_libraries(ck PUBLIC
   glfw
   glm

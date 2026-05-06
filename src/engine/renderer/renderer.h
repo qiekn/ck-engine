@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <array>
 #include <chrono>
@@ -16,6 +16,7 @@ class Window;
 namespace ck::vulkan {
 class Context;
 class Swapchain;
+class Allocator;
 class SlangCompiler;
 class ShaderModule;
 class GraphicsPipeline;
@@ -42,6 +43,7 @@ private:
 
   Window& window_;
   Scope<vulkan::Context> context_;
+  Scope<vulkan::Allocator> allocator_;
   Scope<vulkan::Swapchain> swapchain_;
   std::array<Scope<vulkan::Frame>, vulkan::kFramesInFlight> frames_;
   std::vector<vk::Semaphore> render_finished_;  // per-image

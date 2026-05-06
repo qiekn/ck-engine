@@ -17,6 +17,7 @@ namespace ck::vulkan {
 class Context;
 class Swapchain;
 class Allocator;
+class Buffer;
 class SlangCompiler;
 class ShaderModule;
 class GraphicsPipeline;
@@ -56,6 +57,7 @@ private:
   Scope<vulkan::SlangCompiler> slang_;
   Scope<vulkan::ShaderModule> triangle_shader_;
   Scope<vulkan::GraphicsPipeline> triangle_pipeline_;
+  Scope<vulkan::Buffer> vertex_buffer_;
 };
 
 }  // namespace ck

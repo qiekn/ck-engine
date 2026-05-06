@@ -8,9 +8,12 @@
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
 
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <numbers>
 
+#include <glm/glm.hpp>
 #include <volk.h>
 
 #include "core/log.h"
@@ -69,20 +72,44 @@ Renderer::Renderer(Window& window) : window_(window) {
                  spirv.size() * sizeof(uint32_t));
 
   triangle_shader_ = CreateScope<vulkan::ShaderModule>(*context_, std::span{spirv});
-  triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
-      *context_, *triangle_shader_, swapchain_->format());
-  CK_ENGINE_INFO("Pipeline ready");
 
-  // 5.1.2 smoke test: build a dummy 64-byte device-local buffer through the
-  // staging path, log size, then drop it. Exercises Allocator::ImmediateSubmit
-  // and the Buffer ctor/dtor; will be replaced by the real vertex buffer in 5.1.3.
-  {
-    std::array<uint8_t, 64> dummy_data{};
-    auto dummy = vulkan::Buffer::CreateDeviceLocal(
-        *allocator_, dummy_data.data(), dummy_data.size(),
-        vk::BufferUsageFlagBits::eVertexBuffer);
-    CK_ENGINE_INFO("Buffer ready: {} bytes", dummy->size());
-  }
+  struct Vertex {
+    glm::vec2 pos;
+    glm::vec3 color;
+  };
+  static constexpr std::array<Vertex, 3> kTriangleVertices = {{
+      {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+  }};
+  vertex_buffer_ = vulkan::Buffer::CreateDeviceLocal(
+      *allocator_, kTriangleVertices.data(),
+      sizeof(kTriangleVertices), vk::BufferUsageFlagBits::eVertexBuffer);
+  CK_ENGINE_INFO("Vertex buffer ready: {} bytes", vertex_buffer_->size());
+
+  vk::VertexInputBindingDescription binding{};
+  binding.binding = 0;
+  binding.stride = sizeof(Vertex);
+  binding.inputRate = vk::VertexInputRate::eVertex;
+
+  std::array<vk::VertexInputAttributeDescription, 2> attributes{};
+  attributes[0].location = 0;
+  attributes[0].binding = 0;
+  attributes[0].format = vk::Format::eR32G32Sfloat;
+  attributes[0].offset = offsetof(Vertex, pos);
+  attributes[1].location = 1;
+  attributes[1].binding = 0;
+  attributes[1].format = vk::Format::eR32G32B32Sfloat;
+  attributes[1].offset = offsetof(Vertex, color);
+
+  vulkan::VertexInput vertex_input{
+      .bindings = std::span{&binding, 1},
+      .attributes = std::span{attributes.data(), attributes.size()},
+  };
+
+  triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
+      *context_, *triangle_shader_, swapchain_->format(), vertex_input);
+  CK_ENGINE_INFO("Pipeline ready");
 }
 
 Renderer::~Renderer() {
@@ -182,6 +209,9 @@ void Renderer::BeginFrame() {
   cmd.beginRendering(rendering);
 
   cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, triangle_pipeline_->handle());
+  vk::Buffer vbo = vertex_buffer_->handle();
+  vk::DeviceSize vbo_offset = 0;
+  cmd.bindVertexBuffers(0, 1, &vbo, &vbo_offset);
   vk::Extent2D extent = swapchain_->extent();
   vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(extent.width),
                         static_cast<float>(extent.height), 0.0f, 1.0f};

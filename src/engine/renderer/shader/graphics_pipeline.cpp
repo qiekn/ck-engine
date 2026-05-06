@@ -1,4 +1,4 @@
-﻿#include "renderer/shader/graphics_pipeline.h"
+#include "renderer/shader/graphics_pipeline.h"
 
 #include <array>
 #include <cstdint>
@@ -10,7 +10,8 @@ namespace ck::vulkan {
 
 GraphicsPipeline::GraphicsPipeline(Context& ctx,
                                    const ShaderModule& shader,
-                                   vk::Format color_format)
+                                   vk::Format color_format,
+                                   const VertexInput& vertex_input)
     : device_(ctx.device()) {
   vk::PipelineLayoutCreateInfo layout_info{};
   layout_ = device_.createPipelineLayout(layout_info);
@@ -23,8 +24,13 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
   stages[1].module = shader.handle();
   stages[1].pName = "main";
 
-  // No vertex input: positions/colors come from SV_VertexID inside the shader.
-  vk::PipelineVertexInputStateCreateInfo vertex_input{};
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state{};
+  vertex_input_state.vertexBindingDescriptionCount =
+      static_cast<uint32_t>(vertex_input.bindings.size());
+  vertex_input_state.pVertexBindingDescriptions = vertex_input.bindings.data();
+  vertex_input_state.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(vertex_input.attributes.size());
+  vertex_input_state.pVertexAttributeDescriptions = vertex_input.attributes.data();
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly{};
   input_assembly.topology = vk::PrimitiveTopology::eTriangleList;
@@ -68,7 +74,7 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
   info.pNext = &rendering_info;
   info.stageCount = static_cast<uint32_t>(stages.size());
   info.pStages = stages.data();
-  info.pVertexInputState = &vertex_input;
+  info.pVertexInputState = &vertex_input_state;
   info.pInputAssemblyState = &input_assembly;
   info.pViewportState = &viewport_state;
   info.pRasterizationState = &rasterization;

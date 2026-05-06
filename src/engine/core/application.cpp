@@ -1,4 +1,4 @@
-#include "application.h"
+﻿#include "application.h"
 
 #include <filesystem>
 
@@ -6,6 +6,7 @@
 #include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
+#include "renderer/vulkan/context.h"
 
 namespace ck {
 
@@ -21,6 +22,8 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
 
   window_ = Window::Create(WindowProps(specification_.name));
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
+
+  vk_context_ = CreateScope<vulkan::Context>(*window_);
 }
 
 Application::~Application() {

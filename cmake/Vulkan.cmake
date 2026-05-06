@@ -1,15 +1,20 @@
-# Centralised Vulkan stack discovery: vulkan loader + volk + Vulkan-Hpp module + VMA + Slang.
+﻿# Centralised Vulkan stack discovery: vulkan loader + volk + Vulkan-Hpp module + VMA + Slang.
 # Must be included AFTER project().
 
-# - -----------------------------------------------------------------------------: Vulkan + volk
-find_package(Vulkan REQUIRED COMPONENTS volk)
+# - -----------------------------------------------------------------------------: Vulkan loader
+# Skip the volk component: SDK ships volkd.lib built with MSVC /RTC, which won't
+# link with clang/lld. We compile volk.c ourselves below.
+find_package(Vulkan REQUIRED)
 
-# FindVulkan only adds ${Vulkan_INCLUDE_DIRS} to Vulkan::volk, but the SDK ships
-# volk.h under Include/Volk/. Make <volk.h> directly resolvable.
-if(EXISTS "${Vulkan_INCLUDE_DIRS}/Volk/volk.h")
-  set_property(TARGET Vulkan::volk APPEND PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIRS}/Volk")
-endif()
+# - -----------------------------------------------------------------------------: volk (built from SDK source)
+# Vulkan SDK ships volk source at <SDK>/Include/Volk/volk.{h,c}.
+add_library(ck_volk STATIC "${Vulkan_INCLUDE_DIRS}/Volk/volk.c")
+target_include_directories(ck_volk PUBLIC
+  "${Vulkan_INCLUDE_DIRS}"
+  "${Vulkan_INCLUDE_DIRS}/Volk")
+target_link_libraries(ck_volk PUBLIC Vulkan::Vulkan)
+set_target_properties(ck_volk PROPERTIES CXX_SCAN_FOR_MODULES OFF)
+add_library(Vulkan::volk ALIAS ck_volk)
 
 # - -----------------------------------------------------------------------------: Vulkan-Hpp C++ module (Vulkan::cppm)
 add_library(VulkanCppModule)

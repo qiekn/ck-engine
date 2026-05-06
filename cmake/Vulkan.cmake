@@ -13,6 +13,9 @@ target_include_directories(ck_volk PUBLIC
   "${Vulkan_INCLUDE_DIRS}"
   "${Vulkan_INCLUDE_DIRS}/Volk")
 target_link_libraries(ck_volk PUBLIC Vulkan::Vulkan)
+# Make every consumer of volk see vulkan headers WITHOUT prototypes; volk's
+# function-pointer table provides them at runtime.
+target_compile_definitions(ck_volk PUBLIC VK_NO_PROTOTYPES)
 set_target_properties(ck_volk PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 add_library(Vulkan::volk ALIAS ck_volk)
 

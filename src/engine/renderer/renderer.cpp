@@ -4,6 +4,7 @@
 #include "shader/shader_module.h"
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
+#include "vulkan/buffer.h"
 #include "vulkan/context.h"
 #include "vulkan/swapchain.h"
 
@@ -71,6 +72,17 @@ Renderer::Renderer(Window& window) : window_(window) {
   triangle_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
       *context_, *triangle_shader_, swapchain_->format());
   CK_ENGINE_INFO("Pipeline ready");
+
+  // 5.1.2 smoke test: build a dummy 64-byte device-local buffer through the
+  // staging path, log size, then drop it. Exercises Allocator::ImmediateSubmit
+  // and the Buffer ctor/dtor; will be replaced by the real vertex buffer in 5.1.3.
+  {
+    std::array<uint8_t, 64> dummy_data{};
+    auto dummy = vulkan::Buffer::CreateDeviceLocal(
+        *allocator_, dummy_data.data(), dummy_data.size(),
+        vk::BufferUsageFlagBits::eVertexBuffer);
+    CK_ENGINE_INFO("Buffer ready: {} bytes", dummy->size());
+  }
 }
 
 Renderer::~Renderer() {

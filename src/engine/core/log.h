@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "core.h"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -41,13 +41,13 @@ inline OStream& operator<<(OStream& os, const glm::qua<T, Q>& quaternion) {
 #define CK_ENGINE_INFO(...)  ::ck::Log::GetEngineLogger()->info(__VA_ARGS__)
 #define CK_ENGINE_WARN(...)  ::ck::Log::GetEngineLogger()->warn(__VA_ARGS__)
 #define CK_ENGINE_ERROR(...) ::ck::Log::GetEngineLogger()->error(__VA_ARGS__)
-#define CK_ENGINE_FATAL(...) ::ck::Log::GetEngineLogger()->fatal(__VA_ARGS__)
+#define CK_ENGINE_FATAL(...) ::ck::Log::GetEngineLogger()->critical(__VA_ARGS__)
 
 #define CK_CLIENT_TRACE(...) ::ck::Log::GetClientLogger()->trace(__VA_ARGS__)
 #define CK_CLIENT_INFO(...)  ::ck::Log::GetClientLogger()->info(__VA_ARGS__)
 #define CK_CLIENT_WARN(...)  ::ck::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define CK_CLIENT_ERROR(...) ::ck::Log::GetClientLogger()->error(__VA_ARGS__)
-#define CK_CLIENT_FATAL(...) ::ck::Log::GetClientLogger()->fatal(__VA_ARGS__)
+#define CK_CLIENT_FATAL(...) ::ck::Log::GetClientLogger()->critical(__VA_ARGS__)
 // clang-format on
 
 #define CK_ENABLE_ASSERTS

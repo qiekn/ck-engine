@@ -20,6 +20,8 @@ class Allocator;
 class Buffer;
 class Image;
 class Sampler;
+class DescriptorPool;
+class DescriptorSetLayout;
 class SlangCompiler;
 class ShaderModule;
 class GraphicsPipeline;
@@ -62,6 +64,9 @@ private:
   Scope<vulkan::Buffer> vertex_buffer_;
   Scope<vulkan::Image> texture_;
   Scope<vulkan::Sampler> sampler_;
+  Scope<vulkan::DescriptorPool> descriptor_pool_;
+  Scope<vulkan::DescriptorSetLayout> descriptor_set_layout_;
+  vk::DescriptorSet descriptor_set_;
 };
 
 }  // namespace ck

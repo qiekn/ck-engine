@@ -6,6 +6,7 @@
 #include "vulkan/allocator.h"
 #include "vulkan/buffer.h"
 #include "vulkan/context.h"
+#include "vulkan/descriptor.h"
 #include "vulkan/image.h"
 #include "vulkan/sampler.h"
 #include "vulkan/swapchain.h"
@@ -120,6 +121,27 @@ Renderer::Renderer(Window& window) : window_(window) {
                  texture_->extent().width, texture_->extent().height);
 
   sampler_ = CreateScope<vulkan::Sampler>(*context_);
+
+  std::array<vulkan::DescriptorPool::PoolSize, 2> pool_sizes{{
+      {vk::DescriptorType::eUniformBuffer, 1},
+      {vk::DescriptorType::eCombinedImageSampler, 1},
+  }};
+  descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(*context_, pool_sizes, 1);
+
+  std::array<vk::DescriptorSetLayoutBinding, 2> set_bindings{};
+  set_bindings[0].binding = 0;
+  set_bindings[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+  set_bindings[0].descriptorCount = 1;
+  set_bindings[0].stageFlags = vk::ShaderStageFlagBits::eVertex;
+  set_bindings[1].binding = 1;
+  set_bindings[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+  set_bindings[1].descriptorCount = 1;
+  set_bindings[1].stageFlags = vk::ShaderStageFlagBits::eFragment;
+  descriptor_set_layout_ =
+      CreateScope<vulkan::DescriptorSetLayout>(*context_, set_bindings);
+
+  descriptor_set_ = descriptor_pool_->Allocate(descriptor_set_layout_->handle());
+  CK_ENGINE_INFO("Descriptor pool ready (1 UBO + 1 sampler slot)");
 }
 
 Renderer::~Renderer() {

@@ -10,7 +10,6 @@
 #include "core/core.h"
 #include "renderer/camera.h"
 #include "renderer/vulkan/frame.h"  // for kFramesInFlight
-#include "renderer/vulkan/uniform_buffer.h"
 
 namespace ck {
 class Window;
@@ -20,19 +19,11 @@ namespace ck::vulkan {
 class Context;
 class Swapchain;
 class Allocator;
-class Buffer;
 class Image;
-class Sampler;
-class DescriptorPool;
-class DescriptorSetLayout;
 class SlangCompiler;
-class ShaderModule;
-class GraphicsPipeline;
 }
 
 namespace ck {
-
-class Material;
 
 class Renderer {
 public:
@@ -49,10 +40,6 @@ public:
   void OnResize(uint32_t width, uint32_t height);
 
 private:
-  struct CameraData {
-    glm::mat4 view_proj;
-  };
-
   void RecreateSwapchain();
 
   Window& window_;
@@ -67,15 +54,9 @@ private:
   bool resize_pending_ = false;
   std::chrono::steady_clock::time_point start_time_;
 
+  Camera camera_;
   Scope<vulkan::SlangCompiler> slang_;
   Scope<vulkan::Image> texture_;
-  Scope<vulkan::Sampler> sampler_;
-  Camera camera_;
-  Scope<vulkan::DescriptorPool> descriptor_pool_;
-  Scope<vulkan::UniformBuffer<CameraData>> camera_ubo_;
-  Scope<vulkan::Buffer> quad_vbo_;
-  Scope<vulkan::Buffer> quad_ibo_;
-  Scope<Material> quad_material_;
 };
 
 }  // namespace ck

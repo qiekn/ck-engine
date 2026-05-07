@@ -1,20 +1,15 @@
 #include "renderer.h"
 
 #include "camera.h"
-#include "material.h"
-#include "shader/graphics_pipeline.h"
+#include "renderer_2d.h"
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
-#include "vulkan/buffer.h"
 #include "vulkan/context.h"
-#include "vulkan/descriptor.h"
 #include "vulkan/image.h"
-#include "vulkan/sampler.h"
 #include "vulkan/swapchain.h"
 
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <numbers>
 
 #include <glm/glm.hpp>
@@ -77,93 +72,14 @@ Renderer::Renderer(Window& window) : window_(window) {
   CK_ENGINE_INFO("Texture loaded: checkerboard.png {}x{}",
                  texture_->extent().width, texture_->extent().height);
 
-  sampler_ = CreateScope<vulkan::Sampler>(*context_);
-
-  std::array<vulkan::DescriptorPool::PoolSize, 2> pool_sizes{{
-      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight},
-      {vk::DescriptorType::eCombinedImageSampler, 1},
-  }};
-  descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(
-      *context_, pool_sizes, vulkan::kFramesInFlight);
-
-  std::array<vk::DescriptorSetLayoutBinding, 2> set_bindings{};
-  set_bindings[0].binding = 0;
-  set_bindings[0].descriptorType = vk::DescriptorType::eUniformBuffer;
-  set_bindings[0].descriptorCount = 1;
-  set_bindings[0].stageFlags = vk::ShaderStageFlagBits::eVertex;
-  set_bindings[1].binding = 1;
-  set_bindings[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-  set_bindings[1].descriptorCount = 1;
-  set_bindings[1].stageFlags = vk::ShaderStageFlagBits::eFragment;
-  CK_ENGINE_INFO("Descriptor pool ready ({} sets max)",
-                 vulkan::kFramesInFlight);
-
-  camera_ubo_ = CreateScope<vulkan::UniformBuffer<CameraData>>(
-      *allocator_, vulkan::kFramesInFlight);
-  CK_ENGINE_INFO("UBO ring ready ({} frames)", vulkan::kFramesInFlight);
-
-  // Quad geometry (centered at origin, 1x1 in world space). UVs span the full
-  // texture; (0,0) at top-left consistent with Vulkan Y-down NDC.
-  struct QuadVertex {
-    glm::vec2 pos;
-    glm::vec2 uv;
-  };
-  static constexpr std::array<QuadVertex, 4> kQuadVertices = {{
-      {{-0.5f, -0.5f}, {0.0f, 0.0f}},
-      {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
-      {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
-      {{-0.5f,  0.5f}, {0.0f, 1.0f}},
-  }};
-  static constexpr std::array<uint16_t, 6> kQuadIndices = {0, 1, 2, 2, 3, 0};
-
-  quad_vbo_ = vulkan::Buffer::CreateDeviceLocal(
-      *allocator_, kQuadVertices.data(), sizeof(kQuadVertices),
-      vk::BufferUsageFlagBits::eVertexBuffer);
-  quad_ibo_ = vulkan::Buffer::CreateDeviceLocal(
-      *allocator_, kQuadIndices.data(), sizeof(kQuadIndices),
-      vk::BufferUsageFlagBits::eIndexBuffer);
-  CK_ENGINE_INFO("Quad VBO {} bytes / IBO {} bytes",
-                 quad_vbo_->size(), quad_ibo_->size());
-
-  vk::VertexInputBindingDescription binding{};
-  binding.binding = 0;
-  binding.stride = sizeof(QuadVertex);
-  binding.inputRate = vk::VertexInputRate::eVertex;
-
-  std::array<vk::VertexInputAttributeDescription, 2> attributes{};
-  attributes[0].location = 0;
-  attributes[0].binding = 0;
-  attributes[0].format = vk::Format::eR32G32Sfloat;
-  attributes[0].offset = offsetof(QuadVertex, pos);
-  attributes[1].location = 1;
-  attributes[1].binding = 0;
-  attributes[1].format = vk::Format::eR32G32Sfloat;
-  attributes[1].offset = offsetof(QuadVertex, uv);
-
-  vulkan::VertexInput vertex_input{
-      .bindings = std::span{&binding, 1},
-      .attributes = std::span{attributes.data(), attributes.size()},
-  };
-
-  Material::Spec mat_spec{
-      .shader_path = "assets/shaders/textured_quad.slang",
-      .bindings = {set_bindings.begin(), set_bindings.end()},
-      .color_format = swapchain_->format(),
-      .vertex_input = vertex_input,
-  };
-  quad_material_ =
-      CreateScope<Material>(*context_, *slang_, *descriptor_pool_, mat_spec);
-  quad_material_->SetTexture(1, *texture_, *sampler_);
-  for (uint32_t i = 0; i < vulkan::kFramesInFlight; ++i) {
-    quad_material_->SetUniformBuffer(0, i, camera_ubo_->Handle(i),
-                                     sizeof(CameraData));
-  }
+  Renderer2D::Init(*context_, *allocator_, *slang_, swapchain_->format());
 }
 
 Renderer::~Renderer() {
   CK_PROFILE_FUNCTION();
   if (context_ && context_->device()) {
     context_->device().waitIdle();
+    Renderer2D::Shutdown();
     for (auto s : render_finished_) context_->device().destroySemaphore(s);
   }
 }
@@ -205,12 +121,8 @@ void Renderer::BeginFrame() {
   // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
 
-  // Write camera UBO for the current slot.
   vk::Extent2D extent = swapchain_->extent();
   camera_.SetViewport(extent.width, extent.height);
-  CameraData cam{};
-  cam.view_proj = camera_.view_projection();
-  camera_ubo_->Write(current_frame_, cam);
 
   uint32_t image_index = 0;
   try {
@@ -263,20 +175,16 @@ void Renderer::BeginFrame() {
   rendering.pColorAttachments = &color_att;
   cmd.beginRendering(rendering);
 
-  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, quad_material_->pipeline());
-  cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                         quad_material_->pipeline_layout(), 0,
-                         quad_material_->descriptor_set(current_frame_), {});
-  vk::Buffer vbo = quad_vbo_->handle();
-  vk::DeviceSize vbo_offset = 0;
-  cmd.bindVertexBuffers(0, 1, &vbo, &vbo_offset);
-  cmd.bindIndexBuffer(quad_ibo_->handle(), 0, vk::IndexType::eUint16);
   vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(extent.width),
                         static_cast<float>(extent.height), 0.0f, 1.0f};
   cmd.setViewport(0, viewport);
   vk::Rect2D scissor{vk::Offset2D{0, 0}, extent};
   cmd.setScissor(0, scissor);
-  cmd.drawIndexed(6, 1, 0, 0, 0);
+
+  Renderer2D::BeginScene(camera_, current_frame_);
+  // Built-in test draw: a single textured quad. 5.4.5 will move this into
+  // a sandbox layer and Renderer will become content-agnostic.
+  Renderer2D::DrawQuad(glm::mat4(1.0f), *texture_);
 
   frame_active_ = true;
 }
@@ -289,6 +197,7 @@ void Renderer::EndFrame() {
   vulkan::Frame& fr = *frames_[current_frame_];
   vk::CommandBuffer cmd = fr.command_buffer();
 
+  Renderer2D::EndScene(cmd);
   cmd.endRendering();
   TransitionImage(cmd, swapchain_->images()[image_index_],
                   vk::ImageLayout::eColorAttachmentOptimal,

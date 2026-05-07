@@ -165,8 +165,17 @@ Context::Context(Window& window) {
   vk::PhysicalDeviceVulkan11Features features11{};
   features11.shaderDrawParameters = VK_TRUE;
 
+  // Vulkan 1.2: descriptor indexing for Renderer2D's bindless texture array
+  // (Sampler2D textures[] in shader, NonUniformResourceIndex sampling).
+  vk::PhysicalDeviceVulkan12Features features12{};
+  features12.pNext = &features11;
+  features12.runtimeDescriptorArray = VK_TRUE;
+  features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+  features12.descriptorBindingPartiallyBound = VK_TRUE;
+  features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
   vk::PhysicalDeviceVulkan13Features features13{};
-  features13.pNext = &features11;
+  features13.pNext = &features12;
   features13.dynamicRendering = VK_TRUE;
   features13.synchronization2 = VK_TRUE;
 

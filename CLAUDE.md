@@ -18,16 +18,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine series.
-The codebase is **mid-migration from OpenGL to Vulkan** (branch `3d`):
+ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine series. Branch `3d` is currently on Vulkan-only renderer abstractions (Phase 5 complete):
 
 - Build infrastructure: CMake 3.30, C++23, libc++, `import std`, presets — done (Phase 0/1)
 - OpenGL backend dropped (Phase 2a, commit `0c76c3b`); engine reduced to a bare GLFW window with `GLFW_NO_API`
 - Vulkan stack wired (Phase 2b, commit `91959cb`): volk (built from SDK source via `cmake/Vulkan.cmake`) + Vulkan-Hpp header + VMA + Slang from the SDK; imgui on ocornut docking upstream
 - Vulkan bring-up done (Phase 3): `Renderer` drives BeginFrame/EndFrame on a Vulkan 1.3 dynamic-rendering loop with a time-cycled clear color; resize / out-of-date / suboptimal handled
-- Hello-triangle done (Phase 4): runtime Slang→SPIR-V compile + a dynamic-rendering graphics pipeline; `BeginFrame` records `bind + setViewport/Scissor + draw(3,1,0,0)`. Triangle positions/colors come from `SV_VertexID` — no vertex/index buffer yet (that lands in Phase 5)
+- Hello-triangle done (Phase 4): runtime Slang→SPIR-V compile + dynamic-rendering pipeline.
+- Renderer abstractions done (Phase 5): VMA-backed `Allocator` / `Buffer` / `Image` / `Sampler` / `DescriptorPool` / `DescriptorSetLayout` / `UniformBuffer<T>` / `Material` / engine-wide `vk::PipelineCache`; Hazel-style `Renderer2D` quad batcher with bindless `Sampler2D textures[]` (kMaxQuads=10000, kMaxTextures=32); public API switched from `#include <ck.h>` to `import ck;` (module at `src/engine/ck.cppm`).
 
-Editor (`editor`) and sandbox (`sandbox`) open a window with the Vulkan clear-color loop running and an RGB vertex-interp triangle on top — no scene/ECS, geometry, materials, or 2D batches yet (those land in Phase 5+).
+Editor draws a single Renderer2D textured quad; sandbox draws a 10×10 grid of textured quads (3 textures, 1 draw call) — all through `ck::Renderer2D::DrawQuad` from layers.
 
 ## Current Learning Context
 
@@ -69,19 +69,28 @@ Top-level `CMakeLists.txt` is small (toolchain + `project()` + 4 `add_subdirecto
 | ------------------- | -------------------------------------------------------------------- |
 | `cmake/`            | Helper modules (`EnableCxxImportStd.cmake`)                          |
 | `deps/`             | Option overrides + `add_subdirectory` per dep + INTERFACE header libs |
-| `src/engine/`       | `ck` STATIC lib. PCH at `pch.h`, public umbrella header `include/ck.h` |
+| `src/engine/`       | `ck` STATIC lib. PCH at `pch.h` (PRIVATE), public module interface `ck.cppm`      |
 | `src/editor/`       | `editor` exe (`EditorLayer` + `panels/`)                             |
 | `src/sandbox/`      | `sandbox` exe (standalone client example)                            |
 
 All targets globbed with `CONFIGURE_DEPENDS`. `CMAKE_RUNTIME_OUTPUT_DIRECTORY` keeps `editor.exe`/`sandbox.exe` at `build/<preset>/` root.
 
-Both executables include `core/entry_point.h` exactly once. That header defines `main()`, calls `ck::Log::Init()`, then expects the client to provide `ck::CreateApplication(args)` (see `src/editor/editor.cpp` and `src/sandbox/sandbox.cpp`).
+Both executables write a one-line `int main(...) { return ck::EntryPoint(argc, argv); }`. `ck::EntryPoint` (in `src/engine/core/entry_point.cpp`) calls `Log::Init` then drives `ck::CreateApplication`, which the client provides (see `src/editor/editor.cpp` / `src/sandbox/sandbox.cpp`).
 
-## Architecture (post-Phase-4, hello-triangle renderer)
+## Architecture (post-Phase-5, Renderer2D + module API)
 
 The early-Hazel layered skeleton plus a thin Vulkan-only renderer:
 
-- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context`, `vulkan::Swapchain`, `std::array<Frame, kFramesInFlight>`, plus the hello-triangle's `SlangCompiler` / `ShaderModule` / `GraphicsPipeline`. `BeginFrame` records `beginRendering` + bind triangle pipeline + dynamic viewport/scissor + `draw(3,1,0,0)`; `EndFrame` does layout transition + submit2 + present. `OnResize` defers swapchain recreate to next BeginFrame.
+- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context` / `vulkan::Allocator` / `vulkan::Swapchain` / `std::array<Frame, kFramesInFlight>` / `vulkan::SlangCompiler` / `Camera`. `BeginFrame` records cmdbuf begin + layout transition + `beginRendering` + `Renderer2D::BeginScene`; layers fill the batch via `Renderer2D::DrawQuad` in `OnUpdate`; `EndFrame` calls `Renderer2D::EndScene(cmd)` then `endRendering` + submit2 + present. `OnResize` defers swapchain recreate to next BeginFrame.
+- **`Renderer2D`** (`renderer/renderer_2d.{h,cpp}`) — static-API quad batcher with bindless texture array (binding 0 UBO, binding 1 `Sampler2D[kMaxTextures]` with `PartiallyBound` + `VariableDescriptorCount`). `Init/Shutdown` lifetime owned by Renderer; `LoadTexture(path) -> TextureHandle` registers Image::FromFile into the bindless slot; per-frame host-visible vertex buffer + static index buffer; flushes one `drawIndexed` per `EndScene`.
+- **`Material`** (`renderer/material.{h,cpp}`) — Spec-driven shader+layout+pipeline+per-frame descriptor-set bundle. Built against the engine-wide `vk::PipelineCache`. Public abstraction; not used by Renderer's own quad path (Renderer2D drives that directly).
+- **`Camera`** (`renderer/camera.{h,cpp}`) — orthographic camera with `SetViewport` / `SetPosition` / `view_projection`; Vulkan Y-down NDC handled internally.
+- **`vulkan::Allocator`** (`renderer/vulkan/allocator.{h,cpp}`) — VMA wrapper + transient command pool/fence for `ImmediateSubmit` (one-shot uploads).
+- **`vulkan::Buffer`** (`renderer/vulkan/buffer.{h,cpp}`) — RAII over (VkBuffer, VmaAllocation); `HostVisible` / `DeviceLocal` types; `CreateDeviceLocal` does staging upload.
+- **`vulkan::Image`** (`renderer/vulkan/image.{h,cpp}`) — RAII over (VkImage, VkImageView, VmaAllocation); `FromFile` slurps via stb_image and lands in `ShaderReadOnlyOptimal`.
+- **`vulkan::Sampler`** (`renderer/vulkan/sampler.{h,cpp}`) — RAII over `vk::Sampler`; default linear + repeat.
+- **`vulkan::DescriptorPool`** / **`DescriptorSetLayout`** / **`DescriptorWriter`** (`renderer/vulkan/descriptor.{h,cpp}`) — RAII pool + layout, plus a chained writer with stable buffer/image-info storage.
+- **`vulkan::UniformBuffer<T>`** (`renderer/vulkan/uniform_buffer.h`) — per-frame UBO ring; one HostVisible Buffer per frame in flight, persistently mapped.
 - **`vulkan::Context`** (`renderer/vulkan/context.{h,cpp}`) — volk init, Vulkan-Hpp dynamic dispatcher, validation layer + debug messenger, GLFW surface, physical device pick, logical device with vk1.3 dynamic rendering + sync2 + vk1.1 shaderDrawParameters (Slang's SV_VertexID translation declares the DrawParameters capability).
 - **`vulkan::Swapchain`** (`renderer/vulkan/swapchain.{h,cpp}`) — surface format / present mode (vsync via `Window::IsVSync`), HiDPI extent, per-image views; `Recreate()`.
 - **`vulkan::Frame`** (`renderer/vulkan/frame.{h,cpp}`) — per-frame-in-flight: command pool/buffer + `image_available` semaphore + `in_flight` fence (signalled init). `render_finished` is per-swapchain-image and lives in `Renderer` (binary semaphore reuse rule).
@@ -109,7 +118,8 @@ Roadmap (one phase = one commit):
 - **Phase 2b** ✅ Add Vulkan stack (volk + `Vulkan::cppm` + VMA + Slang); switch imgui to upstream docking — `91959cb`
 - **Phase 3** ✅ Vulkan bring-up: instance/device/swapchain → time-based clear-color (dynamic rendering, sync2, 2 frames in flight, resize handling) — `b29641c`..`14ea163`
 - **Phase 4** ✅ Slang runtime compile + first graphics pipeline + hello-triangle (RGB vertex-interp triangle on the time-cycled clear) — `36d816e`..`b52bc90`
-- **Phase 5+** — Renderer / Material / RenderPass abstractions, Renderer2D rebuild, modules-based public API (`import ck` replaces the umbrella header)
+- **Phase 5** ✅ Renderer abstractions + Renderer2D + module API — split into 5.1 (Allocator/Buffer/VBO+IBO triangle), 5.2 (Image/Sampler/DescriptorPool/UBO ring/textured quad), 5.3 (Material + engine-wide PipelineCache), 5.4 (Camera + Renderer2D bindless quad batcher), 5.5 (unified `ck::log` API + `import ck` module + umbrella header retired)
+- **Phase 6+** — scene/ECS, ImGui editor panels, 3D mesh renderer (TBD)
 
 ## Conventions
 
@@ -127,15 +137,15 @@ Smart-pointer aliases (`core/core.h`):
 
 Logging / asserts (`core/log.h`):
 
-- `CK_ENGINE_TRACE/INFO/WARN/ERROR/FATAL(...)` and `CK_CLIENT_*` mirrors. spdlog format strings.
-- `CK_ENGINE_ASSERT(cond, msg)` / `CK_CLIENT_ASSERT(cond, msg)` — gated by `CK_ENABLE_ASSERTS`.
+- `ck::log::trace/debug/info/warn/error/fatal(fmt, args...)` — variadic templates forwarding to a single spdlog logger; engine + client share it.
+- `CK_ASSERT(cond, msg)` — gated by `CK_ENABLE_ASSERTS`.
 
 Profiling (`debug/profiler.h`):
 
-- `CK_PROFILE_FUNCTION()` / `CK_PROFILE_SCOPE("Label")`. Sessions framed by `CK_PROFILE_BEGIN_SESSION` / `CK_PROFILE_END_SESSION` (already wired in `entry_point.h`).
+- `CK_PROFILE_FUNCTION()` / `CK_PROFILE_SCOPE("Label")`. Sessions framed by `CK_PROFILE_BEGIN_SESSION` / `CK_PROFILE_END_SESSION` (already wired in `entry_point.cpp`).
 - Output: chrome://tracing JSON. View at <https://ui.perfetto.dev>. Files gitignored.
 
-Public engine API: clients `#include <ck.h>` (umbrella in `src/engine/include/ck.h`). After Phase 4, this becomes `import ck;` and the umbrella is replaced by a `.cppm` module interface; engine internals still use `#include`.
+Public engine API: clients `import ck;` (module interface at `src/engine/ck.cppm`). Clients write `int main() { return ck::EntryPoint(argc, argv); }` and never #include engine headers directly; the umbrella `include/ck.h` is gone. Engine internals still use `#include`.
 
 ## Dependencies
 

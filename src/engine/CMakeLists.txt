@@ -11,10 +11,6 @@ target_sources(ck
     FILES "${CMAKE_CURRENT_SOURCE_DIR}/ck.cppm"
 )
 
-set_target_properties(ck PROPERTIES
-  PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/include/ck.h"
-)
-
 if(WIN32)
   target_compile_definitions(ck PRIVATE CK_PLATFORM_WINDOWS)
 elseif(APPLE)
@@ -25,7 +21,6 @@ endif()
 
 target_include_directories(ck
   PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 

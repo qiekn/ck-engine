@@ -1,4 +1,4 @@
-﻿#include "application.h"
+#include "application.h"
 
 #include <filesystem>
 
@@ -14,7 +14,7 @@ Application* Application::instance_ = nullptr;
 
 Application::Application(const ApplicationSpecification& spec) : specification_(spec) {
   CK_PROFILE_FUNCTION();
-  CK_ENGINE_ASSERT(Application::instance_ == nullptr, "application already exists");
+  CK_ASSERT(Application::instance_ == nullptr, "application already exists");
   instance_ = this;
 
   if (!specification_.working_directory.empty())

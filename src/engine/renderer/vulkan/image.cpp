@@ -61,7 +61,7 @@ Image::Image(Context& ctx, Allocator& alloc, const CreateInfo& info)
 
   VkImage raw{};
   if (vmaCreateImage(vma_, &ici, &aci, &raw, &alloc_handle_, nullptr) != VK_SUCCESS) {
-    CK_ENGINE_FATAL("vmaCreateImage failed ({}x{})", info.extent.width, info.extent.height);
+    ck::log::fatal("vmaCreateImage failed ({}x{})", info.extent.width, info.extent.height);
     return;
   }
   image_ = raw;
@@ -94,7 +94,7 @@ Scope<Image> Image::FromFile(Context& ctx, Allocator& alloc,
   int channels = 0;
   stbi_uc* pixels = stbi_load(path.string().c_str(), &w, &h, &channels, STBI_rgb_alpha);
   if (!pixels) {
-    CK_ENGINE_ERROR("stbi_load failed: {}", path.string());
+    ck::log::error("stbi_load failed: {}", path.string());
     return nullptr;
   }
   vk::DeviceSize size = static_cast<vk::DeviceSize>(w) * static_cast<vk::DeviceSize>(h) * 4;

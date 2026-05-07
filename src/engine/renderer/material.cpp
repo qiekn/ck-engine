@@ -20,7 +20,7 @@ Material::Material(vulkan::Context& ctx, vulkan::SlangCompiler& compiler,
   CK_PROFILE_FUNCTION();
 
   auto spirv = compiler.CompileToSpirv(spec.shader_path);
-  CK_ENGINE_ASSERT(!spirv.empty(),
+  CK_ASSERT(!spirv.empty(),
                    "Slang compile failed for material shader");
   shader_ = CreateScope<vulkan::ShaderModule>(ctx, std::span{spirv});
 
@@ -36,7 +36,7 @@ Material::Material(vulkan::Context& ctx, vulkan::SlangCompiler& compiler,
       ctx, *shader_, spec.color_format, spec.vertex_input,
       std::span{&layout, 1}, ctx.pipeline_cache());
 
-  CK_ENGINE_INFO("Material ready: {}",
+  ck::log::info("Material ready: {}",
                  spec.shader_path.filename().string());
 }
 

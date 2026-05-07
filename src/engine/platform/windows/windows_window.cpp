@@ -14,7 +14,7 @@ static bool is_glfw_initialized = false;
 float Window::s_high_dpi_scale_factor_ = 1.0f;
 
 static void GLFWErrorCallback(int error, const char* description) {
-  CK_CLIENT_ERROR("GLFW ERROR ({}) {}", error, description);
+  ck::log::error("GLFW ERROR ({}) {}", error, description);
 }
 
 Scope<Window> Window::Create(const WindowProps& props) {
@@ -36,12 +36,12 @@ void WindowsWindow::Init(const WindowProps& props) {
   data_.title = props.title;
   data_.width = props.width;
   data_.height = props.height;
-  CK_ENGINE_TRACE("Create window {}, ({}, {})", props.title, props.width, props.height);
+  ck::log::trace("Create window {}, ({}, {})", props.title, props.width, props.height);
 
   if (!is_glfw_initialized) {
     CK_PROFILE_FUNCTION();
     int success = glfwInit();
-    CK_ENGINE_ASSERT(success, "Could not initialize GLFW");
+    CK_ASSERT(success, "Could not initialize GLFW");
     glfwSetErrorCallback(GLFWErrorCallback);
     is_glfw_initialized = true;
   }
@@ -134,7 +134,7 @@ void WindowsWindow::Init(const WindowProps& props) {
     data.event_callback(event);
   });
 
-  CK_CLIENT_INFO("Window Init Finished");
+  ck::log::info("Window Init Finished");
 }
 
 void WindowsWindow::OnUpdate() {

@@ -1,4 +1,4 @@
-﻿#include "renderer/shader/slang_compiler.h"
+#include "renderer/shader/slang_compiler.h"
 
 #include <array>
 #include <cstring>
@@ -27,7 +27,7 @@ SlangCompiler::SlangCompiler() {
   CK_PROFILE_FUNCTION();
 
   if (SLANG_FAILED(slang::createGlobalSession(global_session_.writeRef()))) {
-    CK_ENGINE_FATAL("[slang] createGlobalSession failed");
+    ck::log::fatal("[slang] createGlobalSession failed");
     return;
   }
 
@@ -50,7 +50,7 @@ SlangCompiler::SlangCompiler() {
   desc.compilerOptionEntryCount = static_cast<uint32_t>(options.size());
 
   if (SLANG_FAILED(global_session_->createSession(desc, session_.writeRef()))) {
-    CK_ENGINE_FATAL("[slang] createSession failed");
+    ck::log::fatal("[slang] createSession failed");
   }
 }
 
@@ -62,7 +62,7 @@ std::vector<uint32_t> SlangCompiler::CompileToSpirv(const std::filesystem::path&
 
   std::string source = SlurpFile(path);
   if (source.empty()) {
-    CK_ENGINE_ERROR("[slang] failed to read shader: {}", path.string());
+    ck::log::error("[slang] failed to read shader: {}", path.string());
     return {};
   }
 
@@ -73,7 +73,7 @@ std::vector<uint32_t> SlangCompiler::CompileToSpirv(const std::filesystem::path&
   Slang::ComPtr<slang::IModule> module(session_->loadModuleFromSourceString(
       module_name.c_str(), path_str.c_str(), source.c_str(), diagnostics.writeRef()));
   if (diagnostics) {
-    CK_ENGINE_ERROR("[slang] {}", static_cast<const char*>(diagnostics->getBufferPointer()));
+    ck::log::error("[slang] {}", static_cast<const char*>(diagnostics->getBufferPointer()));
   }
   if (!module) return {};
 
@@ -81,7 +81,7 @@ std::vector<uint32_t> SlangCompiler::CompileToSpirv(const std::filesystem::path&
   Slang::ComPtr<slang::IBlob> link_diag;
   if (SLANG_FAILED(module->getTargetCode(0, spirv.writeRef(), link_diag.writeRef()))) {
     if (link_diag) {
-      CK_ENGINE_ERROR("[slang] {}", static_cast<const char*>(link_diag->getBufferPointer()));
+      ck::log::error("[slang] {}", static_cast<const char*>(link_diag->getBufferPointer()));
     }
     return {};
   }

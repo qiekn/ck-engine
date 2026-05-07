@@ -34,7 +34,7 @@ Buffer::Buffer(Allocator& alloc, vk::DeviceSize size, vk::BufferUsageFlags usage
   VmaAllocationInfo info{};
   VkBuffer raw{};
   if (vmaCreateBuffer(vma_, &bci, &aci, &raw, &alloc_, &info) != VK_SUCCESS) {
-    CK_ENGINE_FATAL("vmaCreateBuffer failed (size={}, usage=0x{:x})",
+    ck::log::fatal("vmaCreateBuffer failed (size={}, usage=0x{:x})",
                     static_cast<uint64_t>(size),
                     static_cast<uint32_t>(usage));
     return;

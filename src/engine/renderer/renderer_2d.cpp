@@ -154,7 +154,7 @@ void EmitQuad(const glm::mat4& transform, const glm::vec4& color, uint32_t tex_i
 void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
                       vulkan::SlangCompiler& compiler, vk::Format color_format) {
   CK_PROFILE_FUNCTION();
-  CK_ENGINE_ASSERT(g_state == nullptr, "Renderer2D already initialized");
+  CK_ASSERT(g_state == nullptr, "Renderer2D already initialized");
 
   g_state = new State();
   g_state->ctx = &ctx;
@@ -330,7 +330,7 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
 
   // -- Compile shader and build pipeline.
   auto spirv = compiler.CompileToSpirv("assets/shaders/renderer_2d_quad.slang");
-  CK_ENGINE_ASSERT(!spirv.empty(),
+  CK_ASSERT(!spirv.empty(),
                    "Slang compile failed for renderer_2d_quad.slang");
   g_state->shader = CreateScope<vulkan::ShaderModule>(ctx, std::span{spirv});
 
@@ -362,7 +362,7 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
 
   g_state->cpu_buffer.resize(kMaxQuads * kVerticesPerQuad);
 
-  CK_ENGINE_INFO("Renderer2D ready: max {} quads, max {} textures",
+  ck::log::info("Renderer2D ready: max {} quads, max {} textures",
                  kMaxQuads, kMaxTextures);
 }
 
@@ -426,7 +426,7 @@ Renderer2D::TextureHandle Renderer2D::LoadTexture(const std::filesystem::path& p
     if (p == path) return slot;
   }
   auto image = vulkan::Image::FromFile(*g_state->ctx, *g_state->alloc, path);
-  CK_ENGINE_ASSERT(image, "Renderer2D::LoadTexture failed");
+  CK_ASSERT(image, "Renderer2D::LoadTexture failed");
   uint32_t slot = RegisterImageView(image->view());
   g_state->loaded_paths.emplace_back(path, slot);
   g_state->loaded_textures.push_back(std::move(image));

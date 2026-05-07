@@ -32,10 +32,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(
     void* /*user_data*/) {
   using Sev = vk::DebugUtilsMessageSeverityFlagBitsEXT;
   switch (severity) {
-    case Sev::eVerbose: CK_ENGINE_TRACE("[vk] {}", data->pMessage); break;
-    case Sev::eInfo:    CK_ENGINE_INFO ("[vk] {}", data->pMessage); break;
-    case Sev::eWarning: CK_ENGINE_WARN ("[vk] {}", data->pMessage); break;
-    case Sev::eError:   CK_ENGINE_ERROR("[vk] {}", data->pMessage); break;
+    case Sev::eVerbose: ck::log::trace("[vk] {}", data->pMessage); break;
+    case Sev::eInfo:    ck::log::info("[vk] {}", data->pMessage); break;
+    case Sev::eWarning: ck::log::warn("[vk] {}", data->pMessage); break;
+    case Sev::eError:   ck::log::error("[vk] {}", data->pMessage); break;
     default: break;
   }
   return VK_FALSE;
@@ -61,7 +61,7 @@ uint32_t FindGraphicsFamily(vk::PhysicalDevice pd, vk::SurfaceKHR surface) {
 vk::PhysicalDevice PickPhysicalDevice(vk::Instance inst) {
   auto devices = inst.enumeratePhysicalDevices();
   if (devices.empty()) {
-    CK_ENGINE_FATAL("No Vulkan-capable GPU found");
+    ck::log::fatal("No Vulkan-capable GPU found");
     return nullptr;
   }
   for (auto pd : devices) {
@@ -77,7 +77,7 @@ Context::Context(Window& window) {
 
   // 1. volk -> dispatcher
   if (volkInitialize() != VK_SUCCESS) {
-    CK_ENGINE_FATAL("volkInitialize() failed - Vulkan loader not found");
+    ck::log::fatal("volkInitialize() failed - Vulkan loader not found");
     return;
   }
   VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
@@ -94,7 +94,7 @@ Context::Context(Window& window) {
       layers.push_back("VK_LAYER_KHRONOS_validation");
       instance_exts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     } else {
-      CK_ENGINE_WARN("VK_LAYER_KHRONOS_validation not available");
+      ck::log::warn("VK_LAYER_KHRONOS_validation not available");
     }
   }
 
@@ -132,7 +132,7 @@ Context::Context(Window& window) {
   VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
   auto* glfw_window = static_cast<GLFWwindow*>(window.GetNativeWindow());
   if (glfwCreateWindowSurface(instance_, glfw_window, nullptr, &raw_surface) != VK_SUCCESS) {
-    CK_ENGINE_FATAL("glfwCreateWindowSurface failed");
+    ck::log::fatal("glfwCreateWindowSurface failed");
     return;
   }
   surface_ = raw_surface;
@@ -141,15 +141,15 @@ Context::Context(Window& window) {
   physical_device_ = PickPhysicalDevice(instance_);
   if (!physical_device_) return;
   auto props = physical_device_.getProperties();
-  CK_ENGINE_INFO("GPU: {}", static_cast<const char*>(props.deviceName));
+  ck::log::info("GPU: {}", static_cast<const char*>(props.deviceName));
 
   // 7. Queue family (single family, graphics + present)
   graphics_family_ = FindGraphicsFamily(physical_device_, surface_);
   if (graphics_family_ == ~0u) {
-    CK_ENGINE_FATAL("No graphics+present queue family found");
+    ck::log::fatal("No graphics+present queue family found");
     return;
   }
-  CK_ENGINE_INFO("Queue family (graphics+present): {}", graphics_family_);
+  ck::log::info("Queue family (graphics+present): {}", graphics_family_);
 
   // 8. Logical device with Vulkan 1.3 dynamic rendering + sync2
   float queue_priority = 1.0f;
@@ -196,9 +196,9 @@ Context::Context(Window& window) {
   // reuses this cache so the driver can short-circuit repeated compile
   // work within a process.
   pipeline_cache_ = device_.createPipelineCache({});
-  CK_ENGINE_INFO("Pipeline cache ready");
+  ck::log::info("Pipeline cache ready");
 
-  CK_ENGINE_INFO("Vulkan context ready");
+  ck::log::info("Vulkan context ready");
 }
 
 Context::~Context() {

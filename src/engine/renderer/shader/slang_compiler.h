@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <cstdint>
 #include <filesystem>
@@ -24,7 +24,7 @@ public:
 
   // Compile a single .slang file containing [shader("vertex")] / [shader("fragment")]
   // entry points into a SPIR-V word stream. Returns an empty vector on failure;
-  // diagnostics are routed through CK_ENGINE_ERROR.
+  // diagnostics are routed through ck::log::error.
   std::vector<uint32_t> CompileToSpirv(const std::filesystem::path& path);
 
 private:

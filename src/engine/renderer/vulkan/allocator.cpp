@@ -25,7 +25,7 @@ Allocator::Allocator(Context& ctx) : ctx_(&ctx) {
   info.pVulkanFunctions = &fns;
 
   if (vmaCreateAllocator(&info, &allocator_) != VK_SUCCESS) {
-    CK_ENGINE_FATAL("vmaCreateAllocator failed");
+    ck::log::fatal("vmaCreateAllocator failed");
     return;
   }
 
@@ -39,7 +39,7 @@ Allocator::Allocator(Context& ctx) : ctx_(&ctx) {
   vk::FenceCreateInfo fci{};
   fence_ = ctx.device().createFence(fci);
 
-  CK_ENGINE_INFO("VMA allocator ready");
+  ck::log::info("VMA allocator ready");
 }
 
 Allocator::~Allocator() {

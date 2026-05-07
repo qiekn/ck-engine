@@ -1,4 +1,4 @@
-﻿#include "swapchain.h"
+#include "swapchain.h"
 
 #include "context.h"
 
@@ -117,7 +117,7 @@ void Swapchain::Create() {
     image_views_.push_back(dev.createImageView(ivi));
   }
 
-  CK_ENGINE_INFO("Swapchain: {}x{}, {} images, format={}, present={}",
+  ck::log::info("Swapchain: {}x{}, {} images, format={}, present={}",
                  extent_.width, extent_.height, images_.size(),
                  vk::to_string(format_), vk::to_string(pm));
 }

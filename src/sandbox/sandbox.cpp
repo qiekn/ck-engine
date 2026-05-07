@@ -38,7 +38,7 @@ public:
 
     if (++log_counter_ % 120 == 0) {
       auto s = ck::Renderer2D::stats();
-      CK_CLIENT_INFO("Renderer2D flushed: {} quads, {} textures, {} draw call(s)",
+      ck::log::info("Renderer2D flushed: {} quads, {} textures, {} draw call(s)",
                      s.quad_count, s.texture_count, s.draw_calls);
     }
   }

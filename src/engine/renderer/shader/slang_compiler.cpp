@@ -21,6 +21,50 @@ std::string SlurpFile(const std::filesystem::path& path) {
   return ss.str();
 }
 
+// Slang's IBlob diagnostics carry a mix of warning / error / note lines in
+// the format "path(line): severity NNNN: message" with continuation lines
+// indented underneath. Walk the blob line-by-line, classify each diagnostic
+// group by the first severity tag we see, and route to the matching ck::log
+// channel. This stops benign warnings (e.g., profile auto-promotion) from
+// showing up red in the console.
+void LogSlangDiagnostics(slang::IBlob* blob) {
+  if (!blob || blob->getBufferSize() == 0) return;
+  std::string_view all(static_cast<const char*>(blob->getBufferPointer()),
+                       blob->getBufferSize());
+
+  enum class Severity { Info, Warn, Error };
+  Severity current = Severity::Error;  // default for unrecognized output
+
+  size_t pos = 0;
+  while (pos <= all.size()) {
+    size_t eol = all.find('\n', pos);
+    if (eol == std::string_view::npos) eol = all.size();
+    std::string_view line = all.substr(pos, eol - pos);
+    if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
+
+    if (!line.empty()) {
+      // Classify only on header lines (those that contain ": severity ").
+      if (line.find(": warning ") != std::string_view::npos) {
+        current = Severity::Warn;
+      } else if (line.find(": error ") != std::string_view::npos) {
+        current = Severity::Error;
+      } else if (line.find(": note ") != std::string_view::npos) {
+        current = Severity::Info;
+      }
+      // Continuation lines stay on |current|.
+
+      switch (current) {
+        case Severity::Info:  ck::log::info ("[slang] {}", line); break;
+        case Severity::Warn:  ck::log::warn ("[slang] {}", line); break;
+        case Severity::Error: ck::log::error("[slang] {}", line); break;
+      }
+    }
+
+    if (eol == all.size()) break;
+    pos = eol + 1;
+  }
+}
+
 }  // namespace
 
 SlangCompiler::SlangCompiler() {
@@ -33,14 +77,24 @@ SlangCompiler::SlangCompiler() {
 
   std::array<slang::TargetDesc, 1> targets{};
   targets[0].format = SLANG_SPIRV;
-  targets[0].profile = global_session_->findProfile("spirv_1_4");
+  // spirv_1_5 has SPV_EXT_descriptor_indexing capabilities promoted, so
+  // Renderer2D's NonUniformResourceIndex usage no longer trips the
+  // "auto-promoting profile" warning that fires under spirv_1_4.
+  targets[0].profile = global_session_->findProfile("spirv_1_5");
 
   // EmitSpirvDirectly skips the GLSL roundtrip and lets Slang generate SPIR-V
   // straight from its IR. Required for modern Slang features and faster.
-  std::array<slang::CompilerOptionEntry, 1> options{};
+  // 41012 is the "auto-promoting profile" warning: Slang chains in capabilities
+  // (image-query, gather-extended, sparse-residency, ...) for any fragment
+  // shader regardless of whether they're used. We don't need the noise.
+  const char* kDisable41012 = "41012";
+  std::array<slang::CompilerOptionEntry, 2> options{};
   options[0].name = slang::CompilerOptionName::EmitSpirvDirectly;
   options[0].value.kind = slang::CompilerOptionValueKind::Int;
   options[0].value.intValue0 = 1;
+  options[1].name = slang::CompilerOptionName::DisableWarning;
+  options[1].value.kind = slang::CompilerOptionValueKind::String;
+  options[1].value.stringValue0 = kDisable41012;
 
   slang::SessionDesc desc{};
   desc.targets = targets.data();
@@ -72,17 +126,13 @@ std::vector<uint32_t> SlangCompiler::CompileToSpirv(const std::filesystem::path&
   Slang::ComPtr<slang::IBlob> diagnostics;
   Slang::ComPtr<slang::IModule> module(session_->loadModuleFromSourceString(
       module_name.c_str(), path_str.c_str(), source.c_str(), diagnostics.writeRef()));
-  if (diagnostics) {
-    ck::log::error("[slang] {}", static_cast<const char*>(diagnostics->getBufferPointer()));
-  }
+  LogSlangDiagnostics(diagnostics);
   if (!module) return {};
 
   Slang::ComPtr<slang::IBlob> spirv;
   Slang::ComPtr<slang::IBlob> link_diag;
   if (SLANG_FAILED(module->getTargetCode(0, spirv.writeRef(), link_diag.writeRef()))) {
-    if (link_diag) {
-      ck::log::error("[slang] {}", static_cast<const char*>(link_diag->getBufferPointer()));
-    }
+    LogSlangDiagnostics(link_diag);
     return {};
   }
 

@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include "material.h"
 #include "shader/graphics_pipeline.h"
 #include "shader/shader_module.h"
 #include "shader/slang_compiler.h"
@@ -78,12 +79,15 @@ Renderer::Renderer(Window& window) : window_(window) {
 
   sampler_ = CreateScope<vulkan::Sampler>(*context_);
 
+  // Sized for the existing hand-rolled path AND the parallel quad_material_
+  // built below (5.3.2). 5.3.3 will drop the hand-rolled path and shrink
+  // these back.
   std::array<vulkan::DescriptorPool::PoolSize, 2> pool_sizes{{
-      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight},
-      {vk::DescriptorType::eCombinedImageSampler, 1},
+      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight * 2},
+      {vk::DescriptorType::eCombinedImageSampler, 2},
   }};
   descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(
-      *context_, pool_sizes, vulkan::kFramesInFlight);
+      *context_, pool_sizes, vulkan::kFramesInFlight * 2);
 
   std::array<vk::DescriptorSetLayoutBinding, 2> set_bindings{};
   set_bindings[0].binding = 0;
@@ -175,6 +179,22 @@ Renderer::Renderer(Window& window) : window_(window) {
                       vk::ImageLayout::eShaderReadOnlyOptimal,
                       vk::DescriptorType::eCombinedImageSampler);
     writer.Update(*context_, descriptor_sets_[i]);
+  }
+
+  // 5.3.2 parallel-path validation: stand up a Material with the same
+  // shader+layout+vertex spec. Not yet bound for drawing (5.3.3 swap).
+  Material::Spec mat_spec{
+      .shader_path = "assets/shaders/textured_quad.slang",
+      .bindings = {set_bindings.begin(), set_bindings.end()},
+      .color_format = swapchain_->format(),
+      .vertex_input = vertex_input,
+  };
+  quad_material_ =
+      CreateScope<Material>(*context_, *slang_, *descriptor_pool_, mat_spec);
+  quad_material_->SetTexture(1, *texture_, *sampler_);
+  for (uint32_t i = 0; i < vulkan::kFramesInFlight; ++i) {
+    quad_material_->SetUniformBuffer(0, i, camera_ubo_->Handle(i),
+                                     sizeof(CameraData));
   }
 }
 

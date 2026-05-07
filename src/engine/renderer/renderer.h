@@ -31,6 +31,8 @@ class GraphicsPipeline;
 
 namespace ck {
 
+class Material;
+
 class Renderer {
 public:
   explicit Renderer(Window& window);
@@ -75,6 +77,7 @@ private:
   Scope<vulkan::GraphicsPipeline> quad_pipeline_;
   Scope<vulkan::Buffer> quad_vbo_;
   Scope<vulkan::Buffer> quad_ibo_;
+  Scope<Material> quad_material_;
 };
 
 }  // namespace ck

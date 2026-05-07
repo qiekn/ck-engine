@@ -2,6 +2,15 @@
 file(GLOB_RECURSE ck_sources CONFIGURE_DEPENDS "*.cpp")
 add_library(ck STATIC ${ck_sources})
 
+# Public C++23 module interface (`import ck;`). Coexists with the legacy
+# umbrella header at include/ck.h until phase 5.5.4 retires it.
+target_sources(ck
+  PUBLIC
+    FILE_SET ck_modules TYPE CXX_MODULES
+    BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/ck.cppm"
+)
+
 set_target_properties(ck PROPERTIES
   PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/include/ck.h"
 )

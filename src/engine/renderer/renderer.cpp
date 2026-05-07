@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include "camera.h"
 #include "material.h"
 #include "shader/graphics_pipeline.h"
 #include "shader/slang_compiler.h"
@@ -204,15 +205,11 @@ void Renderer::BeginFrame() {
   // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
 
-  // Write camera UBO for the current slot. glm::ortho is a GL-style
-  // projection (Y up); Vulkan NDC has Y down, so flip the Y scale on
-  // the projection matrix's diagonal.
+  // Write camera UBO for the current slot.
   vk::Extent2D extent = swapchain_->extent();
-  float aspect = static_cast<float>(extent.width) /
-                 static_cast<float>(extent.height);
+  camera_.SetViewport(extent.width, extent.height);
   CameraData cam{};
-  cam.view_proj = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
-  cam.view_proj[1][1] *= -1.0f;
+  cam.view_proj = camera_.view_projection();
   camera_ubo_->Write(current_frame_, cam);
 
   uint32_t image_index = 0;

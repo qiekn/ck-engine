@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "core/core.h"
+#include "renderer/camera.h"
 #include "renderer/vulkan/frame.h"  // for kFramesInFlight
 #include "renderer/vulkan/uniform_buffer.h"
 
@@ -69,6 +70,7 @@ private:
   Scope<vulkan::SlangCompiler> slang_;
   Scope<vulkan::Image> texture_;
   Scope<vulkan::Sampler> sampler_;
+  Camera camera_;
   Scope<vulkan::DescriptorPool> descriptor_pool_;
   Scope<vulkan::UniformBuffer<CameraData>> camera_ubo_;
   Scope<vulkan::Buffer> quad_vbo_;

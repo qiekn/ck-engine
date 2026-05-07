@@ -19,6 +19,7 @@ namespace ck::vulkan {
 class Context;
 class Swapchain;
 class Allocator;
+class Image;
 class SlangCompiler;
 }
 
@@ -45,6 +46,7 @@ private:
   Scope<vulkan::Context> context_;
   Scope<vulkan::Allocator> allocator_;
   Scope<vulkan::Swapchain> swapchain_;
+  Scope<vulkan::Image> color_target_;  // offscreen render target; blitted to swapchain image each frame
   std::array<Scope<vulkan::Frame>, vulkan::kFramesInFlight> frames_;
   std::vector<vk::Semaphore> render_finished_;  // per-image
   uint32_t current_frame_ = 0;

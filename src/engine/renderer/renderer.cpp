@@ -5,6 +5,7 @@
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
 #include "vulkan/context.h"
+#include "vulkan/image.h"
 #include "vulkan/swapchain.h"
 
 #include <array>
@@ -57,6 +58,13 @@ Renderer::Renderer(Window& window) : window_(window) {
   context_ = CreateScope<vulkan::Context>(window_);
   allocator_ = CreateScope<vulkan::Allocator>(*context_);
   swapchain_ = CreateScope<vulkan::Swapchain>(*context_, window_);
+  {
+    vulkan::Image::CreateInfo ci{};
+    ci.format = swapchain_->format();
+    ci.extent = swapchain_->extent();
+    ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+    color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
+  }
   for (auto& f : frames_) f = CreateScope<vulkan::Frame>(*context_);
 
   vk::SemaphoreCreateInfo sem_ci{};
@@ -94,6 +102,16 @@ void Renderer::RecreateSwapchain() {
   render_finished_.clear();
 
   swapchain_->Recreate();
+
+  // Recreate offscreen color target at the new extent.
+  color_target_.reset();
+  {
+    vulkan::Image::CreateInfo ci{};
+    ci.format = swapchain_->format();
+    ci.extent = swapchain_->extent();
+    ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+    color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
+  }
 
   vk::SemaphoreCreateInfo sem_ci{};
   render_finished_.resize(swapchain_->image_count());
@@ -135,7 +153,9 @@ void Renderer::BeginFrame() {
   begin.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
   cmd.begin(begin);
 
-  TransitionImage(cmd, swapchain_->images()[image_index_],
+  // Render into the offscreen color target. We always loadOp=Clear, so we can
+  // transition from Undefined every frame and let previous contents be discarded.
+  TransitionImage(cmd, color_target_->handle(),
                   vk::ImageLayout::eUndefined,
                   vk::ImageLayout::eColorAttachmentOptimal,
                   vk::PipelineStageFlagBits2::eTopOfPipe, {},
@@ -153,7 +173,7 @@ void Renderer::BeginFrame() {
       1.0f}};
 
   vk::RenderingAttachmentInfo color_att{};
-  color_att.imageView = swapchain_->image_views()[image_index_];
+  color_att.imageView = color_target_->view();
   color_att.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
   color_att.loadOp = vk::AttachmentLoadOp::eClear;
   color_att.storeOp = vk::AttachmentStoreOp::eStore;
@@ -190,12 +210,42 @@ void Renderer::EndFrame() {
 
   Renderer2D::EndScene(cmd);
   cmd.endRendering();
-  TransitionImage(cmd, swapchain_->images()[image_index_],
+
+  // color_target: ColorAttachmentOptimal -> TransferSrcOptimal
+  TransitionImage(cmd, color_target_->handle(),
                   vk::ImageLayout::eColorAttachmentOptimal,
-                  vk::ImageLayout::ePresentSrcKHR,
+                  vk::ImageLayout::eTransferSrcOptimal,
                   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                   vk::AccessFlagBits2::eColorAttachmentWrite,
+                  vk::PipelineStageFlagBits2::eTransfer,
+                  vk::AccessFlagBits2::eTransferRead);
+
+  // swapchain image: Undefined -> TransferDstOptimal (we always overwrite via copy).
+  TransitionImage(cmd, swapchain_->images()[image_index_],
+                  vk::ImageLayout::eUndefined,
+                  vk::ImageLayout::eTransferDstOptimal,
+                  vk::PipelineStageFlagBits2::eTopOfPipe, {},
+                  vk::PipelineStageFlagBits2::eTransfer,
+                  vk::AccessFlagBits2::eTransferWrite);
+
+  // Same format + same extent (we recreate color_target_ on swapchain recreate),
+  // so a straight copy beats a blit.
+  vk::ImageCopy region{};
+  region.srcSubresource = vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
+  region.dstSubresource = region.srcSubresource;
+  region.extent = vk::Extent3D{swapchain_->extent().width, swapchain_->extent().height, 1};
+  cmd.copyImage(color_target_->handle(), vk::ImageLayout::eTransferSrcOptimal,
+                swapchain_->images()[image_index_], vk::ImageLayout::eTransferDstOptimal,
+                region);
+
+  // swapchain image: TransferDstOptimal -> PresentSrcKHR
+  TransitionImage(cmd, swapchain_->images()[image_index_],
+                  vk::ImageLayout::eTransferDstOptimal,
+                  vk::ImageLayout::ePresentSrcKHR,
+                  vk::PipelineStageFlagBits2::eTransfer,
+                  vk::AccessFlagBits2::eTransferWrite,
                   vk::PipelineStageFlagBits2::eBottomOfPipe, {});
+
   cmd.end();
 
   vk::SemaphoreSubmitInfo wait_si{};

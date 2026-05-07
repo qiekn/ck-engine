@@ -94,7 +94,7 @@ void Swapchain::Create() {
   sci.imageColorSpace = sf.colorSpace;
   sci.imageExtent = extent_;
   sci.imageArrayLayers = 1;
-  sci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+  sci.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
   sci.imageSharingMode = vk::SharingMode::eExclusive;  // single graphics+present queue
   sci.preTransform = caps.currentTransform;
   sci.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;

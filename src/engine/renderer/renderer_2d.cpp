@@ -53,7 +53,8 @@ constexpr glm::vec2 kQuadUVs[4] = {
 };
 
 struct State {
-  vulkan::Context*   ctx = nullptr;
+  vulkan::Context*   ctx   = nullptr;
+  vulkan::Allocator* alloc = nullptr;
   vk::Device         device;
 
   Scope<vulkan::ShaderModule>     shader;
@@ -69,6 +70,12 @@ struct State {
 
   Scope<vulkan::Image>            white_fallback;
   Scope<vulkan::Sampler>          sampler;
+
+  // Textures owned by Renderer2D (loaded via LoadTexture). Index in
+  // |loaded_textures| is NOT the bindless slot; |loaded_paths| keeps the
+  // path -> slot mapping for idempotent LoadTexture calls.
+  std::vector<Scope<vulkan::Image>> loaded_textures;
+  std::vector<std::pair<std::filesystem::path, uint32_t>> loaded_paths;
 
   // Bindless texture array: index = slot, value = image view (already
   // registered into the descriptor array).
@@ -151,6 +158,7 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
 
   g_state = new State();
   g_state->ctx = &ctx;
+  g_state->alloc = &alloc;
   g_state->device = ctx.device();
 
   // -- 1x1 white fallback texture (slot 0)
@@ -412,10 +420,22 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
   EmitQuad(transform, color, 0);
 }
 
-void Renderer2D::DrawQuad(const glm::mat4& transform, const vulkan::Image& texture,
+Renderer2D::TextureHandle Renderer2D::LoadTexture(const std::filesystem::path& path) {
+  // Idempotent: same path returns the same slot.
+  for (auto const& [p, slot] : g_state->loaded_paths) {
+    if (p == path) return slot;
+  }
+  auto image = vulkan::Image::FromFile(*g_state->ctx, *g_state->alloc, path);
+  CK_ENGINE_ASSERT(image, "Renderer2D::LoadTexture failed");
+  uint32_t slot = RegisterImageView(image->view());
+  g_state->loaded_paths.emplace_back(path, slot);
+  g_state->loaded_textures.push_back(std::move(image));
+  return slot;
+}
+
+void Renderer2D::DrawQuad(const glm::mat4& transform, TextureHandle texture,
                           const glm::vec4& tint) {
-  uint32_t slot = RegisterImageView(texture.view());
-  EmitQuad(transform, tint, slot);
+  EmitQuad(transform, tint, texture);
 }
 
 Renderer2D::Stats Renderer2D::stats() {

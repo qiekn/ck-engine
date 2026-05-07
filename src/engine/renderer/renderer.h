@@ -19,7 +19,6 @@ namespace ck::vulkan {
 class Context;
 class Swapchain;
 class Allocator;
-class Image;
 class SlangCompiler;
 }
 
@@ -56,7 +55,6 @@ private:
 
   Camera camera_;
   Scope<vulkan::SlangCompiler> slang_;
-  Scope<vulkan::Image> texture_;
 };
 
 }  // namespace ck

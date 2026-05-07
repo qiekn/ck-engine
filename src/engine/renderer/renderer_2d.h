@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
+
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
@@ -50,13 +52,22 @@ public:
   // + bindDescriptorSets + bindVertex/IndexBuffers + drawIndexed.
   static void EndScene(vk::CommandBuffer cmd);
 
+  // Opaque handle into the bindless texture array. 0 is always the white
+  // fallback; LoadTexture returns 1, 2, ... up to kMaxTextures - 1.
+  using TextureHandle = uint32_t;
+  static constexpr TextureHandle kWhiteTexture = 0;
+
+  // Load |path| via stb_image, register into the bindless array, and
+  // return its slot. Idempotent: a path loaded twice gets the same slot.
+  // Lifetime is tied to Renderer2D itself (until Shutdown).
+  static TextureHandle LoadTexture(const std::filesystem::path& path);
+
   // Solid-color quad. tex_id points at the white fallback (slot 0).
   static void DrawQuad(const glm::mat4& transform, const glm::vec4& color);
 
-  // Textured quad. Image is registered into the bindless array (idempotent
-  // by image handle); tint multiplies the sampled color. If the array is
-  // full, falls back to slot 0 (white) so the tint still shows.
-  static void DrawQuad(const glm::mat4& transform, const vulkan::Image& texture,
+  // Textured quad. |texture| must come from LoadTexture (or kWhiteTexture).
+  // |tint| multiplies the sampled color.
+  static void DrawQuad(const glm::mat4& transform, TextureHandle texture,
                        const glm::vec4& tint = glm::vec4(1.0f));
 
   struct Stats {

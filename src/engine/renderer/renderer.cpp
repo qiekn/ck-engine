@@ -5,7 +5,6 @@
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
 #include "vulkan/context.h"
-#include "vulkan/image.h"
 #include "vulkan/swapchain.h"
 
 #include <array>
@@ -65,13 +64,6 @@ Renderer::Renderer(Window& window) : window_(window) {
   for (auto& s : render_finished_) s = context_->device().createSemaphore(sem_ci);
 
   slang_ = CreateScope<vulkan::SlangCompiler>();
-
-  texture_ = vulkan::Image::FromFile(*context_, *allocator_,
-                                     "assets/textures/checkerboard.png");
-  CK_ENGINE_ASSERT(texture_, "checkerboard.png failed to load");
-  CK_ENGINE_INFO("Texture loaded: checkerboard.png {}x{}",
-                 texture_->extent().width, texture_->extent().height);
-
   Renderer2D::Init(*context_, *allocator_, *slang_, swapchain_->format());
 }
 
@@ -181,10 +173,9 @@ void Renderer::BeginFrame() {
   vk::Rect2D scissor{vk::Offset2D{0, 0}, extent};
   cmd.setScissor(0, scissor);
 
+  // Renderer2D batch is open between BeginScene and EndScene; layers fill
+  // it via DrawQuad calls in OnUpdate.
   Renderer2D::BeginScene(camera_, current_frame_);
-  // Built-in test draw: a single textured quad. 5.4.5 will move this into
-  // a sandbox layer and Renderer will become content-agnostic.
-  Renderer2D::DrawQuad(glm::mat4(1.0f), *texture_);
 
   frame_active_ = true;
 }

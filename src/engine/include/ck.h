@@ -13,4 +13,6 @@
 #include "events/key_codes.h"   // IWYU pragma: export
 #include "events/mouse_codes.h" // IWYU pragma: export
 
+#include "renderer/renderer_2d.h"  // IWYU pragma: export
+
 // clang-format on

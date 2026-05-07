@@ -2,7 +2,6 @@
 
 #include "material.h"
 #include "shader/graphics_pipeline.h"
-#include "shader/shader_module.h"
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
 #include "vulkan/buffer.h"
@@ -79,15 +78,12 @@ Renderer::Renderer(Window& window) : window_(window) {
 
   sampler_ = CreateScope<vulkan::Sampler>(*context_);
 
-  // Sized for the existing hand-rolled path AND the parallel quad_material_
-  // built below (5.3.2). 5.3.3 will drop the hand-rolled path and shrink
-  // these back.
   std::array<vulkan::DescriptorPool::PoolSize, 2> pool_sizes{{
-      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight * 2},
-      {vk::DescriptorType::eCombinedImageSampler, 2},
+      {vk::DescriptorType::eUniformBuffer, vulkan::kFramesInFlight},
+      {vk::DescriptorType::eCombinedImageSampler, 1},
   }};
   descriptor_pool_ = CreateScope<vulkan::DescriptorPool>(
-      *context_, pool_sizes, vulkan::kFramesInFlight * 2);
+      *context_, pool_sizes, vulkan::kFramesInFlight);
 
   std::array<vk::DescriptorSetLayoutBinding, 2> set_bindings{};
   set_bindings[0].binding = 0;
@@ -98,25 +94,12 @@ Renderer::Renderer(Window& window) : window_(window) {
   set_bindings[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
   set_bindings[1].descriptorCount = 1;
   set_bindings[1].stageFlags = vk::ShaderStageFlagBits::eFragment;
-  descriptor_set_layout_ =
-      CreateScope<vulkan::DescriptorSetLayout>(*context_, set_bindings);
-
-  for (auto& set : descriptor_sets_) {
-    set = descriptor_pool_->Allocate(descriptor_set_layout_->handle());
-  }
-  CK_ENGINE_INFO("Descriptor pool ready ({} sets, 1 UBO + 1 sampler each)",
+  CK_ENGINE_INFO("Descriptor pool ready ({} sets max)",
                  vulkan::kFramesInFlight);
 
   camera_ubo_ = CreateScope<vulkan::UniformBuffer<CameraData>>(
       *allocator_, vulkan::kFramesInFlight);
   CK_ENGINE_INFO("UBO ring ready ({} frames)", vulkan::kFramesInFlight);
-
-  // Compile the textured-quad shader.
-  auto spirv = slang_->CompileToSpirv("assets/shaders/textured_quad.slang");
-  CK_ENGINE_ASSERT(!spirv.empty(), "textured_quad.slang failed to compile");
-  CK_ENGINE_INFO("Slang compiled textured_quad.slang ({} bytes SPIR-V)",
-                 spirv.size() * sizeof(uint32_t));
-  quad_shader_ = CreateScope<vulkan::ShaderModule>(*context_, std::span{spirv});
 
   // Quad geometry (centered at origin, 1x1 in world space). UVs span the full
   // texture; (0,0) at top-left consistent with Vulkan Y-down NDC.
@@ -161,28 +144,6 @@ Renderer::Renderer(Window& window) : window_(window) {
       .attributes = std::span{attributes.data(), attributes.size()},
   };
 
-  vk::DescriptorSetLayout set_layout = descriptor_set_layout_->handle();
-  quad_pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
-      *context_, *quad_shader_, swapchain_->format(), vertex_input,
-      std::span{&set_layout, 1},
-      context_->pipeline_cache());
-  CK_ENGINE_INFO("Pipeline ready");
-
-  // Per-frame descriptor sets: each UBO slot binds into its own set so we
-  // can bindDescriptorSets(set[current_frame_]) without touching a set the
-  // GPU is still using. Texture/sampler are shared (read-only).
-  for (uint32_t i = 0; i < vulkan::kFramesInFlight; ++i) {
-    vulkan::DescriptorWriter writer;
-    writer.WriteBuffer(0, camera_ubo_->Handle(i), 0, sizeof(CameraData),
-                       vk::DescriptorType::eUniformBuffer);
-    writer.WriteImage(1, texture_->view(), sampler_->handle(),
-                      vk::ImageLayout::eShaderReadOnlyOptimal,
-                      vk::DescriptorType::eCombinedImageSampler);
-    writer.Update(*context_, descriptor_sets_[i]);
-  }
-
-  // 5.3.2 parallel-path validation: stand up a Material with the same
-  // shader+layout+vertex spec. Not yet bound for drawing (5.3.3 swap).
   Material::Spec mat_spec{
       .shader_path = "assets/shaders/textured_quad.slang",
       .bindings = {set_bindings.begin(), set_bindings.end()},
@@ -305,10 +266,10 @@ void Renderer::BeginFrame() {
   rendering.pColorAttachments = &color_att;
   cmd.beginRendering(rendering);
 
-  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, quad_pipeline_->handle());
+  cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, quad_material_->pipeline());
   cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                         quad_pipeline_->layout(), 0,
-                         descriptor_sets_[current_frame_], {});
+                         quad_material_->pipeline_layout(), 0,
+                         quad_material_->descriptor_set(current_frame_), {});
   vk::Buffer vbo = quad_vbo_->handle();
   vk::DeviceSize vbo_offset = 0;
   cmd.bindVertexBuffers(0, 1, &vbo, &vbo_offset);

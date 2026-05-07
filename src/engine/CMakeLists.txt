@@ -31,7 +31,10 @@ target_include_directories(ck
 
 target_compile_options(ck PRIVATE $<$<CONFIG:Debug>:-g>)
 
-target_precompile_headers(ck PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
+# PCH must be PRIVATE: with import ck clients pulling std types through
+# the module, exposing the engine PCH (which #includes <iostream> etc.)
+# gives client TUs two conflicting definitions of std::basic_string et al.
+target_precompile_headers(ck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 
 # VMA implementation TU stays out of the engine PCH so VMA's macro
 # pollution (VMA_IMPLEMENTATION + dynamic-functions defines) doesn't leak

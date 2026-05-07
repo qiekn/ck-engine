@@ -29,6 +29,7 @@ using ::ck::Application;
 using ::ck::ApplicationSpecification;
 using ::ck::ApplicationCommandLineArgs;
 using ::ck::CreateApplication;
+using ::ck::EntryPoint;
 using ::ck::Layer;
 using ::ck::DeltaTime;
 using ::ck::Window;
@@ -59,6 +60,21 @@ using ::ck::MouseScrollEvent;
 using ::ck::Renderer2D;
 
 }  // export namespace ck
+
+// glm bare essentials clients touch (mat4, vecs, transform helpers).
+// Re-exported so client TUs don't have to #include glm — including it
+// after import ck pulls glm a second time in the client TU and trips
+// duplicate-template-default errors against the module-global copies.
+export namespace glm {
+using ::glm::mat4;
+using ::glm::mat3;
+using ::glm::vec2;
+using ::glm::vec3;
+using ::glm::vec4;
+using ::glm::translate;
+using ::glm::scale;
+using ::glm::rotate;
+}  // export namespace glm
 
 export namespace ck::log {
 using ::ck::log::trace;

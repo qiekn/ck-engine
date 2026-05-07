@@ -1,17 +1,9 @@
-#include <ck.h>
-
-#include <array>
-#include <cstdint>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "core/entry_point.h"  // IWYU pragma: keep
+import ck;
 
 namespace {
 
 // 10x10 grid of textured quads, alternating between three textures.
-// Demonstrates Renderer2D batching: one draw call flushes the whole grid.
+// One draw call flushes the whole grid via Renderer2D batching.
 class GridLayer : public ck::Layer {
 public:
   GridLayer() : Layer("GridLayer") {}
@@ -39,13 +31,13 @@ public:
     if (++log_counter_ % 120 == 0) {
       auto s = ck::Renderer2D::stats();
       ck::log::info("Renderer2D flushed: {} quads, {} textures, {} draw call(s)",
-                     s.quad_count, s.texture_count, s.draw_calls);
+                    s.quad_count, s.texture_count, s.draw_calls);
     }
   }
 
 private:
-  std::array<ck::Renderer2D::TextureHandle, 3> textures_{};
-  uint32_t log_counter_ = 0;
+  ck::Renderer2D::TextureHandle textures_[3]{};
+  unsigned int log_counter_ = 0;
 };
 
 }  // namespace
@@ -64,3 +56,5 @@ ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) {
   spec.command_line_args = args;
   return new Sandbox(spec);
 }
+
+int main(int argc, char** argv) { return ck::EntryPoint(argc, argv); }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <chrono>
 #include <string>
@@ -64,6 +64,9 @@ private:
 
 // To be defined in CLIENT
 extern Application* CreateApplication(ApplicationCommandLineArgs args);
+
+// Engine-provided main-loop driver; clients call this from main().
+int EntryPoint(int argc, char** argv);
 }  // namespace ck
 
 #define MAKE_APPLICATION(ClassName)                                             \

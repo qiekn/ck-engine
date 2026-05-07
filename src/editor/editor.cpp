@@ -1,13 +1,8 @@
-#include <ck.h>
-
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "core/entry_point.h"  // IWYU pragma: keep
+import ck;
 
 namespace ck {
 
 // Single textured quad — the editor's smoke test for the Renderer2D path.
-// Loads the checkerboard once on attach, draws one quad each frame.
 class EditorLayer : public Layer {
 public:
   EditorLayer() : Layer("EditorLayer") {}
@@ -40,3 +35,5 @@ ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) {
   spec.command_line_args = args;
   return new ck::Editor(spec);
 }
+
+int main(int argc, char** argv) { return ck::EntryPoint(argc, argv); }

@@ -11,6 +11,9 @@ void ViewportPanel::OnImGuiRender() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::Begin("Viewport");
 
+  hovered_ = ImGui::IsWindowHovered(0);
+  focused_ = ImGui::IsWindowFocused(0);
+
   ImVec2 size = ImGui::GetContentRegionAvail();
   if (size.x > 0.0f && size.y > 0.0f) {
     ck::Application::Get().OnViewportResize(static_cast<unsigned int>(size.x),

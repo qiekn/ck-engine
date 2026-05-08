@@ -18,7 +18,9 @@ module;
 
 #include "imgui/imgui_layer.h"
 
+#include "renderer/renderer.h"
 #include "renderer/renderer_2d.h"
+#include "renderer/camera.h"
 
 #include "scene/components.h"
 #include "scene/scene.h"
@@ -63,12 +65,17 @@ using ::ck::MouseButtonPressedEvent;
 using ::ck::MouseButtonReleasedEvent;
 using ::ck::MouseMoveEvent;
 using ::ck::MouseScrollEvent;
+using ::ck::MouseCode;
+using ::ck::Mouse;
+using ::ck::KeyCode;
 
 // imgui
 using ::ck::ImGuiLayer;
 
 // renderer
+using ::ck::Renderer;
 using ::ck::Renderer2D;
+using ::ck::Camera;
 
 // scene
 using ::ck::Scene;
@@ -124,6 +131,7 @@ using ::ImGui::TreePop;
 using ::ImGui::IsItemClicked;
 using ::ImGui::IsMouseDown;
 using ::ImGui::IsWindowHovered;
+using ::ImGui::IsWindowFocused;
 using ::ImGui::BeginPopupContextItem;
 using ::ImGui::BeginPopupContextWindow;
 using ::ImGui::EndPopup;

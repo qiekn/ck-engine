@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include <algorithm>
+
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace ck {
@@ -15,12 +17,18 @@ void Camera::SetPosition(const glm::vec3& position) {
   Recompute();
 }
 
+void Camera::SetZoom(float zoom) {
+  zoom_ = std::clamp(zoom, 0.01f, 1000.0f);
+  Recompute();
+}
+
 void Camera::Recompute() {
   float aspect = static_cast<float>(width_) / static_cast<float>(height_);
 
-  // GL-style ortho (Y up). Flip Y on the projection's Y scale to match
-  // Vulkan's Y-down NDC.
-  glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
+  // GL-style ortho (Y up) scaled by zoom_. Flip Y on the projection's Y
+  // scale to match Vulkan's Y-down NDC.
+  glm::mat4 projection =
+      glm::ortho(-aspect * zoom_, aspect * zoom_, -zoom_, zoom_);
   projection[1][1] *= -1.0f;
 
   glm::mat4 view = glm::translate(glm::mat4(1.0f), -position_);

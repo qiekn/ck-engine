@@ -1,5 +1,6 @@
 import ck;
 
+#include "editor_camera.h"
 #include "panels/properties_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/stats_panel.h"
@@ -22,7 +23,15 @@ public:
     hierarchy_panel_.SetContext(scene_);
   }
 
-  void OnUpdate(ck::DeltaTime ts) override { scene_->OnUpdate(ts); }
+  void OnUpdate(ck::DeltaTime ts) override {
+    editor_camera_.OnUpdate(ts, viewport_panel_.IsHovered());
+    editor_camera_.PushTo(ck::Application::Get().GetRenderer().GetCamera());
+    scene_->OnUpdate(ts);
+  }
+
+  void OnEvent(ck::Event& e) override {
+    editor_camera_.OnEvent(e, viewport_panel_.IsHovered());
+  }
 
   void OnImGuiRender() override {
     // Full-window dockspace: panels can dock into edges of the main viewport.
@@ -38,6 +47,7 @@ public:
 
 private:
   ck::Ref<ck::Scene> scene_;
+  EditorCamera editor_camera_;
   ViewportPanel viewport_panel_;
   SceneHierarchyPanel hierarchy_panel_;
   PropertiesPanel properties_panel_;

@@ -64,6 +64,10 @@ public:
   vulkan::Context&   context()      { return *context_; }
   vulkan::Swapchain& swapchain()    { return *swapchain_; }
   vk::ImageView      color_target_view() const;
+  // Editor-facing handle: editor camera pokes position/zoom on this each
+  // frame. Renderer keeps SetViewport ownership so width/height stay synced
+  // to color_target_'s extent.
+  Camera&            GetCamera()    { return camera_; }
 
 private:
   void RecreateSwapchain();

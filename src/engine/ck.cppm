@@ -105,12 +105,16 @@ using ::ImGui::Image;
 using ::ImGui::GetContentRegionAvail;
 using ::ImGui::DockSpaceOverViewport;
 using ::ImGui::GetMainViewport;
+using ::ImGui::PushStyleVar;
+using ::ImGui::PopStyleVar;
 }  // export namespace ImGui
 
 export using ::ImGuiIO;
 export using ::ImGuiWindowFlags;
 export using ::ImGuiViewport;
 export using ::ImGuiDockNodeFlags;
+export using ::ImGuiStyleVar;
+export using ::ImGuiStyleVar_;
 export using ::ImTextureID;
 export using ::ImVec2;
 export using ::ImVec4;

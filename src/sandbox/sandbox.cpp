@@ -34,10 +34,12 @@ public:
   // 6.A.3 flow the engine no longer blits color_target straight to the
   // swapchain, so a panel hosting the texture is the only way to see it.
   void OnImGuiRender() override {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Sandbox Viewport");
     ImTextureID tex = ck::Application::Get().GetImGuiLayer().viewport_texture_id();
     if (tex) ImGui::Image(tex, ImGui::GetContentRegionAvail());
     ImGui::End();
+    ImGui::PopStyleVar();
 
     ImGui::Begin("Sandbox Stats");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);

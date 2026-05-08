@@ -22,7 +22,7 @@ void Scene::OnUpdate(DeltaTime /*ts*/) {
   auto view = registry_.view<TransformComponent, SpriteRendererComponent>();
   for (auto e : view) {
     auto [t, s] = view.get<TransformComponent, SpriteRendererComponent>(e);
-    Renderer2D::DrawQuad(t.transform, s.texture, s.color);
+    Renderer2D::DrawQuad(t.GetTransform(), s.texture, s.color);
   }
 }
 

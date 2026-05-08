@@ -2,6 +2,8 @@
 
 #include <string>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "renderer/renderer_2d.h"
 
@@ -15,16 +17,22 @@ struct TagComponent {
   TagComponent(const std::string& t) : tag(t) {}
 };
 
-// World transform. Single mat4 for now — split into translation/rotation/
-// scale when 6.B.3's PropertiesPanel needs to inspect them individually.
+// World transform stored as T/R/S so PropertiesPanel can edit each axis
+// individually. GetTransform composes them on demand for Renderer2D.
+// rotation is XYZ-euler in radians (Hazel convention via glm::quat ctor).
 struct TransformComponent {
-  glm::mat4 transform{1.0f};
+  glm::vec3 translation{0.0f, 0.0f, 0.0f};
+  glm::vec3 rotation   {0.0f, 0.0f, 0.0f};
+  glm::vec3 scale      {1.0f, 1.0f, 1.0f};
 
   TransformComponent() = default;
-  TransformComponent(const glm::mat4& m) : transform(m) {}
+  TransformComponent(const glm::vec3& t) : translation(t) {}
 
-  operator glm::mat4&()             { return transform; }
-  operator const glm::mat4&() const { return transform; }
+  glm::mat4 GetTransform() const {
+    glm::mat4 r = glm::mat4_cast(glm::quat(rotation));
+    return glm::translate(glm::mat4(1.0f), translation) * r *
+           glm::scale(glm::mat4(1.0f), scale);
+  }
 };
 
 // Renderer2D quad. texture=kWhiteTexture + color = solid color.

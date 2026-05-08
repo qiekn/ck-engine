@@ -128,6 +128,12 @@ using ::ImGui::BeginPopupContextItem;
 using ::ImGui::BeginPopupContextWindow;
 using ::ImGui::EndPopup;
 using ::ImGui::MenuItem;
+// PropertiesPanel (6.B.3): collapsing headers + scalar/color/text editors.
+using ::ImGui::CollapsingHeader;
+using ::ImGui::Separator;
+using ::ImGui::InputText;
+using ::ImGui::DragFloat3;
+using ::ImGui::ColorEdit4;
 }  // export namespace ImGui
 
 export using ::ImGuiIO;

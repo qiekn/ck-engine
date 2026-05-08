@@ -1,5 +1,6 @@
 import ck;
 
+#include "panels/properties_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/stats_panel.h"
 #include "panels/viewport_panel.h"
@@ -31,6 +32,7 @@ public:
 
     viewport_panel_.OnImGuiRender();
     hierarchy_panel_.OnImGuiRender();
+    properties_panel_.OnImGuiRender(hierarchy_panel_.SelectedEntity());
     stats_panel_.OnImGuiRender();
   }
 
@@ -38,6 +40,7 @@ private:
   ck::Ref<ck::Scene> scene_;
   ViewportPanel viewport_panel_;
   SceneHierarchyPanel hierarchy_panel_;
+  PropertiesPanel properties_panel_;
   StatsPanel stats_panel_;
 };
 

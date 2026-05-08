@@ -37,8 +37,13 @@ struct TransformComponent {
 
 // Renderer2D quad. texture=kWhiteTexture + color = solid color.
 // Real texture + color = texture tinted by color.
+//
+// texture_path is the persistent identifier for serialization (6.B.5);
+// texture is the runtime bindless slot, repopulated via Renderer2D::
+// LoadTexture(texture_path) on deserialize. Empty path = white fallback.
 struct SpriteRendererComponent {
   Renderer2D::TextureHandle texture = Renderer2D::kWhiteTexture;
+  std::string texture_path;
   glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 
   SpriteRendererComponent() = default;

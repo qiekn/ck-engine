@@ -25,6 +25,7 @@ module;
 #include "scene/components.h"
 #include "scene/scene.h"
 #include "scene/entity.h"
+#include "scene/scene_serializer.h"
 
 #include <imgui.h>
 
@@ -83,6 +84,7 @@ using ::ck::Entity;
 using ::ck::TagComponent;
 using ::ck::TransformComponent;
 using ::ck::SpriteRendererComponent;
+using ::ck::SceneSerializer;
 
 }  // export namespace ck
 
@@ -142,6 +144,11 @@ using ::ImGui::Separator;
 using ::ImGui::InputText;
 using ::ImGui::DragFloat3;
 using ::ImGui::ColorEdit4;
+// Editor menu bar (6.B.5): main menu + nested menus.
+using ::ImGui::BeginMainMenuBar;
+using ::ImGui::EndMainMenuBar;
+using ::ImGui::BeginMenu;
+using ::ImGui::EndMenu;
 }  // export namespace ImGui
 
 export using ::ImGuiIO;

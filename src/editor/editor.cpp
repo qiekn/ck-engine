@@ -17,8 +17,9 @@ public:
   void OnAttach() override {
     scene_ = ck::CreateRef<ck::Scene>();
     auto entity = scene_->CreateEntity("Checkerboard");
-    entity.AddComponent<ck::SpriteRendererComponent>(
-        ck::Renderer2D::LoadTexture("assets/textures/checkerboard.png"));
+    auto& sr = entity.AddComponent<ck::SpriteRendererComponent>();
+    sr.texture_path = "assets/textures/checkerboard.png";
+    sr.texture = ck::Renderer2D::LoadTexture(sr.texture_path);
 
     hierarchy_panel_.SetContext(scene_);
   }
@@ -39,6 +40,22 @@ public:
     // out in phase-6-plan.md.
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0, nullptr);
 
+    if (ImGui::BeginMainMenuBar()) {
+      if (ImGui::BeginMenu("File")) {
+        if (ImGui::MenuItem("Save Scene", nullptr, false, true)) {
+          ck::SceneSerializer(scene_).Serialize(kScenePath);
+        }
+        if (ImGui::MenuItem("Load Scene", nullptr, false, true)) {
+          ck::SceneSerializer(scene_).Deserialize(kScenePath);
+          // Wipe the panel selection in case the loaded scene doesn't
+          // contain the previously-selected handle.
+          hierarchy_panel_.SetSelectedEntity({});
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMainMenuBar();
+    }
+
     viewport_panel_.OnImGuiRender();
     hierarchy_panel_.OnImGuiRender();
     properties_panel_.OnImGuiRender(hierarchy_panel_.SelectedEntity());
@@ -46,6 +63,8 @@ public:
   }
 
 private:
+  static constexpr const char* kScenePath = "assets/scenes/default.ckscene";
+
   ck::Ref<ck::Scene> scene_;
   EditorCamera editor_camera_;
   ViewportPanel viewport_panel_;

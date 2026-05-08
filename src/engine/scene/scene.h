@@ -27,6 +27,9 @@ public:
 
   Entity CreateEntity(const std::string& tag = std::string());
   void DestroyEntity(Entity entity);
+  // Drops every entity. Used by SceneSerializer::Deserialize before
+  // streaming a new scene file in over the existing one.
+  void Clear();
 
   // Iterates (TransformComponent, SpriteRendererComponent) view and calls
   // Renderer2D::DrawQuad for each. Caller must have already opened a

@@ -18,6 +18,10 @@ void Scene::DestroyEntity(Entity entity) {
   registry_.destroy(static_cast<entt::entity>(entity));
 }
 
+void Scene::Clear() {
+  registry_.clear();
+}
+
 void Scene::OnUpdate(DeltaTime /*ts*/) {
   auto view = registry_.view<TransformComponent, SpriteRendererComponent>();
   for (auto e : view) {

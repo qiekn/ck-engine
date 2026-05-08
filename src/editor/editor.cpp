@@ -3,19 +3,19 @@ import ck;
 #include "panels/stats_panel.h"
 #include "panels/viewport_panel.h"
 
-namespace ck {
+namespace ck_editor {
 
 // Single textured quad — the editor's smoke test for the Renderer2D path.
-class EditorLayer : public Layer {
+class EditorLayer : public ck::Layer {
 public:
   EditorLayer() : Layer("EditorLayer") {}
 
   void OnAttach() override {
-    checkerboard_ = Renderer2D::LoadTexture("assets/textures/checkerboard.png");
+    checkerboard_ = ck::Renderer2D::LoadTexture("assets/textures/checkerboard.png");
   }
 
-  void OnUpdate(DeltaTime) override {
-    Renderer2D::DrawQuad(glm::mat4(1.0f), checkerboard_);
+  void OnUpdate(ck::DeltaTime) override {
+    ck::Renderer2D::DrawQuad(glm::mat4(1.0f), checkerboard_);
   }
 
   void OnImGuiRender() override {
@@ -29,26 +29,26 @@ public:
   }
 
 private:
-  Renderer2D::TextureHandle checkerboard_ = Renderer2D::kWhiteTexture;
-  ck_editor::ViewportPanel viewport_panel_;
-  ck_editor::StatsPanel stats_panel_;
+  ck::Renderer2D::TextureHandle checkerboard_ = ck::Renderer2D::kWhiteTexture;
+  ViewportPanel viewport_panel_;
+  StatsPanel stats_panel_;
 };
 
-class Editor : public Application {
+class Editor : public ck::Application {
 public:
-  explicit Editor(const ApplicationSpecification& spec) : Application(spec) {
-    PushLayer(CreateScope<EditorLayer>());
+  explicit Editor(const ck::ApplicationSpecification& spec) : Application(spec) {
+    PushLayer(ck::CreateScope<EditorLayer>());
   }
   ~Editor() {}
 };
 
-}  // namespace ck
+}  // namespace ck_editor
 
 ck::Application* ck::CreateApplication(ck::ApplicationCommandLineArgs args) {
   ck::ApplicationSpecification spec;
   spec.name = "CK Editor";
   spec.command_line_args = args;
-  return new ck::Editor(spec);
+  return new ck_editor::Editor(spec);
 }
 
 int main(int argc, char** argv) { return ck::EntryPoint(argc, argv); }

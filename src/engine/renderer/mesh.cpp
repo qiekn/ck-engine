@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "core/log.h"
 #include "renderer/vulkan/buffer.h"
 
 namespace ck {
@@ -62,6 +63,20 @@ Ref<Mesh> Mesh::CreateCube(vulkan::Allocator& alloc) {
   return CreateRef<Mesh>(alloc,
                          std::span<const MeshVertex>{verts.data(), verts.size()},
                          std::span<const uint32_t>{indices.data(), indices.size()});
+}
+
+Ref<Mesh> Mesh::Load(const std::string& path, vulkan::Allocator& alloc) {
+  if (path.empty() || path == "cube") return CreateCube(alloc);
+  if (auto m = FromFile(path, alloc)) return m;
+  ck::log::warn("Mesh::Load fallback to cube for '{}'", path);
+  return CreateCube(alloc);
+}
+
+Ref<Mesh> Mesh::FromFile(const std::filesystem::path& /*path*/,
+                         vulkan::Allocator& /*alloc*/) {
+  // tinyobjloader wiring lands in phase 6.C.5; until then everything
+  // off the "cube" token funnels through the warn+fallback path above.
+  return nullptr;
 }
 
 }  // namespace ck

@@ -4,7 +4,10 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "core/application.h"
 #include "core/log.h"
+#include "renderer/mesh.h"
+#include "renderer/renderer.h"
 #include "renderer/renderer_2d.h"
 #include "scene/components.h"
 #include "scene/entity.h"
@@ -100,6 +103,16 @@ void SerializeEntity(YAML::Emitter& out, Entity entity) {
     out << YAML::EndMap;
   }
 
+  if (entity.HasComponent<MeshComponent>()) {
+    out << YAML::Key << "MeshComponent";
+    out << YAML::Value << YAML::BeginMap;
+    const auto& m = entity.GetComponent<MeshComponent>();
+    out << YAML::Key << "Path" << YAML::Value << m.mesh_path;
+    out << YAML::Key << "Tint" << YAML::Value
+        << glm::vec4(m.tint, 1.0f);  // serialize as vec4 for symmetry
+    out << YAML::EndMap;
+  }
+
   out << YAML::EndMap;
 }
 
@@ -162,6 +175,15 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& path) {
       if (!s.texture_path.empty()) {
         s.texture = Renderer2D::LoadTexture(s.texture_path, s.filter);
       }
+    }
+
+    if (auto mc = entity_node["MeshComponent"]) {
+      auto& m = e.AddComponent<MeshComponent>();
+      m.mesh_path = mc["Path"].as<std::string>(std::string{"cube"});
+      glm::vec4 tint4 = mc["Tint"].as<glm::vec4>(glm::vec4{1.0f});
+      m.tint = glm::vec3(tint4);
+      m.mesh = Mesh::Load(m.mesh_path,
+                          Application::Get().GetRenderer().allocator());
     }
   }
   log::info("Scene loaded from {}", path.string());

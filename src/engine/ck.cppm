@@ -97,6 +97,7 @@ using ::ck::Entity;
 using ::ck::TagComponent;
 using ::ck::TransformComponent;
 using ::ck::SpriteRendererComponent;
+using ::ck::MeshComponent;
 using ::ck::SceneSerializer;
 
 }  // export namespace ck
@@ -157,6 +158,7 @@ using ::ImGui::Separator;
 using ::ImGui::InputText;
 using ::ImGui::DragFloat3;
 using ::ImGui::ColorEdit4;
+using ::ImGui::Button;
 // Editor menu bar (6.B.5): main menu + nested menus.
 using ::ImGui::BeginMainMenuBar;
 using ::ImGui::EndMainMenuBar;

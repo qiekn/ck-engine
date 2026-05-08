@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <span>
+#include <string>
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
@@ -23,7 +25,7 @@ struct MeshVertex {
 };
 
 // Device-local vertex + index buffer pair. Shared via Ref<Mesh> from
-// MeshComponent. tinyobjloader-driven Mesh::FromFile arrives in 6.C.5.
+// MeshComponent.
 class Mesh {
 public:
   Mesh(vulkan::Allocator& alloc,
@@ -44,6 +46,17 @@ public:
   // sharing across faces -> 24 verts, 36 indices). CCW winding on the
   // outside; pair with cull_back.
   static Ref<Mesh> CreateCube(vulkan::Allocator& alloc);
+
+  // Path-driven loader -- the persistent identifier carried by
+  // MeshComponent. Special tokens:
+  //   "cube"  (or empty) -> CreateCube
+  //   anything else      -> FromFile (currently logs a warn + cube
+  //                          fallback; tinyobjloader lands in 6.C.5)
+  static Ref<Mesh> Load(const std::string& path, vulkan::Allocator& alloc);
+
+  // .obj loader (tinyobjloader). Returns nullptr on parse failure.
+  static Ref<Mesh> FromFile(const std::filesystem::path& path,
+                            vulkan::Allocator& alloc);
 
 private:
   Scope<vulkan::Buffer> vertex_buffer_;

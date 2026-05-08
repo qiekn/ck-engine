@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "core/core.h"
+#include "renderer/mesh.h"
 #include "renderer/renderer_2d.h"
 
 namespace ck {
@@ -52,6 +54,19 @@ struct SpriteRendererComponent {
   SpriteRendererComponent() = default;
   SpriteRendererComponent(Renderer2D::TextureHandle tex) : texture(tex) {}
   SpriteRendererComponent(const glm::vec4& c) : color(c) {}
+};
+
+// Renderer3D mesh draw. mesh_path is the persistent identifier
+// (Mesh::Load tokens: "cube" / "" -> procedural cube, anything else ->
+// FromFile). mesh is the runtime device-local Ref repopulated on
+// deserialize / mesh_path edit.
+struct MeshComponent {
+  Ref<Mesh>   mesh;
+  std::string mesh_path = "cube";
+  glm::vec3   tint{1.0f, 1.0f, 1.0f};
+
+  MeshComponent() = default;
+  MeshComponent(const std::string& path) : mesh_path(path) {}
 };
 
 }  // namespace ck

@@ -19,16 +19,22 @@ public:
     auto& renderer = ck::Application::Get().GetRenderer();
 
     scene_ = ck::CreateRef<ck::Scene>();
-    auto entity = scene_->CreateEntity("Checkerboard");
-    auto& sr = entity.AddComponent<ck::SpriteRendererComponent>();
+
+    auto checker = scene_->CreateEntity("Checkerboard");
+    auto& sr = checker.AddComponent<ck::SpriteRendererComponent>();
     sr.texture_path = "assets/textures/checkerboard.png";
     sr.filter  = ck::Renderer2D::Filter::Nearest;
     sr.texture = ck::Renderer2D::LoadTexture(sr.texture_path, sr.filter);
 
-    hierarchy_panel_.SetContext(scene_);
+    auto cube = scene_->CreateEntity("Cube");
+    auto& mc = cube.AddComponent<ck::MeshComponent>();
+    mc.mesh_path = "cube";
+    mc.tint = glm::vec3(0.85f, 0.45f, 0.25f);
+    mc.mesh = ck::Mesh::Load(mc.mesh_path, renderer.allocator());
+    cube.GetComponent<ck::TransformComponent>().translation =
+        glm::vec3(0.0f, 0.0f, 0.6f);
 
-    cube_ = ck::Mesh::CreateCube(renderer.allocator());
-    cube_transform_ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.6f));
+    hierarchy_panel_.SetContext(scene_);
   }
 
   void OnUpdate(ck::DeltaTime ts) override {
@@ -39,9 +45,6 @@ public:
     }
     editor_camera_.OnUpdate(ts, viewport_panel_.IsHovered());
     renderer.SetActiveCamera(editor_camera_.view_projection());
-
-    // Demo 3D draw alongside the 2D Scene path.
-    ck::Renderer3D::DrawMesh(cube_, cube_transform_, glm::vec3(0.85f, 0.45f, 0.25f));
 
     scene_->OnUpdate(ts);
   }
@@ -85,9 +88,6 @@ private:
   SceneHierarchyPanel hierarchy_panel_;
   PropertiesPanel properties_panel_;
   StatsPanel stats_panel_;
-
-  ck::Ref<ck::Mesh> cube_;
-  glm::mat4 cube_transform_{1.0f};
 };
 
 class Editor : public ck::Application {

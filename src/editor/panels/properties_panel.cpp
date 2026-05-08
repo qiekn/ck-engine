@@ -44,6 +44,24 @@ void DrawSpriteRenderer(ck::Entity entity) {
   ImGui::ColorEdit4("Color", &s.color.x, 0);
 }
 
+void DrawMesh(ck::Entity entity) {
+  if (!entity.HasComponent<ck::MeshComponent>()) return;
+  if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) return;
+  auto& m = entity.GetComponent<ck::MeshComponent>();
+
+  char path_buf[256] = {};
+  std::strncpy(path_buf, m.mesh_path.c_str(), sizeof(path_buf) - 1);
+  if (ImGui::InputText("Path", path_buf, sizeof(path_buf), 0, nullptr, nullptr)) {
+    m.mesh_path = path_buf;
+  }
+  ImGui::Text("Tokens: \"cube\" / .obj path");
+  if (ImGui::Button("Reload Mesh")) {
+    m.mesh = ck::Mesh::Load(m.mesh_path,
+                            ck::Application::Get().GetRenderer().allocator());
+  }
+  ImGui::ColorEdit4("Tint", &m.tint.x, 0);
+}
+
 }  // namespace
 
 void PropertiesPanel::OnImGuiRender(ck::Entity selected) {
@@ -53,6 +71,7 @@ void PropertiesPanel::OnImGuiRender(ck::Entity selected) {
     ImGui::Separator();
     DrawTransform(selected);
     DrawSpriteRenderer(selected);
+    DrawMesh(selected);
   }
   ImGui::End();
 }

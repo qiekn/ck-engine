@@ -1,6 +1,7 @@
 #include "scene/scene.h"
 
 #include "renderer/renderer_2d.h"
+#include "renderer/renderer_3d.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 
@@ -23,10 +24,21 @@ void Scene::Clear() {
 }
 
 void Scene::OnUpdate(DeltaTime /*ts*/) {
-  auto view = registry_.view<TransformComponent, SpriteRendererComponent>();
-  for (auto e : view) {
-    auto [t, s] = view.get<TransformComponent, SpriteRendererComponent>(e);
-    Renderer2D::DrawQuad(t.GetTransform(), s.texture, s.color);
+  // 2D sprites
+  {
+    auto view = registry_.view<TransformComponent, SpriteRendererComponent>();
+    for (auto e : view) {
+      auto [t, s] = view.get<TransformComponent, SpriteRendererComponent>(e);
+      Renderer2D::DrawQuad(t.GetTransform(), s.texture, s.color);
+    }
+  }
+  // 3D meshes
+  {
+    auto view = registry_.view<TransformComponent, MeshComponent>();
+    for (auto e : view) {
+      auto [t, m] = view.get<TransformComponent, MeshComponent>(e);
+      if (m.mesh) Renderer3D::DrawMesh(m.mesh, t.GetTransform(), m.tint);
+    }
   }
 }
 

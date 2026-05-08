@@ -29,9 +29,19 @@ vk::SurfaceFormatKHR PickFormat(const std::vector<vk::SurfaceFormatKHR>& formats
 }
 
 vk::PresentModeKHR PickPresentMode(const std::vector<vk::PresentModeKHR>& modes, bool vsync) {
-  if (vsync) return vk::PresentModeKHR::eFifo;  // always supported
+  // Prefer MAILBOX even when vsync is requested: it is also tearing-free and
+  // always presents the latest queued image, which keeps input → display
+  // latency low. Without this, FIFO + 3-image swapchain queues frames up to
+  // ~2 vblanks behind the cursor, which feels like ImGui windows chase the
+  // mouse during drags. Fall back to FIFO when MAILBOX is unavailable.
+  if (vsync) {
+    for (auto m : modes) {
+      if (m == vk::PresentModeKHR::eMailbox) return m;
+    }
+    return vk::PresentModeKHR::eFifo;
+  }
   for (auto m : modes) {
-    if (m == vk::PresentModeKHR::eMailbox) return m;
+    if (m == vk::PresentModeKHR::eImmediate) return m;
   }
   return vk::PresentModeKHR::eFifo;
 }

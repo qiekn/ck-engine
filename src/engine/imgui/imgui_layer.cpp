@@ -7,6 +7,8 @@
 #include <volk.h>
 #include <GLFW/glfw3.h>
 
+#include <cmath>
+
 #include "core/application.h"
 #include "core/log.h"
 #include "core/window.h"
@@ -52,6 +54,22 @@ void ApplyDarkThemeColors() {
   colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 }
 
+// The swapchain image is sRGB so the GPU does linear→sRGB encoding on every
+// fragment write. ImGui colors above are perceptual sRGB values though
+// (matched the OpenGL pipeline that wrote raw byte values to the framebuffer).
+// Without compensation each component lands ~pow(c, 1/2.2) brighter than
+// authored, so the dark Hazel palette renders washed out. Pre-applying
+// pow(c, 2.2) cancels the hardware encoding and the displayed pixels match
+// the authored values.
+void GammaCorrectStyleColors() {
+  auto& colors = ImGui::GetStyle().Colors;
+  for (int i = 0; i < ImGuiCol_COUNT; ++i) {
+    colors[i].x = std::pow(colors[i].x, 2.2f);
+    colors[i].y = std::pow(colors[i].y, 2.2f);
+    colors[i].z = std::pow(colors[i].z, 2.2f);
+  }
+}
+
 }  // namespace
 
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
@@ -80,6 +98,7 @@ void ImGuiLayer::OnAttach() {
   style.FrameRounding = 8.0f;
   style.ScaleAllSizes(dpi);
   ApplyDarkThemeColors();
+  GammaCorrectStyleColors();
 
   Renderer& renderer = Application::Get().GetRenderer();
   vulkan::Context& ctx = renderer.context();

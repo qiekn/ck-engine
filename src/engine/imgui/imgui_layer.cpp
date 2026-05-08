@@ -23,6 +23,35 @@ void CheckVkResult(VkResult err) {
   ck::log::error("[imgui-vk] VkResult = {}", static_cast<int>(err));
 }
 
+// Hazel-style dark theme — carried over from the OpenGL-era ImGuiLayer so the
+// editor keeps the look the user is used to.
+void ApplyDarkThemeColors() {
+  auto& colors = ImGui::GetStyle().Colors;
+  colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+
+  colors[ImGuiCol_Header]        = ImVec4{0.2f,  0.205f,  0.21f,  1.0f};
+  colors[ImGuiCol_HeaderHovered] = ImVec4{0.3f,  0.305f,  0.31f,  1.0f};
+  colors[ImGuiCol_HeaderActive]  = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  colors[ImGuiCol_Button]        = ImVec4{0.2f,  0.205f,  0.21f,  1.0f};
+  colors[ImGuiCol_ButtonHovered] = ImVec4{0.3f,  0.305f,  0.31f,  1.0f};
+  colors[ImGuiCol_ButtonActive]  = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  colors[ImGuiCol_FrameBg]        = ImVec4{0.2f,  0.205f,  0.21f,  1.0f};
+  colors[ImGuiCol_FrameBgHovered] = ImVec4{0.3f,  0.305f,  0.31f,  1.0f};
+  colors[ImGuiCol_FrameBgActive]  = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+
+  colors[ImGuiCol_Tab]                = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TabHovered]         = ImVec4{0.38f, 0.3805f, 0.381f, 1.0f};
+  colors[ImGuiCol_TabActive]          = ImVec4{0.28f, 0.2805f, 0.281f, 1.0f};
+  colors[ImGuiCol_TabUnfocused]       = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.2f,  0.205f,  0.21f,  1.0f};
+
+  colors[ImGuiCol_TitleBg]          = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TitleBgActive]    = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+  colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+}
+
 }  // namespace
 
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
@@ -37,7 +66,20 @@ void ImGuiLayer::OnAttach() {
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   // Multi-viewport intentionally off — see phase-6-plan.md §6.A decisions.
 
+  // Fonts + style sized for the monitor's DPI scale; with GLFW_SCALE_TO_MONITOR
+  // the window is created at the scaled size, so io.DisplayFramebufferScale
+  // stays at 1.0 and we have to inflate font + widget metrics ourselves.
+  const float dpi = Window::s_high_dpi_scale_factor_;
+  io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", dpi * 18.0f);
+  io.FontDefault = io.Fonts->AddFontFromFileTTF(
+      "assets/fonts/opensans/OpenSans-Regular.ttf", dpi * 18.0f);
+
   ImGui::StyleColorsDark();
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 8.0f;
+  style.FrameRounding = 8.0f;
+  style.ScaleAllSizes(dpi);
+  ApplyDarkThemeColors();
 
   Renderer& renderer = Application::Get().GetRenderer();
   vulkan::Context& ctx = renderer.context();
@@ -81,8 +123,8 @@ void ImGuiLayer::OnAttach() {
                                     static_cast<VkCommandBuffer>(cmd));
   });
 
-  ck::log::info("ImGuiLayer attached (dynamic rendering, format={})",
-                static_cast<int>(color_format));
+  ck::log::info("ImGuiLayer attached (dynamic rendering, format={}, dpi={})",
+                static_cast<int>(color_format), dpi);
 }
 
 void ImGuiLayer::OnDetach() {

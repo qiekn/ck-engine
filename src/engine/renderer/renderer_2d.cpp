@@ -10,7 +10,6 @@
 #include "core/core.h"
 #include "core/log.h"
 #include "debug/profiler.h"
-#include "renderer/camera.h"
 #include "renderer/shader/graphics_pipeline.h"
 #include "renderer/shader/shader_module.h"
 #include "renderer/shader/slang_compiler.h"
@@ -163,7 +162,8 @@ void EmitQuad(const glm::mat4& transform, const glm::vec4& color, uint32_t tex_i
 }  // namespace
 
 void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
-                      vulkan::SlangCompiler& compiler, vk::Format color_format) {
+                      vulkan::SlangCompiler& compiler, vk::Format color_format,
+                      vk::Format depth_format) {
   CK_PROFILE_FUNCTION();
   CK_ASSERT(g_state == nullptr, "Renderer2D already initialized");
 
@@ -377,9 +377,17 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
       .bindings = std::span{&vb_binding, 1},
       .attributes = std::span{vb_attrs.data(), vb_attrs.size()},
   };
+  vulkan::GraphicsPipelineSpec spec{};
+  spec.color_format = color_format;
+  spec.depth_format = depth_format;
+  // 2D quads draw on top of whatever's already in depth (no test, no
+  // write); 3D mesh pass owns the depth buffer.
+  spec.depth_test_enable = false;
+  spec.depth_write_enable = false;
+  spec.blend_enable = true;
+  spec.set_layouts = std::span{&g_state->set_layout, 1};
   g_state->pipeline = CreateScope<vulkan::GraphicsPipeline>(
-      ctx, *g_state->shader, color_format, vi,
-      std::span{&g_state->set_layout, 1}, ctx.pipeline_cache());
+      ctx, *g_state->shader, vi, spec, ctx.pipeline_cache());
 
   g_state->cpu_buffer.resize(kMaxQuads * kVerticesPerQuad);
 
@@ -396,7 +404,7 @@ void Renderer2D::Shutdown() {
   g_state = nullptr;
 }
 
-void Renderer2D::BeginScene(const Camera& camera, uint32_t frame_index) {
+void Renderer2D::BeginScene(uint32_t frame_index) {
   CK_PROFILE_FUNCTION();
   g_state->frame_index = frame_index;
   g_state->quad_count = 0;
@@ -404,13 +412,9 @@ void Renderer2D::BeginScene(const Camera& camera, uint32_t frame_index) {
   // Ensure this frame's set has descriptors for any textures registered
   // since it was last used.
   SyncDescriptors(frame_index);
-
-  CameraUBOData ubo{};
-  ubo.view_proj = camera.view_projection();
-  g_state->camera_ubo->Write(frame_index, ubo);
 }
 
-void Renderer2D::EndScene(vk::CommandBuffer cmd) {
+void Renderer2D::EndScene(vk::CommandBuffer cmd, const glm::mat4& view_projection) {
   CK_PROFILE_FUNCTION();
   uint32_t qc = g_state->quad_count;
   uint32_t fi = g_state->frame_index;
@@ -421,6 +425,12 @@ void Renderer2D::EndScene(vk::CommandBuffer cmd) {
   g_state->last_stats.draw_calls = qc > 0 ? 1 : 0;
 
   if (qc == 0) return;
+
+  // Write the camera UBO at flush time so a layer's OnUpdate camera mutation
+  // is reflected in the same frame's draws.
+  CameraUBOData ubo{};
+  ubo.view_proj = view_projection;
+  g_state->camera_ubo->Write(fi, ubo);
 
   std::memcpy(g_state->vertex_buffers[fi]->mapped(),
               g_state->cpu_buffer.data(),

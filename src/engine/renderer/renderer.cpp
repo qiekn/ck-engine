@@ -23,6 +23,8 @@ namespace ck {
 
 namespace {
 
+constexpr vk::Format kDepthFormat = vk::Format::eD32Sfloat;
+
 void TransitionImage(vk::CommandBuffer cmd,
                      vk::Image image,
                      vk::ImageLayout old_layout,
@@ -30,7 +32,8 @@ void TransitionImage(vk::CommandBuffer cmd,
                      vk::PipelineStageFlags2 src_stage,
                      vk::AccessFlags2 src_access,
                      vk::PipelineStageFlags2 dst_stage,
-                     vk::AccessFlags2 dst_access) {
+                     vk::AccessFlags2 dst_access,
+                     vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor) {
   vk::ImageMemoryBarrier2 barrier{};
   barrier.srcStageMask = src_stage;
   barrier.srcAccessMask = src_access;
@@ -41,8 +44,7 @@ void TransitionImage(vk::CommandBuffer cmd,
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.image = image;
-  barrier.subresourceRange = vk::ImageSubresourceRange{
-      vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
+  barrier.subresourceRange = vk::ImageSubresourceRange{aspect, 0, 1, 0, 1};
 
   vk::DependencyInfo dep{};
   dep.imageMemoryBarrierCount = 1;
@@ -66,7 +68,7 @@ Renderer::Renderer(Window& window) : window_(window) {
   for (auto& s : render_finished_) s = context_->device().createSemaphore(sem_ci);
 
   slang_ = CreateScope<vulkan::SlangCompiler>();
-  Renderer2D::Init(*context_, *allocator_, *slang_, swapchain_->format());
+  Renderer2D::Init(*context_, *allocator_, *slang_, swapchain_->format(), kDepthFormat);
 }
 
 Renderer::~Renderer() {
@@ -93,18 +95,38 @@ void Renderer::SetColorTargetCallback(ColorTargetCallback cb) {
   if (color_target_changed_ && color_target_) color_target_changed_();
 }
 
+void Renderer::SetActiveCamera(const glm::mat4& view_projection) {
+  active_view_projection_ = view_projection;
+}
+
+void Renderer::ResetActiveCamera() {
+  active_view_projection_.reset();
+}
+
 vk::ImageView Renderer::color_target_view() const {
   return color_target_ ? color_target_->view() : vk::ImageView{};
 }
 
+vk::Extent2D Renderer::color_target_extent() const {
+  return color_target_ ? color_target_->extent() : vk::Extent2D{0, 0};
+}
+
 void Renderer::RecreateColorTarget(vk::Extent2D extent) {
   color_target_.reset();
-  vulkan::Image::CreateInfo ci{};
-  ci.format = swapchain_->format();
-  ci.extent = extent;
+  depth_target_.reset();
+  vulkan::Image::CreateInfo color_ci{};
+  color_ci.format = swapchain_->format();
+  color_ci.extent = extent;
   // Sampled: imgui's ViewportPanel reads it as a SAMPLED_IMAGE descriptor.
-  ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
-  color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
+  color_ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+  color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, color_ci);
+
+  vulkan::Image::CreateInfo depth_ci{};
+  depth_ci.format = kDepthFormat;
+  depth_ci.extent = extent;
+  depth_ci.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+  depth_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, depth_ci);
+
   if (color_target_changed_) color_target_changed_();
 }
 
@@ -191,6 +213,15 @@ void Renderer::BeginFrame() {
                   vk::PipelineStageFlagBits2::eTopOfPipe, {},
                   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                   vk::AccessFlagBits2::eColorAttachmentWrite);
+  // Same story for depth: cleared every frame, so prior layout doesn't matter.
+  TransitionImage(cmd, depth_target_->handle(),
+                  vk::ImageLayout::eUndefined,
+                  vk::ImageLayout::eDepthAttachmentOptimal,
+                  vk::PipelineStageFlagBits2::eTopOfPipe, {},
+                  vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                      vk::PipelineStageFlagBits2::eLateFragmentTests,
+                  vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                  vk::ImageAspectFlagBits::eDepth);
 
   // Time-based RGB cycle: each channel is a sine offset by 120 degrees.
   float t = std::chrono::duration<float>(
@@ -209,12 +240,21 @@ void Renderer::BeginFrame() {
   color_att.storeOp = vk::AttachmentStoreOp::eStore;
   color_att.clearValue.color = clear_color;
 
+  vk::RenderingAttachmentInfo depth_att{};
+  depth_att.imageView = depth_target_->view();
+  depth_att.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+  depth_att.loadOp = vk::AttachmentLoadOp::eClear;
+  depth_att.storeOp = vk::AttachmentStoreOp::eDontCare;
+  depth_att.clearValue.depthStencil.depth = 1.0f;
+  depth_att.clearValue.depthStencil.stencil = 0;
+
   vk::RenderingInfo rendering{};
   rendering.renderArea.offset = vk::Offset2D{0, 0};
   rendering.renderArea.extent = color_extent;
   rendering.layerCount = 1;
   rendering.colorAttachmentCount = 1;
   rendering.pColorAttachments = &color_att;
+  rendering.pDepthAttachment = &depth_att;
   cmd.beginRendering(rendering);
 
   vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(color_extent.width),
@@ -224,8 +264,9 @@ void Renderer::BeginFrame() {
   cmd.setScissor(0, scissor);
 
   // Renderer2D batch is open between BeginScene and EndScene; layers fill
-  // it via DrawQuad calls in OnUpdate.
-  Renderer2D::BeginScene(camera_, current_frame_);
+  // it via DrawQuad calls in OnUpdate. Camera matrix is fed at EndScene
+  // time so layer-side camera updates land in the same frame.
+  Renderer2D::BeginScene(current_frame_);
 
   frame_active_ = true;
 }
@@ -238,7 +279,10 @@ void Renderer::EndFrame() {
   vulkan::Frame& fr = *frames_[current_frame_];
   vk::CommandBuffer cmd = fr.command_buffer();
 
-  Renderer2D::EndScene(cmd);
+  // Pick the active camera matrix: editor pushes via SetActiveCamera each
+  // OnUpdate; sandbox leaves it unset and falls back to the ortho camera_.
+  glm::mat4 active_vp = active_view_projection_.value_or(camera_.view_projection());
+  Renderer2D::EndScene(cmd, active_vp);
   cmd.endRendering();
 
   // color_target: ColorAttachmentOptimal -> ShaderReadOnlyOptimal so the

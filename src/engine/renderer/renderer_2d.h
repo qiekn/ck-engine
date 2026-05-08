@@ -15,8 +15,6 @@ class Image;
 
 namespace ck {
 
-class Camera;
-
 // Hazel-style 2D quad batcher.
 //
 // One static instance, lifetime managed by Renderer (Init in ctor, Shutdown
@@ -38,19 +36,22 @@ public:
   static constexpr uint32_t kMaxTextures = 32;
 
   static void Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
-                   vulkan::SlangCompiler& compiler, vk::Format color_format);
+                   vulkan::SlangCompiler& compiler, vk::Format color_format,
+                   vk::Format depth_format);
   static void Shutdown();
 
   // Begin a frame's batch. |frame_index| is the frame-in-flight slot the
   // caller is currently recording for; used to pick the per-frame UBO and
   // vertex buffer. Newly-registered textures are written into this frame's
-  // descriptor set here.
-  static void BeginScene(const Camera& camera, uint32_t frame_index);
+  // descriptor set here. Camera matrix is fed to EndScene so layers can
+  // mutate the active camera in their OnUpdate without a frame of lag.
+  static void BeginScene(uint32_t frame_index);
 
   // Flush the batch into |cmd| (must already be in a renderpass / dynamic
-  // rendering scope with the matching color format). Records bindPipeline
-  // + bindDescriptorSets + bindVertex/IndexBuffers + drawIndexed.
-  static void EndScene(vk::CommandBuffer cmd);
+  // rendering scope with the matching color format). Writes |view_projection|
+  // into this frame's UBO before recording bindPipeline + bindDescriptorSets
+  // + bindVertex/IndexBuffers + drawIndexed.
+  static void EndScene(vk::CommandBuffer cmd, const glm::mat4& view_projection);
 
   // Opaque handle into the bindless texture array. 0 is always the white
   // fallback; LoadTexture returns 1, 2, ... up to kMaxTextures - 1.

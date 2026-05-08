@@ -16,18 +16,34 @@ struct VertexInput {
   std::span<const vk::VertexInputAttributeDescription> attributes;
 };
 
-// Hello-triangle pipeline: dynamic rendering, no descriptor sets, no push
-// constants, dynamic viewport+scissor. Both vertex and fragment entry
-// points must be named "main" inside |shader|. |color_format| has to
-// match the format declared at vk::CommandBuffer::beginRendering time
-// (i.e., the swapchain format). Vertex input bindings/attributes come
-// from |vertex_input|; pass empty spans for SV_VertexID-driven shaders
-// (no longer used after phase 5.1.3).
+// Pipeline configuration. Fields with sensible defaults can be left alone
+// for the common 2D quad case; 3D mesh callers opt into depth state +
+// back-face culling. depth_format = Undefined disables the depth attachment
+// slot in PipelineRenderingCreateInfo (still valid even when depth_test is
+// false, e.g. for a 2D-only pass that won't run alongside 3D draws).
+struct GraphicsPipelineSpec {
+  vk::Format color_format = vk::Format::eUndefined;
+  vk::Format depth_format = vk::Format::eUndefined;
+  bool depth_test_enable = false;
+  bool depth_write_enable = false;
+  vk::CompareOp depth_compare_op = vk::CompareOp::eLess;
+  bool blend_enable = false;
+  vk::CullModeFlagBits cull_mode = vk::CullModeFlagBits::eNone;
+  vk::FrontFace front_face = vk::FrontFace::eCounterClockwise;
+  std::span<const vk::DescriptorSetLayout> set_layouts = {};
+  std::span<const vk::PushConstantRange> push_constants = {};
+};
+
+// Dynamic-rendering graphics pipeline. Both vertex and fragment entry
+// points must be named "main" inside |shader|. |spec.color_format| has to
+// match the format declared at vk::CommandBuffer::beginRendering time. If
+// |spec.depth_format| is set (non-Undefined), the matching beginRendering
+// call must also bind a depth attachment of that format.
 class GraphicsPipeline {
 public:
-  GraphicsPipeline(Context& ctx, const ShaderModule& shader, vk::Format color_format,
+  GraphicsPipeline(Context& ctx, const ShaderModule& shader,
                    const VertexInput& vertex_input,
-                   std::span<const vk::DescriptorSetLayout> set_layouts = {},
+                   const GraphicsPipelineSpec& spec,
                    vk::PipelineCache cache = {});
   ~GraphicsPipeline();
 

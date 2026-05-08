@@ -14,6 +14,19 @@ namespace ck::vulkan {
 
 namespace {
 
+constexpr bool IsDepthFormat(vk::Format f) {
+  switch (f) {
+    case vk::Format::eD16Unorm:
+    case vk::Format::eD32Sfloat:
+    case vk::Format::eD16UnormS8Uint:
+    case vk::Format::eD24UnormS8Uint:
+    case vk::Format::eD32SfloatS8Uint:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void TransitionImageLayout(vk::CommandBuffer cmd, vk::Image image,
                            vk::ImageLayout old_layout, vk::ImageLayout new_layout,
                            vk::PipelineStageFlags2 src_stage, vk::AccessFlags2 src_access,
@@ -70,7 +83,9 @@ Image::Image(Context& ctx, Allocator& alloc, const CreateInfo& info)
   vci.image = image_;
   vci.viewType = vk::ImageViewType::e2D;
   vci.format = format_;
-  vci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+  vci.subresourceRange.aspectMask = IsDepthFormat(format_)
+                                        ? vk::ImageAspectFlagBits::eDepth
+                                        : vk::ImageAspectFlagBits::eColor;
   vci.subresourceRange.baseMipLevel = 0;
   vci.subresourceRange.levelCount = info.mip_levels;
   vci.subresourceRange.baseArrayLayer = 0;

@@ -10,14 +10,15 @@ namespace ck::vulkan {
 
 GraphicsPipeline::GraphicsPipeline(Context& ctx,
                                    const ShaderModule& shader,
-                                   vk::Format color_format,
                                    const VertexInput& vertex_input,
-                                   std::span<const vk::DescriptorSetLayout> set_layouts,
+                                   const GraphicsPipelineSpec& spec,
                                    vk::PipelineCache cache)
     : device_(ctx.device()) {
   vk::PipelineLayoutCreateInfo layout_info{};
-  layout_info.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
-  layout_info.pSetLayouts = set_layouts.data();
+  layout_info.setLayoutCount = static_cast<uint32_t>(spec.set_layouts.size());
+  layout_info.pSetLayouts = spec.set_layouts.data();
+  layout_info.pushConstantRangeCount = static_cast<uint32_t>(spec.push_constants.size());
+  layout_info.pPushConstantRanges = spec.push_constants.data();
   layout_ = device_.createPipelineLayout(layout_info);
 
   std::array<vk::PipelineShaderStageCreateInfo, 2> stages{};
@@ -45,15 +46,30 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
 
   vk::PipelineRasterizationStateCreateInfo rasterization{};
   rasterization.polygonMode = vk::PolygonMode::eFill;
-  rasterization.cullMode = vk::CullModeFlagBits::eNone;
-  rasterization.frontFace = vk::FrontFace::eCounterClockwise;
+  rasterization.cullMode = spec.cull_mode;
+  rasterization.frontFace = spec.front_face;
   rasterization.lineWidth = 1.0f;
 
   vk::PipelineMultisampleStateCreateInfo multisample{};
   multisample.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil{};
+  depth_stencil.depthTestEnable = spec.depth_test_enable ? VK_TRUE : VK_FALSE;
+  depth_stencil.depthWriteEnable = spec.depth_write_enable ? VK_TRUE : VK_FALSE;
+  depth_stencil.depthCompareOp = spec.depth_compare_op;
+  depth_stencil.depthBoundsTestEnable = VK_FALSE;
+  depth_stencil.stencilTestEnable = VK_FALSE;
+
   vk::PipelineColorBlendAttachmentState blend_attachment{};
-  blend_attachment.blendEnable = VK_FALSE;
+  blend_attachment.blendEnable = spec.blend_enable ? VK_TRUE : VK_FALSE;
+  if (spec.blend_enable) {
+    blend_attachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    blend_attachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    blend_attachment.colorBlendOp = vk::BlendOp::eAdd;
+    blend_attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    blend_attachment.dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    blend_attachment.alphaBlendOp = vk::BlendOp::eAdd;
+  }
   blend_attachment.colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -72,7 +88,8 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
 
   vk::PipelineRenderingCreateInfo rendering_info{};
   rendering_info.colorAttachmentCount = 1;
-  rendering_info.pColorAttachmentFormats = &color_format;
+  rendering_info.pColorAttachmentFormats = &spec.color_format;
+  rendering_info.depthAttachmentFormat = spec.depth_format;
 
   vk::GraphicsPipelineCreateInfo info{};
   info.pNext = &rendering_info;
@@ -83,6 +100,7 @@ GraphicsPipeline::GraphicsPipeline(Context& ctx,
   info.pViewportState = &viewport_state;
   info.pRasterizationState = &rasterization;
   info.pMultisampleState = &multisample;
+  info.pDepthStencilState = &depth_stencil;
   info.pColorBlendState = &color_blend;
   info.pDynamicState = &dynamic_state;
   info.layout = layout_;

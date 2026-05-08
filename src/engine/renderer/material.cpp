@@ -32,9 +32,11 @@ Material::Material(vulkan::Context& ctx, vulkan::SlangCompiler& compiler,
   }
 
   vk::DescriptorSetLayout layout = set_layout_->handle();
+  vulkan::GraphicsPipelineSpec pipeline_spec{};
+  pipeline_spec.color_format = spec.color_format;
+  pipeline_spec.set_layouts = std::span{&layout, 1};
   pipeline_ = CreateScope<vulkan::GraphicsPipeline>(
-      ctx, *shader_, spec.color_format, spec.vertex_input,
-      std::span{&layout, 1}, ctx.pipeline_cache());
+      ctx, *shader_, spec.vertex_input, pipeline_spec, ctx.pipeline_cache());
 
   ck::log::info("Material ready: {}",
                  spec.shader_path.filename().string());

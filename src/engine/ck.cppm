@@ -118,6 +118,16 @@ using ::ImGui::DockSpaceOverViewport;
 using ::ImGui::GetMainViewport;
 using ::ImGui::PushStyleVar;
 using ::ImGui::PopStyleVar;
+// SceneHierarchyPanel (6.B.2): tree nodes + popups + mouse queries.
+using ::ImGui::TreeNodeEx;
+using ::ImGui::TreePop;
+using ::ImGui::IsItemClicked;
+using ::ImGui::IsMouseDown;
+using ::ImGui::IsWindowHovered;
+using ::ImGui::BeginPopupContextItem;
+using ::ImGui::BeginPopupContextWindow;
+using ::ImGui::EndPopup;
+using ::ImGui::MenuItem;
 }  // export namespace ImGui
 
 export using ::ImGuiIO;
@@ -126,6 +136,10 @@ export using ::ImGuiViewport;
 export using ::ImGuiDockNodeFlags;
 export using ::ImGuiStyleVar;
 export using ::ImGuiStyleVar_;
+export using ::ImGuiTreeNodeFlags;
+export using ::ImGuiTreeNodeFlags_;
+export using ::ImGuiPopupFlags;
+export using ::ImGuiPopupFlags_;
 export using ::ImTextureID;
 export using ::ImVec2;
 export using ::ImVec4;

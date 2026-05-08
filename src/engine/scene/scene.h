@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <entt.hpp>
 
 #include "core/deltatime.h"
@@ -31,6 +32,10 @@ public:
   // Renderer2D::DrawQuad for each. Caller must have already opened a
   // Renderer2D::BeginScene (handled by Renderer::BeginFrame).
   void OnUpdate(DeltaTime ts);
+
+  // Snapshot of every live entity wrapped in ck::Entity. Allocated per
+  // call so the SceneHierarchyPanel never has to touch entt:: directly.
+  std::vector<Entity> GetAllEntities();
 
 private:
   friend class Entity;

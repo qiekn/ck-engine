@@ -26,4 +26,14 @@ void Scene::OnUpdate(DeltaTime /*ts*/) {
   }
 }
 
+std::vector<Entity> Scene::GetAllEntities() {
+  auto& storage = registry_.storage<entt::entity>();
+  std::vector<Entity> out;
+  out.reserve(storage.size());
+  for (auto e : storage) {
+    out.emplace_back(e, this);
+  }
+  return out;
+}
+
 }  // namespace ck

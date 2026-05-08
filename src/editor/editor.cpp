@@ -1,5 +1,6 @@
 import ck;
 
+#include "panels/scene_hierarchy_panel.h"
 #include "panels/stats_panel.h"
 #include "panels/viewport_panel.h"
 
@@ -16,6 +17,8 @@ public:
     auto entity = scene_->CreateEntity("Checkerboard");
     entity.AddComponent<ck::SpriteRendererComponent>(
         ck::Renderer2D::LoadTexture("assets/textures/checkerboard.png"));
+
+    hierarchy_panel_.SetContext(scene_);
   }
 
   void OnUpdate(ck::DeltaTime ts) override { scene_->OnUpdate(ts); }
@@ -27,12 +30,14 @@ public:
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0, nullptr);
 
     viewport_panel_.OnImGuiRender();
+    hierarchy_panel_.OnImGuiRender();
     stats_panel_.OnImGuiRender();
   }
 
 private:
   ck::Ref<ck::Scene> scene_;
   ViewportPanel viewport_panel_;
+  SceneHierarchyPanel hierarchy_panel_;
   StatsPanel stats_panel_;
 };
 

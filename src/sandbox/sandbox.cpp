@@ -27,17 +27,21 @@ public:
         ck::Renderer2D::DrawQuad(t, textures_[(x + y) % 3]);
       }
     }
+  }
 
-    if (++log_counter_ % 120 == 0) {
-      auto s = ck::Renderer2D::stats();
-      ck::log::info("Renderer2D flushed: {} quads, {} textures, {} draw call(s)",
-                    s.quad_count, s.texture_count, s.draw_calls);
-    }
+  // Doubles as the import-ck → ImGui::* re-export validation per phase 6.A.2.
+  void OnImGuiRender() override {
+    ImGui::Begin("Sandbox Stats");
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    auto s = ck::Renderer2D::stats();
+    ImGui::Text("Quads: %u", s.quad_count);
+    ImGui::Text("Textures: %u", s.texture_count);
+    ImGui::Text("Draw calls: %u", s.draw_calls);
+    ImGui::End();
   }
 
 private:
   ck::Renderer2D::TextureHandle textures_[3]{};
-  unsigned int log_counter_ = 0;
 };
 
 }  // namespace

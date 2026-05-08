@@ -11,6 +11,7 @@
 namespace ck {
 
 class Renderer;
+class ImGuiLayer;
 
 struct ApplicationCommandLineArgs {
   int count = 0;
@@ -39,6 +40,8 @@ public:
   void PushOverlay(Scope<Layer> layer);
 
   inline auto& GetWindow() { return window_; }
+  Renderer& GetRenderer() { return *renderer_; }
+  ImGuiLayer& GetImGuiLayer() { return *imgui_layer_; }
 
   inline static Application& Get() { return *instance_; }
 
@@ -55,6 +58,7 @@ private:
   Scope<Window> window_;
   Scope<Renderer> renderer_;  // depends on window_; declared after so it dies first
   LayerStack layer_stack_;
+  ImGuiLayer* imgui_layer_ = nullptr;  // raw observer; ownership lives in layer_stack_
   DeltaTime timestep_;
   std::chrono::time_point<std::chrono::steady_clock> last_frame_time_ =
       std::chrono::steady_clock::now();

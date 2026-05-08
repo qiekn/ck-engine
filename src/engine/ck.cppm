@@ -16,7 +16,11 @@ module;
 #include "events/key_codes.h"
 #include "events/mouse_codes.h"
 
+#include "imgui/imgui_layer.h"
+
 #include "renderer/renderer_2d.h"
+
+#include <imgui.h>
 
 export module ck;
 
@@ -56,6 +60,9 @@ using ::ck::MouseButtonReleasedEvent;
 using ::ck::MouseMoveEvent;
 using ::ck::MouseScrollEvent;
 
+// imgui
+using ::ck::ImGuiLayer;
+
 // renderer
 using ::ck::Renderer2D;
 
@@ -84,3 +91,17 @@ using ::ck::log::warn;
 using ::ck::log::error;
 using ::ck::log::fatal;
 }  // export namespace ck::log
+
+// ImGui re-exports — minimal set chosen for phase 6.A.2 stats panels.
+// Add as new client call sites need them; printf-style varargs (Text)
+// and inline default-argument helpers are the known compatibility
+// risks called out in phase-6-plan.md.
+export namespace ImGui {
+using ::ImGui::Begin;
+using ::ImGui::End;
+using ::ImGui::Text;
+using ::ImGui::GetIO;
+}  // export namespace ImGui
+
+export using ::ImGuiIO;
+export using ::ImGuiWindowFlags;

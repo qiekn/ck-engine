@@ -238,13 +238,49 @@ void Renderer::EndFrame() {
                 swapchain_->images()[image_index_], vk::ImageLayout::eTransferDstOptimal,
                 region);
 
-  // swapchain image: TransferDstOptimal -> PresentSrcKHR
-  TransitionImage(cmd, swapchain_->images()[image_index_],
-                  vk::ImageLayout::eTransferDstOptimal,
-                  vk::ImageLayout::ePresentSrcKHR,
-                  vk::PipelineStageFlagBits2::eTransfer,
-                  vk::AccessFlagBits2::eTransferWrite,
-                  vk::PipelineStageFlagBits2::eBottomOfPipe, {});
+  if (imgui_render_) {
+    // swapchain image: TransferDstOptimal -> ColorAttachmentOptimal so we can
+    // render imgui on top of the copied color_target_ contents (loadOp=Load).
+    TransitionImage(cmd, swapchain_->images()[image_index_],
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::eColorAttachmentOptimal,
+                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite);
+
+    vk::RenderingAttachmentInfo imgui_att{};
+    imgui_att.imageView = swapchain_->image_views()[image_index_];
+    imgui_att.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    imgui_att.loadOp = vk::AttachmentLoadOp::eLoad;
+    imgui_att.storeOp = vk::AttachmentStoreOp::eStore;
+
+    vk::RenderingInfo imgui_pass{};
+    imgui_pass.renderArea.offset = vk::Offset2D{0, 0};
+    imgui_pass.renderArea.extent = swapchain_->extent();
+    imgui_pass.layerCount = 1;
+    imgui_pass.colorAttachmentCount = 1;
+    imgui_pass.pColorAttachments = &imgui_att;
+    cmd.beginRendering(imgui_pass);
+    imgui_render_(cmd);
+    cmd.endRendering();
+
+    // swapchain image: ColorAttachmentOptimal -> PresentSrcKHR
+    TransitionImage(cmd, swapchain_->images()[image_index_],
+                    vk::ImageLayout::eColorAttachmentOptimal,
+                    vk::ImageLayout::ePresentSrcKHR,
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::PipelineStageFlagBits2::eBottomOfPipe, {});
+  } else {
+    // No imgui pass — go straight from copy result to present.
+    TransitionImage(cmd, swapchain_->images()[image_index_],
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::ePresentSrcKHR,
+                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eBottomOfPipe, {});
+  }
 
   cmd.end();
 

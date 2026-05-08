@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine series. Branch `3d` is currently on Vulkan-only renderer abstractions (Phase 5 complete):
+ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine series. Branch `3d` is currently mid-Phase-6 (ImGui integration; 6.A.1 + 6.A.2 done):
 
 - Build infrastructure: CMake 3.30, C++23, libc++, `import std`, presets — done (Phase 0/1)
 - OpenGL backend dropped (Phase 2a, commit `0c76c3b`); engine reduced to a bare GLFW window with `GLFW_NO_API`
@@ -26,6 +26,7 @@ ck-engine is a learning-oriented game engine, mirroring TheCherno's Hazel engine
 - Vulkan bring-up done (Phase 3): `Renderer` drives BeginFrame/EndFrame on a Vulkan 1.3 dynamic-rendering loop with a time-cycled clear color; resize / out-of-date / suboptimal handled
 - Hello-triangle done (Phase 4): runtime Slang→SPIR-V compile + dynamic-rendering pipeline.
 - Renderer abstractions done (Phase 5): VMA-backed `Allocator` / `Buffer` / `Image` / `Sampler` / `DescriptorPool` / `DescriptorSetLayout` / `UniformBuffer<T>` / `Material` / engine-wide `vk::PipelineCache`; Hazel-style `Renderer2D` quad batcher with bindless `Sampler2D textures[]` (kMaxQuads=10000, kMaxTextures=32); public API switched from `#include <ck.h>` to `import ck;` (module at `src/engine/ck.cppm`).
+- ImGui integration in progress (Phase 6.A): 6.A.1 added an offscreen `color_target_` + swapchain copy; 6.A.2 stood up `ck::ImGuiLayer` (imgui_impl_glfw + imgui_impl_vulkan via volk), added an optional imgui pass on the swapchain inside `Renderer::EndFrame`, and re-exported a minimal `ImGui::*` set through `ck.cppm`.
 
 Editor draws a single Renderer2D textured quad; sandbox draws a 10×10 grid of textured quads (3 textures, 1 draw call) — all through `ck::Renderer2D::DrawQuad` from layers.
 
@@ -81,7 +82,8 @@ Both executables write a one-line `int main(...) { return ck::EntryPoint(argc, a
 
 The early-Hazel layered skeleton plus a thin Vulkan-only renderer:
 
-- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context` / `vulkan::Allocator` / `vulkan::Swapchain` / `std::array<Frame, kFramesInFlight>` / `vulkan::SlangCompiler` / `Camera`. `BeginFrame` records cmdbuf begin + layout transition + `beginRendering` + `Renderer2D::BeginScene`; layers fill the batch via `Renderer2D::DrawQuad` in `OnUpdate`; `EndFrame` calls `Renderer2D::EndScene(cmd)` then `endRendering` + submit2 + present. `OnResize` defers swapchain recreate to next BeginFrame.
+- **Renderer** (`renderer/renderer.{h,cpp}`) — frontend; owns `vulkan::Context` / `vulkan::Allocator` / `vulkan::Swapchain` / offscreen `vulkan::Image color_target_` / `std::array<Frame, kFramesInFlight>` / `vulkan::SlangCompiler` / `Camera`. `BeginFrame` records cmdbuf begin + transition `color_target_` to `ColorAttachmentOptimal` + `beginRendering` (cleared time-cycled rgb) + `Renderer2D::BeginScene`; layers fill the batch via `Renderer2D::DrawQuad` in `OnUpdate`; `EndFrame` calls `Renderer2D::EndScene(cmd)`, `endRendering`, copies `color_target_` to the swapchain image, optionally runs an imgui pass on the swapchain (loadOp=Load) via the `SetImGuiRenderCallback` hook, then transitions to `PresentSrcKHR` + submit2 + present. `OnResize` defers swapchain + color_target recreate to next BeginFrame.
+- **`ImGuiLayer`** (`imgui/imgui_layer.{h,cpp}`) — engine-side overlay that owns the ImGui context + `imgui_impl_glfw` + `imgui_impl_vulkan` (dynamic rendering, `DescriptorPoolSize=128` so imgui owns the pool). `Begin/End` brackets the per-frame `OnImGuiRender` pass; the actual cmdbuf record happens via the callback registered with `Renderer::SetImGuiRenderCallback`. ImGui-C/Vulkan-C headers live only in the `.cpp`; clients reach ImGui through the `ImGui::*` re-exports in `ck.cppm`.
 - **`Renderer2D`** (`renderer/renderer_2d.{h,cpp}`) — static-API quad batcher with bindless texture array (binding 0 UBO, binding 1 `Sampler2D[kMaxTextures]` with `PartiallyBound` + `VariableDescriptorCount`). `Init/Shutdown` lifetime owned by Renderer; `LoadTexture(path) -> TextureHandle` registers Image::FromFile into the bindless slot; per-frame host-visible vertex buffer + static index buffer; flushes one `drawIndexed` per `EndScene`.
 - **`Material`** (`renderer/material.{h,cpp}`) — Spec-driven shader+layout+pipeline+per-frame descriptor-set bundle. Built against the engine-wide `vk::PipelineCache`. Public abstraction; not used by Renderer's own quad path (Renderer2D drives that directly).
 - **`Camera`** (`renderer/camera.{h,cpp}`) — orthographic camera with `SetViewport` / `SetPosition` / `view_projection`; Vulkan Y-down NDC handled internally.
@@ -100,7 +102,7 @@ The early-Hazel layered skeleton plus a thin Vulkan-only renderer:
 
 Everything else survived the Phase 2a pruning — the early-Hazel layered skeleton, no scene/ECS or content systems yet:
 
-- **Application** (`core/application.{h,cpp}`) — singleton (`Application::Get()`). Owns a `Window` and a `LayerStack`. Run loop ticks layers then `window_->OnUpdate()` (just `glfwPollEvents()` now — present is the future Vulkan renderer's job).
+- **Application** (`core/application.{h,cpp}`) — singleton (`Application::Get()`). Owns a `Window`, a `Renderer`, and a `LayerStack`; auto-pushes one `ImGuiLayer` overlay in its constructor and stores a raw observer pointer. Run loop ticks layers' `OnUpdate`, drives `imgui_layer_->Begin / iterate-OnImGuiRender / imgui_layer_->End`, then `renderer_->EndFrame()` and `window_->OnUpdate()`. `GetRenderer()` / `GetImGuiLayer()` exposed for clients and engine sub-systems.
 - **Layer / LayerStack** (`core/layer.h`, `core/layer_stack.{h,cpp}`) — `OnAttach/OnDetach/OnUpdate(DeltaTime)/OnEvent/OnImGuiRender`. Overlays after regular layers; reverse iteration for events (stop on `IsHandled`).
 - **Events** (`events/`) — `EventDispatcher::DispatchEvent<T>(fn)` + `CK_BIND_EVENT(method)` macro.
 - **Window / Input** (`core/window.h`, `platform/windows/`) — GLFW-backed (`GLFW_NO_API`, no GL context). The `windows_*` directory name is GLFW path used on every OS, not Win32-specific.
@@ -119,7 +121,8 @@ Roadmap (one phase = one commit):
 - **Phase 3** ✅ Vulkan bring-up: instance/device/swapchain → time-based clear-color (dynamic rendering, sync2, 2 frames in flight, resize handling) — `b29641c`..`14ea163`
 - **Phase 4** ✅ Slang runtime compile + first graphics pipeline + hello-triangle (RGB vertex-interp triangle on the time-cycled clear) — `36d816e`..`b52bc90`
 - **Phase 5** ✅ Renderer abstractions + Renderer2D + module API — split into 5.1 (Allocator/Buffer/VBO+IBO triangle), 5.2 (Image/Sampler/DescriptorPool/UBO ring/textured quad), 5.3 (Material + engine-wide PipelineCache), 5.4 (Camera + Renderer2D bindless quad batcher), 5.5 (unified `ck::log` API + `import ck` module + umbrella header retired)
-- **Phase 6+** — scene/ECS, ImGui editor panels, 3D mesh renderer (TBD)
+- **Phase 6.A** 🚧 ImGui integration — 6.A.1 ✅ offscreen color target + swapchain blit (`e578740`); 6.A.2 ✅ `ck::ImGuiLayer` + optional imgui pass on swapchain + `ImGui::*` re-export; 6.A.3+ TBD (dockspace + viewport panel, stats panel polish, EditorLayer rename)
+- **Phase 6.B+** — scene/ECS, ImGui editor panels, 3D mesh renderer (TBD)
 
 ## Conventions
 

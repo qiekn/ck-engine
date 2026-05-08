@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <vector>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
@@ -27,6 +28,10 @@ namespace ck {
 
 class Renderer {
 public:
+  // Recorded inside EndFrame's swapchain pass (loadOp=Load on top of the
+  // copied color_target_). Set to {} to disable the imgui pass entirely.
+  using ImGuiRenderCallback = std::function<void(vk::CommandBuffer)>;
+
   explicit Renderer(Window& window);
   ~Renderer();
 
@@ -38,6 +43,11 @@ public:
   void BeginFrame();
   void EndFrame();
   void OnResize(uint32_t width, uint32_t height);
+
+  void SetImGuiRenderCallback(ImGuiRenderCallback cb) { imgui_render_ = std::move(cb); }
+
+  vulkan::Context&   context()   { return *context_; }
+  vulkan::Swapchain& swapchain() { return *swapchain_; }
 
 private:
   void RecreateSwapchain();
@@ -57,6 +67,7 @@ private:
 
   Camera camera_;
   Scope<vulkan::SlangCompiler> slang_;
+  ImGuiRenderCallback imgui_render_;
 };
 
 }  // namespace ck

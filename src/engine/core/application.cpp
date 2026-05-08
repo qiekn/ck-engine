@@ -6,6 +6,7 @@
 #include "core/log.h"
 #include "events/application_event.h"
 #include "events/event.h"
+#include "imgui/imgui_layer.h"
 #include "renderer/renderer.h"
 
 namespace ck {
@@ -24,6 +25,12 @@ Application::Application(const ApplicationSpecification& spec) : specification_(
   window_->SetEventCallback(CK_BIND_EVENT(Application::OnEvent));
 
   renderer_ = CreateScope<Renderer>(*window_);
+
+  // ImGuiLayer is always pushed; the engine itself never depends on it
+  // having work to do — clients drive it via OnImGuiRender overrides.
+  auto imgui = CreateScope<ImGuiLayer>();
+  imgui_layer_ = imgui.get();
+  PushOverlay(std::move(imgui));
 }
 
 Application::~Application() {
@@ -46,6 +53,15 @@ void Application::Run() {
         for (auto& layer : layer_stack_) {
           layer->OnUpdate(timestep);
         }
+      }
+
+      {
+        CK_PROFILE_SCOPE("LayerStack OnImGuiRender");
+        imgui_layer_->Begin();
+        for (auto& layer : layer_stack_) {
+          layer->OnImGuiRender();
+        }
+        imgui_layer_->End();
       }
 
       renderer_->EndFrame();

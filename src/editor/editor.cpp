@@ -15,6 +15,16 @@ public:
     Renderer2D::DrawQuad(glm::mat4(1.0f), checkerboard_);
   }
 
+  void OnImGuiRender() override {
+    ImGui::Begin("Stats");
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    auto s = Renderer2D::stats();
+    ImGui::Text("Quads: %u", s.quad_count);
+    ImGui::Text("Textures: %u", s.texture_count);
+    ImGui::Text("Draw calls: %u", s.draw_calls);
+    ImGui::End();
+  }
+
 private:
   Renderer2D::TextureHandle checkerboard_ = Renderer2D::kWhiteTexture;
 };

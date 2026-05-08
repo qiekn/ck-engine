@@ -40,10 +40,13 @@ struct TransformComponent {
 //
 // texture_path is the persistent identifier for serialization (6.B.5);
 // texture is the runtime bindless slot, repopulated via Renderer2D::
-// LoadTexture(texture_path) on deserialize. Empty path = white fallback.
+// LoadTexture(texture_path, filter) on deserialize. Empty path = white
+// fallback. filter chooses between Linear (default, smooth) and Nearest
+// (crisp, for pixel-art / checkerboard textures).
 struct SpriteRendererComponent {
   Renderer2D::TextureHandle texture = Renderer2D::kWhiteTexture;
   std::string texture_path;
+  Renderer2D::Filter filter = Renderer2D::Filter::Linear;
   glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 
   SpriteRendererComponent() = default;

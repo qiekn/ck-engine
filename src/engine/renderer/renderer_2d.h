@@ -57,10 +57,17 @@ public:
   using TextureHandle = uint32_t;
   static constexpr TextureHandle kWhiteTexture = 0;
 
+  // Per-texture sampler choice. Linear = smooth (default, photos);
+  // Nearest = crisp pixels (checkerboard / pixel art).
+  enum class Filter { Linear, Nearest };
+
   // Load |path| via stb_image, register into the bindless array, and
-  // return its slot. Idempotent: a path loaded twice gets the same slot.
+  // return its slot. Idempotent on (path, filter): a path loaded twice
+  // with the same filter gets the same slot; loading the same path with a
+  // different filter allocates a fresh slot.
   // Lifetime is tied to Renderer2D itself (until Shutdown).
-  static TextureHandle LoadTexture(const std::filesystem::path& path);
+  static TextureHandle LoadTexture(const std::filesystem::path& path,
+                                   Filter filter = Filter::Linear);
 
   // Solid-color quad. tex_id points at the white fallback (slot 0).
   static void DrawQuad(const glm::mat4& transform, const glm::vec4& color);

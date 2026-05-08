@@ -69,17 +69,24 @@ struct State {
   Scope<vulkan::Buffer>           index_buffer;
 
   Scope<vulkan::Image>            white_fallback;
-  Scope<vulkan::Sampler>          sampler;
+  Scope<vulkan::Sampler>          linear_sampler;
+  Scope<vulkan::Sampler>          nearest_sampler;
 
   // Textures owned by Renderer2D (loaded via LoadTexture). Index in
   // |loaded_textures| is NOT the bindless slot; |loaded_paths| keeps the
-  // path -> slot mapping for idempotent LoadTexture calls.
+  // (path, filter) -> slot mapping for idempotent LoadTexture calls.
   std::vector<Scope<vulkan::Image>> loaded_textures;
-  std::vector<std::pair<std::filesystem::path, uint32_t>> loaded_paths;
+  struct LoadedPath {
+    std::filesystem::path path;
+    Renderer2D::Filter    filter;
+    uint32_t              slot;
+  };
+  std::vector<LoadedPath>         loaded_paths;
 
-  // Bindless texture array: index = slot, value = image view (already
-  // registered into the descriptor array).
+  // Bindless texture array: index = slot, value = image view + sampler
+  // (already registered into the descriptor array).
   std::vector<vk::ImageView>      registered_views;
+  std::vector<vk::Sampler>        registered_samplers;
   // Per-frame: how many of |registered_views| have been written into
   // sets[frame]. Driving rule: BeginScene catches sets up if registered
   // grew last frame.
@@ -96,14 +103,18 @@ struct State {
 
 State* g_state = nullptr;
 
-uint32_t RegisterImageView(vk::ImageView view) {
+uint32_t RegisterImageView(vk::ImageView view, vk::Sampler sampler) {
   for (uint32_t i = 0; i < g_state->registered_views.size(); ++i) {
-    if (g_state->registered_views[i] == view) return i;
+    if (g_state->registered_views[i] == view &&
+        g_state->registered_samplers[i] == sampler) {
+      return i;
+    }
   }
   if (g_state->registered_views.size() >= Renderer2D::kMaxTextures) {
     return 0;  // overflow, white fallback
   }
   g_state->registered_views.push_back(view);
+  g_state->registered_samplers.push_back(sampler);
   return static_cast<uint32_t>(g_state->registered_views.size() - 1);
 }
 
@@ -118,7 +129,7 @@ void SyncDescriptors(uint32_t frame_index) {
   writes.reserve(total - synced);
   for (uint32_t i = synced; i < total; ++i) {
     auto& info = infos.emplace_back();
-    info.sampler = g_state->sampler->handle();
+    info.sampler = g_state->registered_samplers[i];
     info.imageView = g_state->registered_views[i];
     info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
   }
@@ -218,7 +229,14 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
     });
   }
 
-  g_state->sampler = CreateScope<vulkan::Sampler>(ctx);
+  g_state->linear_sampler = CreateScope<vulkan::Sampler>(ctx);
+  {
+    vulkan::Sampler::CreateInfo nci{};
+    nci.mag_filter = vk::Filter::eNearest;
+    nci.min_filter = vk::Filter::eNearest;
+    nci.mipmap_mode = vk::SamplerMipmapMode::eNearest;
+    g_state->nearest_sampler = CreateScope<vulkan::Sampler>(ctx, nci);
+  }
 
   // -- Bindless descriptor set layout
   std::array<vk::DescriptorSetLayoutBinding, 2> bindings{};
@@ -296,8 +314,11 @@ void Renderer2D::Init(vulkan::Context& ctx, vulkan::Allocator& alloc,
     g_state->device.updateDescriptorSets(w, {});
   }
 
-  // -- Register white fallback as slot 0 (across all frame sets).
-  RegisterImageView(g_state->white_fallback->view());
+  // -- Register white fallback as slot 0 (across all frame sets). White
+  // is a 1x1 solid pixel so the sampler choice is irrelevant; pick linear
+  // for symmetry with the default LoadTexture path.
+  RegisterImageView(g_state->white_fallback->view(),
+                    g_state->linear_sampler->handle());
   for (uint32_t i = 0; i < vulkan::kFramesInFlight; ++i) {
     SyncDescriptors(i);
   }
@@ -420,15 +441,19 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color) {
   EmitQuad(transform, color, 0);
 }
 
-Renderer2D::TextureHandle Renderer2D::LoadTexture(const std::filesystem::path& path) {
-  // Idempotent: same path returns the same slot.
-  for (auto const& [p, slot] : g_state->loaded_paths) {
-    if (p == path) return slot;
+Renderer2D::TextureHandle Renderer2D::LoadTexture(const std::filesystem::path& path,
+                                                  Filter filter) {
+  // Idempotent on (path, filter): same key returns the same slot.
+  for (auto const& lp : g_state->loaded_paths) {
+    if (lp.path == path && lp.filter == filter) return lp.slot;
   }
   auto image = vulkan::Image::FromFile(*g_state->ctx, *g_state->alloc, path);
   CK_ASSERT(image, "Renderer2D::LoadTexture failed");
-  uint32_t slot = RegisterImageView(image->view());
-  g_state->loaded_paths.emplace_back(path, slot);
+  vk::Sampler sampler = (filter == Filter::Nearest)
+                            ? g_state->nearest_sampler->handle()
+                            : g_state->linear_sampler->handle();
+  uint32_t slot = RegisterImageView(image->view(), sampler);
+  g_state->loaded_paths.push_back({path, filter, slot});
   g_state->loaded_textures.push_back(std::move(image));
   return slot;
 }

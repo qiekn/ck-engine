@@ -19,7 +19,8 @@ public:
     auto entity = scene_->CreateEntity("Checkerboard");
     auto& sr = entity.AddComponent<ck::SpriteRendererComponent>();
     sr.texture_path = "assets/textures/checkerboard.png";
-    sr.texture = ck::Renderer2D::LoadTexture(sr.texture_path);
+    sr.filter  = ck::Renderer2D::Filter::Nearest;  // crisp grid lines
+    sr.texture = ck::Renderer2D::LoadTexture(sr.texture_path, sr.filter);
 
     hierarchy_panel_.SetContext(scene_);
   }

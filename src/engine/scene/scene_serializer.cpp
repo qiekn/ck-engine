@@ -95,6 +95,8 @@ void SerializeEntity(YAML::Emitter& out, Entity entity) {
     const auto& s = entity.GetComponent<SpriteRendererComponent>();
     out << YAML::Key << "Color"   << YAML::Value << s.color;
     out << YAML::Key << "Texture" << YAML::Value << s.texture_path;
+    out << YAML::Key << "Filter"  << YAML::Value
+        << (s.filter == Renderer2D::Filter::Nearest ? "Nearest" : "Linear");
     out << YAML::EndMap;
   }
 
@@ -154,8 +156,11 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& path) {
       auto& s = e.AddComponent<SpriteRendererComponent>();
       s.color = sc["Color"].as<glm::vec4>(glm::vec4{1.0f});
       s.texture_path = sc["Texture"].as<std::string>(std::string{});
+      const std::string filter = sc["Filter"].as<std::string>(std::string{"Linear"});
+      s.filter = (filter == "Nearest") ? Renderer2D::Filter::Nearest
+                                       : Renderer2D::Filter::Linear;
       if (!s.texture_path.empty()) {
-        s.texture = Renderer2D::LoadTexture(s.texture_path);
+        s.texture = Renderer2D::LoadTexture(s.texture_path, s.filter);
       }
     }
   }

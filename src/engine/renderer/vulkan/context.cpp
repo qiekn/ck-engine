@@ -122,7 +122,10 @@ Context::Context(Window& window) {
     using Sev = vk::DebugUtilsMessageSeverityFlagBitsEXT;
     using Type = vk::DebugUtilsMessageTypeFlagBitsEXT;
     vk::DebugUtilsMessengerCreateInfoEXT dmi{};
-    dmi.messageSeverity = Sev::eVerbose | Sev::eInfo | Sev::eWarning | Sev::eError;
+    // Skip Verbose+Info: the validation layer's startup callstack dump
+    // (per-loader-layer enumeration) is INFO-level and floods the console.
+    // Re-enable Sev::eInfo when chasing a specific loader/layer issue.
+    dmi.messageSeverity = Sev::eWarning | Sev::eError;
     dmi.messageType = Type::eGeneral | Type::eValidation | Type::ePerformance;
     dmi.pfnUserCallback = VkDebugCallback;
     debug_messenger_ = instance_.createDebugUtilsMessengerEXT(dmi);

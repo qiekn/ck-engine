@@ -50,6 +50,11 @@ public:
   void BeginFrame();
   void EndFrame();
   void OnResize(uint32_t width, uint32_t height);
+  // Editor hands the Viewport panel's current content size in here. Stored
+  // until the next BeginFrame, which drains in-flight work and rebuilds
+  // color_target_ + camera at the new extent. Cheap to call every frame —
+  // a no-op when the size hasn't actually changed.
+  void OnViewportResize(uint32_t width, uint32_t height);
 
   void SetImGuiRenderCallback(ImGuiRenderCallback cb) { imgui_render_ = std::move(cb); }
   // Registers cb and fires it once with the current color_target so the
@@ -63,6 +68,7 @@ public:
 private:
   void RecreateSwapchain();
   void RecreateColorTarget(vk::Extent2D extent);
+  void ApplyPendingViewportResize();
 
   Window& window_;
   Scope<vulkan::Context> context_;
@@ -75,6 +81,7 @@ private:
   uint32_t image_index_ = 0;
   bool frame_active_ = false;
   bool resize_pending_ = false;
+  vk::Extent2D pending_viewport_extent_{};  // {0,0} = no resize requested
   std::chrono::steady_clock::time_point start_time_;
 
   Camera camera_;

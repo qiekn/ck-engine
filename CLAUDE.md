@@ -121,7 +121,7 @@ Roadmap (one phase = one commit):
 - **Phase 3** ✅ Vulkan bring-up: instance/device/swapchain → time-based clear-color (dynamic rendering, sync2, 2 frames in flight, resize handling) — `b29641c`..`14ea163`
 - **Phase 4** ✅ Slang runtime compile + first graphics pipeline + hello-triangle (RGB vertex-interp triangle on the time-cycled clear) — `36d816e`..`b52bc90`
 - **Phase 5** ✅ Renderer abstractions + Renderer2D + module API — split into 5.1 (Allocator/Buffer/VBO+IBO triangle), 5.2 (Image/Sampler/DescriptorPool/UBO ring/textured quad), 5.3 (Material + engine-wide PipelineCache), 5.4 (Camera + Renderer2D bindless quad batcher), 5.5 (unified `ck::log` API + `import ck` module + umbrella header retired)
-- **Phase 6.A** 🚧 ImGui integration — 6.A.1 ✅ offscreen color target + swapchain blit (`e578740`); 6.A.2 ✅ `ck::ImGuiLayer` + optional imgui pass on swapchain + `ImGui::*` re-export; 6.A.3 ✅ drop swapchain copy + dockspace + ViewportPanel hosts color_target via `ImGui_ImplVulkan_AddTexture`; 6.A.3.5 ⏳ panel-driven offscreen + camera resize; 6.A.4+ TBD (StatsPanel polish, EditorLayer rename)
+- **Phase 6.A** 🚧 ImGui integration — 6.A.1 ✅ offscreen color target + swapchain blit (`e578740`); 6.A.2 ✅ `ck::ImGuiLayer` + optional imgui pass on swapchain + `ImGui::*` re-export; 6.A.3 ✅ drop swapchain copy + dockspace + ViewportPanel hosts color_target via `ImGui_ImplVulkan_AddTexture`; 6.A.3.5 ✅ panel-driven offscreen + camera resize via `Application::OnViewportResize`; 6.A.4+ TBD (StatsPanel polish, EditorLayer rename)
 - **Phase 6.B+** — scene/ECS, ImGui editor panels, 3D mesh renderer (TBD)
 
 ## Conventions

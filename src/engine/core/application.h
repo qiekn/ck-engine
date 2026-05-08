@@ -36,6 +36,11 @@ public:
 
   void OnEvent(Event& e);
 
+  // Forwarded to Renderer; clients (editor's ViewportPanel) call this with
+  // ImGui::GetContentRegionAvail so the offscreen target + camera follow
+  // the panel size instead of the swapchain's.
+  void OnViewportResize(uint32_t width, uint32_t height);
+
   void PushLayer(Scope<Layer> layer);
   void PushOverlay(Scope<Layer> layer);
 

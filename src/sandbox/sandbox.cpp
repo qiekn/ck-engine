@@ -36,8 +36,13 @@ public:
   void OnImGuiRender() override {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Sandbox Viewport");
+    ImVec2 size = ImGui::GetContentRegionAvail();
+    if (size.x > 0.0f && size.y > 0.0f) {
+      ck::Application::Get().OnViewportResize(static_cast<uint32_t>(size.x),
+                                              static_cast<uint32_t>(size.y));
+    }
     ImTextureID tex = ck::Application::Get().GetImGuiLayer().viewport_texture_id();
-    if (tex) ImGui::Image(tex, ImGui::GetContentRegionAvail());
+    if (tex) ImGui::Image(tex, size);
     ImGui::End();
     ImGui::PopStyleVar();
 

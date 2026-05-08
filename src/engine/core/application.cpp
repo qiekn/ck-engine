@@ -76,6 +76,10 @@ void Application::Close() {
   running_ = false;
 }
 
+void Application::OnViewportResize(uint32_t width, uint32_t height) {
+  if (renderer_) renderer_->OnViewportResize(width, height);
+}
+
 void Application::OnEvent(Event& e) {
   CK_PROFILE_FUNCTION();
   auto dispatcher = EventDispatcher(e);

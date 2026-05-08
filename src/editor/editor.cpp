@@ -23,14 +23,18 @@ public:
 
     // Viewport panel — samples the engine's offscreen color_target as
     // ImTextureID. WindowPadding=0 so the Image fills the panel content
-    // area edge-to-edge (default 8px padding * dpi shows the panel BG
-    // through as a "black border"). Image stretches to whatever size the
-    // panel currently is; panel-driven camera resize is the next sub-step
-    // (6.A.3.5).
+    // area edge-to-edge. Each frame we report the current panel size to
+    // the engine so color_target + camera follow it (panel-driven resize,
+    // phase 6.A.3.5).
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Viewport");
+    ImVec2 size = ImGui::GetContentRegionAvail();
+    if (size.x > 0.0f && size.y > 0.0f) {
+      Application::Get().OnViewportResize(static_cast<uint32_t>(size.x),
+                                          static_cast<uint32_t>(size.y));
+    }
     ImTextureID tex = Application::Get().GetImGuiLayer().viewport_texture_id();
-    if (tex) ImGui::Image(tex, ImGui::GetContentRegionAvail());
+    if (tex) ImGui::Image(tex, size);
     ImGui::End();
     ImGui::PopStyleVar();
 

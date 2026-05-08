@@ -82,6 +82,10 @@ void Renderer::OnResize(uint32_t /*width*/, uint32_t /*height*/) {
   resize_pending_ = true;
 }
 
+void Renderer::OnViewportResize(uint32_t width, uint32_t height) {
+  pending_viewport_extent_ = vk::Extent2D{width, height};
+}
+
 void Renderer::SetColorTargetCallback(ColorTargetCallback cb) {
   color_target_changed_ = std::move(cb);
   // Fire once for the current target so the caller doesn't need a separate
@@ -102,6 +106,22 @@ void Renderer::RecreateColorTarget(vk::Extent2D extent) {
   ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
   color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
   if (color_target_changed_) color_target_changed_();
+}
+
+void Renderer::ApplyPendingViewportResize() {
+  if (pending_viewport_extent_.width == 0 || pending_viewport_extent_.height == 0) return;
+  vk::Extent2D cur = color_target_ ? color_target_->extent() : vk::Extent2D{0, 0};
+  if (pending_viewport_extent_ == cur) {
+    pending_viewport_extent_ = vk::Extent2D{};
+    return;
+  }
+  // color_target is shared across all in-flight frames and held by an imgui
+  // descriptor set referenced inside any queued cmd buffer. waitIdle is the
+  // simplest correct drain before destroying the old image. Resize fires
+  // only on actual panel-size changes, so the stall is rare.
+  context_->device().waitIdle();
+  RecreateColorTarget(pending_viewport_extent_);
+  pending_viewport_extent_ = vk::Extent2D{};
 }
 
 void Renderer::RecreateSwapchain() {
@@ -130,6 +150,7 @@ void Renderer::RecreateSwapchain() {
 void Renderer::BeginFrame() {
   CK_PROFILE_FUNCTION();
   if (resize_pending_) RecreateSwapchain();
+  ApplyPendingViewportResize();
 
   vk::Device dev = context_->device();
   vulkan::Frame& fr = *frames_[current_frame_];
@@ -138,8 +159,10 @@ void Renderer::BeginFrame() {
   // bail safely on OutOfDate without leaving the fence unsignalled.
   (void)dev.waitForFences(fr.in_flight(), VK_TRUE, UINT64_MAX);
 
-  vk::Extent2D extent = swapchain_->extent();
-  camera_.SetViewport(extent.width, extent.height);
+  // Camera + render area follow color_target's extent (driven by the
+  // Viewport panel via OnViewportResize), not the swapchain's.
+  vk::Extent2D color_extent = color_target_->extent();
+  camera_.SetViewport(color_extent.width, color_extent.height);
 
   uint32_t image_index = 0;
   try {
@@ -188,16 +211,16 @@ void Renderer::BeginFrame() {
 
   vk::RenderingInfo rendering{};
   rendering.renderArea.offset = vk::Offset2D{0, 0};
-  rendering.renderArea.extent = swapchain_->extent();
+  rendering.renderArea.extent = color_extent;
   rendering.layerCount = 1;
   rendering.colorAttachmentCount = 1;
   rendering.pColorAttachments = &color_att;
   cmd.beginRendering(rendering);
 
-  vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(extent.width),
-                        static_cast<float>(extent.height), 0.0f, 1.0f};
+  vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(color_extent.width),
+                        static_cast<float>(color_extent.height), 0.0f, 1.0f};
   cmd.setViewport(0, viewport);
-  vk::Rect2D scissor{vk::Offset2D{0, 0}, extent};
+  vk::Rect2D scissor{vk::Offset2D{0, 0}, color_extent};
   cmd.setScissor(0, scissor);
 
   // Renderer2D batch is open between BeginScene and EndScene; layers fill

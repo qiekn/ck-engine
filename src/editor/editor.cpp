@@ -1,6 +1,6 @@
 import ck;
 
-#include "editor_camera.h"
+#include "editor_camera_3d.h"
 #include "panels/properties_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/stats_panel.h"
@@ -8,26 +8,41 @@ import ck;
 
 namespace ck_editor {
 
-// Single textured quad — driven through Scene + (Transform, SpriteRenderer)
-// instead of a direct Renderer2D::DrawQuad call as of phase 6.B.1.
+// Phase 6.C: editor camera switched to 3D arcball; renderer pass now
+// composites a depth-tested 3D mesh (procedural cube) under the
+// Scene-driven Renderer2D quads.
 class EditorLayer : public ck::Layer {
 public:
   EditorLayer() : Layer("EditorLayer") {}
 
   void OnAttach() override {
+    auto& renderer = ck::Application::Get().GetRenderer();
+
     scene_ = ck::CreateRef<ck::Scene>();
     auto entity = scene_->CreateEntity("Checkerboard");
     auto& sr = entity.AddComponent<ck::SpriteRendererComponent>();
     sr.texture_path = "assets/textures/checkerboard.png";
-    sr.filter  = ck::Renderer2D::Filter::Nearest;  // crisp grid lines
+    sr.filter  = ck::Renderer2D::Filter::Nearest;
     sr.texture = ck::Renderer2D::LoadTexture(sr.texture_path, sr.filter);
 
     hierarchy_panel_.SetContext(scene_);
+
+    cube_ = ck::Mesh::CreateCube(renderer.allocator());
+    cube_transform_ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.6f));
   }
 
   void OnUpdate(ck::DeltaTime ts) override {
+    auto& renderer = ck::Application::Get().GetRenderer();
+    auto extent = renderer.color_target_extent();
+    if (extent.width > 0 && extent.height > 0) {
+      editor_camera_.SetViewport(extent.width, extent.height);
+    }
     editor_camera_.OnUpdate(ts, viewport_panel_.IsHovered());
-    editor_camera_.PushTo(ck::Application::Get().GetRenderer().GetCamera());
+    renderer.SetActiveCamera(editor_camera_.view_projection());
+
+    // Demo 3D draw alongside the 2D Scene path.
+    ck::Renderer3D::DrawMesh(cube_, cube_transform_, glm::vec3(0.85f, 0.45f, 0.25f));
+
     scene_->OnUpdate(ts);
   }
 
@@ -48,8 +63,6 @@ public:
         }
         if (ImGui::MenuItem("Load Scene", nullptr, false, true)) {
           ck::SceneSerializer(scene_).Deserialize(kScenePath);
-          // Wipe the panel selection in case the loaded scene doesn't
-          // contain the previously-selected handle.
           hierarchy_panel_.SetSelectedEntity({});
         }
         ImGui::EndMenu();
@@ -67,11 +80,14 @@ private:
   static constexpr const char* kScenePath = "assets/scenes/default.ckscene";
 
   ck::Ref<ck::Scene> scene_;
-  EditorCamera editor_camera_;
+  EditorCamera3D editor_camera_;
   ViewportPanel viewport_panel_;
   SceneHierarchyPanel hierarchy_panel_;
   PropertiesPanel properties_panel_;
   StatsPanel stats_panel_;
+
+  ck::Ref<ck::Mesh> cube_;
+  glm::mat4 cube_transform_{1.0f};
 };
 
 class Editor : public ck::Application {

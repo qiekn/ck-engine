@@ -70,6 +70,7 @@ public:
   void SetColorTargetCallback(ColorTargetCallback cb);
 
   vulkan::Context&   context()      { return *context_; }
+  vulkan::Allocator& allocator()    { return *allocator_; }
   vulkan::Swapchain& swapchain()    { return *swapchain_; }
   vk::ImageView      color_target_view() const;
   // Editor-facing handle: editor camera pokes position/zoom on this each

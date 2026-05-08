@@ -24,6 +24,7 @@ module;
 #include "renderer/camera.h"
 #include "renderer/perspective_camera.h"
 #include "renderer/mesh.h"
+#include "renderer/vulkan/allocator.h"
 
 #include "scene/components.h"
 #include "scene/scene.h"
@@ -84,6 +85,11 @@ using ::ck::Camera;
 using ::ck::PerspectiveCamera;
 using ::ck::Mesh;
 using ::ck::MeshVertex;
+// Engine-internal type, but re-exported because editor-side helpers
+// (Mesh::CreateCube, etc.) take it by reference.
+namespace vulkan {
+using ::ck::vulkan::Allocator;
+}
 
 // scene
 using ::ck::Scene;

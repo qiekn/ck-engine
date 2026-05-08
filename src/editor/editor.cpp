@@ -1,5 +1,8 @@
 import ck;
 
+#include "panels/stats_panel.h"
+#include "panels/viewport_panel.h"
+
 namespace ck {
 
 // Single textured quad — the editor's smoke test for the Renderer2D path.
@@ -21,34 +24,14 @@ public:
     // out in phase-6-plan.md.
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0, nullptr);
 
-    // Viewport panel — samples the engine's offscreen color_target as
-    // ImTextureID. WindowPadding=0 so the Image fills the panel content
-    // area edge-to-edge. Each frame we report the current panel size to
-    // the engine so color_target + camera follow it (panel-driven resize,
-    // phase 6.A.3.5).
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Viewport");
-    ImVec2 size = ImGui::GetContentRegionAvail();
-    if (size.x > 0.0f && size.y > 0.0f) {
-      Application::Get().OnViewportResize(static_cast<uint32_t>(size.x),
-                                          static_cast<uint32_t>(size.y));
-    }
-    ImTextureID tex = Application::Get().GetImGuiLayer().viewport_texture_id();
-    if (tex) ImGui::Image(tex, size);
-    ImGui::End();
-    ImGui::PopStyleVar();
-
-    ImGui::Begin("Stats");
-    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-    auto s = Renderer2D::stats();
-    ImGui::Text("Quads: %u", s.quad_count);
-    ImGui::Text("Textures: %u", s.texture_count);
-    ImGui::Text("Draw calls: %u", s.draw_calls);
-    ImGui::End();
+    viewport_panel_.OnImGuiRender();
+    stats_panel_.OnImGuiRender();
   }
 
 private:
   Renderer2D::TextureHandle checkerboard_ = Renderer2D::kWhiteTexture;
+  ck_editor::ViewportPanel viewport_panel_;
+  ck_editor::StatsPanel stats_panel_;
 };
 
 class Editor : public Application {

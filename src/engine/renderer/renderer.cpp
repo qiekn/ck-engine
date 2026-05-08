@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include "renderer_2d.h"
+#include "renderer_3d.h"
 #include "shader/slang_compiler.h"
 #include "vulkan/allocator.h"
 #include "vulkan/context.h"
@@ -69,12 +70,14 @@ Renderer::Renderer(Window& window) : window_(window) {
 
   slang_ = CreateScope<vulkan::SlangCompiler>();
   Renderer2D::Init(*context_, *allocator_, *slang_, swapchain_->format(), kDepthFormat);
+  Renderer3D::Init(*context_, *allocator_, *slang_, swapchain_->format(), kDepthFormat);
 }
 
 Renderer::~Renderer() {
   CK_PROFILE_FUNCTION();
   if (context_ && context_->device()) {
     context_->device().waitIdle();
+    Renderer3D::Shutdown();
     Renderer2D::Shutdown();
     for (auto s : render_finished_) context_->device().destroySemaphore(s);
   }
@@ -267,6 +270,7 @@ void Renderer::BeginFrame() {
   // it via DrawQuad calls in OnUpdate. Camera matrix is fed at EndScene
   // time so layer-side camera updates land in the same frame.
   Renderer2D::BeginScene(current_frame_);
+  Renderer3D::BeginScene(current_frame_);
 
   frame_active_ = true;
 }
@@ -282,6 +286,8 @@ void Renderer::EndFrame() {
   // Pick the active camera matrix: editor pushes via SetActiveCamera each
   // OnUpdate; sandbox leaves it unset and falls back to the ortho camera_.
   glm::mat4 active_vp = active_view_projection_.value_or(camera_.view_projection());
+  // 3D first (depth test+write), then 2D quads on top (no depth state).
+  Renderer3D::EndScene(cmd, active_vp);
   Renderer2D::EndScene(cmd, active_vp);
   cmd.endRendering();
 

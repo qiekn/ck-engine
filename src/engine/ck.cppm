@@ -20,8 +20,10 @@ module;
 
 #include "renderer/renderer.h"
 #include "renderer/renderer_2d.h"
+#include "renderer/renderer_3d.h"
 #include "renderer/camera.h"
 #include "renderer/perspective_camera.h"
+#include "renderer/mesh.h"
 
 #include "scene/components.h"
 #include "scene/scene.h"
@@ -77,8 +79,11 @@ using ::ck::ImGuiLayer;
 // renderer
 using ::ck::Renderer;
 using ::ck::Renderer2D;
+using ::ck::Renderer3D;
 using ::ck::Camera;
 using ::ck::PerspectiveCamera;
+using ::ck::Mesh;
+using ::ck::MeshVertex;
 
 // scene
 using ::ck::Scene;

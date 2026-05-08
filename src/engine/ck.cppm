@@ -20,6 +20,10 @@ module;
 
 #include "renderer/renderer_2d.h"
 
+#include "scene/components.h"
+#include "scene/scene.h"
+#include "scene/entity.h"
+
 #include <imgui.h>
 
 export module ck;
@@ -65,6 +69,13 @@ using ::ck::ImGuiLayer;
 
 // renderer
 using ::ck::Renderer2D;
+
+// scene
+using ::ck::Scene;
+using ::ck::Entity;
+using ::ck::TagComponent;
+using ::ck::TransformComponent;
+using ::ck::SpriteRendererComponent;
 
 }  // export namespace ck
 

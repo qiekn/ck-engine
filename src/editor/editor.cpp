@@ -5,18 +5,20 @@ import ck;
 
 namespace ck_editor {
 
-// Single textured quad — the editor's smoke test for the Renderer2D path.
+// Single textured quad — driven through Scene + (Transform, SpriteRenderer)
+// instead of a direct Renderer2D::DrawQuad call as of phase 6.B.1.
 class EditorLayer : public ck::Layer {
 public:
   EditorLayer() : Layer("EditorLayer") {}
 
   void OnAttach() override {
-    checkerboard_ = ck::Renderer2D::LoadTexture("assets/textures/checkerboard.png");
+    scene_ = ck::CreateRef<ck::Scene>();
+    auto entity = scene_->CreateEntity("Checkerboard");
+    entity.AddComponent<ck::SpriteRendererComponent>(
+        ck::Renderer2D::LoadTexture("assets/textures/checkerboard.png"));
   }
 
-  void OnUpdate(ck::DeltaTime) override {
-    ck::Renderer2D::DrawQuad(glm::mat4(1.0f), checkerboard_);
-  }
+  void OnUpdate(ck::DeltaTime ts) override { scene_->OnUpdate(ts); }
 
   void OnImGuiRender() override {
     // Full-window dockspace: panels can dock into edges of the main viewport.
@@ -29,7 +31,7 @@ public:
   }
 
 private:
-  ck::Renderer2D::TextureHandle checkerboard_ = ck::Renderer2D::kWhiteTexture;
+  ck::Ref<ck::Scene> scene_;
   ViewportPanel viewport_panel_;
   StatsPanel stats_panel_;
 };

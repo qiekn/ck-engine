@@ -28,9 +28,16 @@ namespace ck {
 
 class Renderer {
 public:
-  // Recorded inside EndFrame's swapchain pass (loadOp=Load on top of the
-  // copied color_target_). Set to {} to disable the imgui pass entirely.
+  // Recorded inside EndFrame's swapchain pass (loadOp=Clear). Set to {} to
+  // disable the imgui pass — useful for headless smoke tests, but in normal
+  // use the offscreen color_target only reaches the screen via the imgui
+  // ViewportPanel that samples it.
   using ImGuiRenderCallback = std::function<void(vk::CommandBuffer)>;
+
+  // Fired after color_target_ has just been (re)created. ImGuiLayer uses
+  // this to drop the stale ImGui_ImplVulkan descriptor set and register a
+  // new one against the fresh image view.
+  using ColorTargetCallback = std::function<void()>;
 
   explicit Renderer(Window& window);
   ~Renderer();
@@ -45,18 +52,23 @@ public:
   void OnResize(uint32_t width, uint32_t height);
 
   void SetImGuiRenderCallback(ImGuiRenderCallback cb) { imgui_render_ = std::move(cb); }
+  // Registers cb and fires it once with the current color_target so the
+  // caller can stand up its initial state without a separate path.
+  void SetColorTargetCallback(ColorTargetCallback cb);
 
-  vulkan::Context&   context()   { return *context_; }
-  vulkan::Swapchain& swapchain() { return *swapchain_; }
+  vulkan::Context&   context()      { return *context_; }
+  vulkan::Swapchain& swapchain()    { return *swapchain_; }
+  vk::ImageView      color_target_view() const;
 
 private:
   void RecreateSwapchain();
+  void RecreateColorTarget(vk::Extent2D extent);
 
   Window& window_;
   Scope<vulkan::Context> context_;
   Scope<vulkan::Allocator> allocator_;
   Scope<vulkan::Swapchain> swapchain_;
-  Scope<vulkan::Image> color_target_;  // offscreen render target; blitted to swapchain image each frame
+  Scope<vulkan::Image> color_target_;  // offscreen render target; sampled by imgui's ViewportPanel
   std::array<Scope<vulkan::Frame>, vulkan::kFramesInFlight> frames_;
   std::vector<vk::Semaphore> render_finished_;  // per-image
   uint32_t current_frame_ = 0;
@@ -68,6 +80,7 @@ private:
   Camera camera_;
   Scope<vulkan::SlangCompiler> slang_;
   ImGuiRenderCallback imgui_render_;
+  ColorTargetCallback color_target_changed_;
 };
 
 }  // namespace ck

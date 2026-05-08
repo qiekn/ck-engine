@@ -30,7 +30,15 @@ public:
   }
 
   // Doubles as the import-ck → ImGui::* re-export validation per phase 6.A.2.
+  // Now also responsible for showing the Renderer2D output: with the
+  // 6.A.3 flow the engine no longer blits color_target straight to the
+  // swapchain, so a panel hosting the texture is the only way to see it.
   void OnImGuiRender() override {
+    ImGui::Begin("Sandbox Viewport");
+    ImTextureID tex = ck::Application::Get().GetImGuiLayer().viewport_texture_id();
+    if (tex) ImGui::Image(tex, ImGui::GetContentRegionAvail());
+    ImGui::End();
+
     ImGui::Begin("Sandbox Stats");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     auto s = ck::Renderer2D::stats();

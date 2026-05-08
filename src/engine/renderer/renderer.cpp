@@ -58,13 +58,7 @@ Renderer::Renderer(Window& window) : window_(window) {
   context_ = CreateScope<vulkan::Context>(window_);
   allocator_ = CreateScope<vulkan::Allocator>(*context_);
   swapchain_ = CreateScope<vulkan::Swapchain>(*context_, window_);
-  {
-    vulkan::Image::CreateInfo ci{};
-    ci.format = swapchain_->format();
-    ci.extent = swapchain_->extent();
-    ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
-  }
+  RecreateColorTarget(swapchain_->extent());
   for (auto& f : frames_) f = CreateScope<vulkan::Frame>(*context_);
 
   vk::SemaphoreCreateInfo sem_ci{};
@@ -88,6 +82,28 @@ void Renderer::OnResize(uint32_t /*width*/, uint32_t /*height*/) {
   resize_pending_ = true;
 }
 
+void Renderer::SetColorTargetCallback(ColorTargetCallback cb) {
+  color_target_changed_ = std::move(cb);
+  // Fire once for the current target so the caller doesn't need a separate
+  // "wire up the initial state" path.
+  if (color_target_changed_ && color_target_) color_target_changed_();
+}
+
+vk::ImageView Renderer::color_target_view() const {
+  return color_target_ ? color_target_->view() : vk::ImageView{};
+}
+
+void Renderer::RecreateColorTarget(vk::Extent2D extent) {
+  color_target_.reset();
+  vulkan::Image::CreateInfo ci{};
+  ci.format = swapchain_->format();
+  ci.extent = extent;
+  // Sampled: imgui's ViewportPanel reads it as a SAMPLED_IMAGE descriptor.
+  ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+  color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
+  if (color_target_changed_) color_target_changed_();
+}
+
 void Renderer::RecreateSwapchain() {
   CK_PROFILE_FUNCTION();
   // Skip if window is minimized — Application's run loop already skips render in that case,
@@ -102,16 +118,7 @@ void Renderer::RecreateSwapchain() {
   render_finished_.clear();
 
   swapchain_->Recreate();
-
-  // Recreate offscreen color target at the new extent.
-  color_target_.reset();
-  {
-    vulkan::Image::CreateInfo ci{};
-    ci.format = swapchain_->format();
-    ci.extent = swapchain_->extent();
-    ci.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    color_target_ = CreateScope<vulkan::Image>(*context_, *allocator_, ci);
-  }
+  RecreateColorTarget(swapchain_->extent());
 
   vk::SemaphoreCreateInfo sem_ci{};
   render_finished_.resize(swapchain_->image_count());
@@ -211,76 +218,52 @@ void Renderer::EndFrame() {
   Renderer2D::EndScene(cmd);
   cmd.endRendering();
 
-  // color_target: ColorAttachmentOptimal -> TransferSrcOptimal
+  // color_target: ColorAttachmentOptimal -> ShaderReadOnlyOptimal so the
+  // imgui ViewportPanel can sample it as a SAMPLED_IMAGE descriptor.
   TransitionImage(cmd, color_target_->handle(),
                   vk::ImageLayout::eColorAttachmentOptimal,
-                  vk::ImageLayout::eTransferSrcOptimal,
+                  vk::ImageLayout::eShaderReadOnlyOptimal,
                   vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                   vk::AccessFlagBits2::eColorAttachmentWrite,
-                  vk::PipelineStageFlagBits2::eTransfer,
-                  vk::AccessFlagBits2::eTransferRead);
+                  vk::PipelineStageFlagBits2::eFragmentShader,
+                  vk::AccessFlagBits2::eShaderSampledRead);
 
-  // swapchain image: Undefined -> TransferDstOptimal (we always overwrite via copy).
+  // swapchain image: Undefined -> ColorAttachmentOptimal; the imgui pass
+  // clears it (loadOp=Clear) and draws every pixel via the dockspace +
+  // viewport panel, so we never need to preserve previous contents.
   TransitionImage(cmd, swapchain_->images()[image_index_],
                   vk::ImageLayout::eUndefined,
-                  vk::ImageLayout::eTransferDstOptimal,
+                  vk::ImageLayout::eColorAttachmentOptimal,
                   vk::PipelineStageFlagBits2::eTopOfPipe, {},
-                  vk::PipelineStageFlagBits2::eTransfer,
-                  vk::AccessFlagBits2::eTransferWrite);
+                  vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                  vk::AccessFlagBits2::eColorAttachmentWrite);
 
-  // Same format + same extent (we recreate color_target_ on swapchain recreate),
-  // so a straight copy beats a blit.
-  vk::ImageCopy region{};
-  region.srcSubresource = vk::ImageSubresourceLayers{vk::ImageAspectFlagBits::eColor, 0, 0, 1};
-  region.dstSubresource = region.srcSubresource;
-  region.extent = vk::Extent3D{swapchain_->extent().width, swapchain_->extent().height, 1};
-  cmd.copyImage(color_target_->handle(), vk::ImageLayout::eTransferSrcOptimal,
-                swapchain_->images()[image_index_], vk::ImageLayout::eTransferDstOptimal,
-                region);
+  vk::ClearColorValue swapchain_clear{std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}};
 
-  if (imgui_render_) {
-    // swapchain image: TransferDstOptimal -> ColorAttachmentOptimal so we can
-    // render imgui on top of the copied color_target_ contents (loadOp=Load).
-    TransitionImage(cmd, swapchain_->images()[image_index_],
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::ImageLayout::eColorAttachmentOptimal,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite);
+  vk::RenderingAttachmentInfo imgui_att{};
+  imgui_att.imageView = swapchain_->image_views()[image_index_];
+  imgui_att.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+  imgui_att.loadOp = vk::AttachmentLoadOp::eClear;
+  imgui_att.storeOp = vk::AttachmentStoreOp::eStore;
+  imgui_att.clearValue.color = swapchain_clear;
 
-    vk::RenderingAttachmentInfo imgui_att{};
-    imgui_att.imageView = swapchain_->image_views()[image_index_];
-    imgui_att.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    imgui_att.loadOp = vk::AttachmentLoadOp::eLoad;
-    imgui_att.storeOp = vk::AttachmentStoreOp::eStore;
+  vk::RenderingInfo imgui_pass{};
+  imgui_pass.renderArea.offset = vk::Offset2D{0, 0};
+  imgui_pass.renderArea.extent = swapchain_->extent();
+  imgui_pass.layerCount = 1;
+  imgui_pass.colorAttachmentCount = 1;
+  imgui_pass.pColorAttachments = &imgui_att;
+  cmd.beginRendering(imgui_pass);
+  if (imgui_render_) imgui_render_(cmd);
+  cmd.endRendering();
 
-    vk::RenderingInfo imgui_pass{};
-    imgui_pass.renderArea.offset = vk::Offset2D{0, 0};
-    imgui_pass.renderArea.extent = swapchain_->extent();
-    imgui_pass.layerCount = 1;
-    imgui_pass.colorAttachmentCount = 1;
-    imgui_pass.pColorAttachments = &imgui_att;
-    cmd.beginRendering(imgui_pass);
-    imgui_render_(cmd);
-    cmd.endRendering();
-
-    // swapchain image: ColorAttachmentOptimal -> PresentSrcKHR
-    TransitionImage(cmd, swapchain_->images()[image_index_],
-                    vk::ImageLayout::eColorAttachmentOptimal,
-                    vk::ImageLayout::ePresentSrcKHR,
-                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    vk::AccessFlagBits2::eColorAttachmentWrite,
-                    vk::PipelineStageFlagBits2::eBottomOfPipe, {});
-  } else {
-    // No imgui pass — go straight from copy result to present.
-    TransitionImage(cmd, swapchain_->images()[image_index_],
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::ImageLayout::ePresentSrcKHR,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eBottomOfPipe, {});
-  }
+  // swapchain image: ColorAttachmentOptimal -> PresentSrcKHR
+  TransitionImage(cmd, swapchain_->images()[image_index_],
+                  vk::ImageLayout::eColorAttachmentOptimal,
+                  vk::ImageLayout::ePresentSrcKHR,
+                  vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                  vk::AccessFlagBits2::eColorAttachmentWrite,
+                  vk::PipelineStageFlagBits2::eBottomOfPipe, {});
 
   cmd.end();
 

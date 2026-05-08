@@ -92,7 +92,7 @@ using ::ck::log::error;
 using ::ck::log::fatal;
 }  // export namespace ck::log
 
-// ImGui re-exports — minimal set chosen for phase 6.A.2 stats panels.
+// ImGui re-exports — minimal set chosen for the phase 6.A panels.
 // Add as new client call sites need them; printf-style varargs (Text)
 // and inline default-argument helpers are the known compatibility
 // risks called out in phase-6-plan.md.
@@ -101,7 +101,16 @@ using ::ImGui::Begin;
 using ::ImGui::End;
 using ::ImGui::Text;
 using ::ImGui::GetIO;
+using ::ImGui::Image;
+using ::ImGui::GetContentRegionAvail;
+using ::ImGui::DockSpaceOverViewport;
+using ::ImGui::GetMainViewport;
 }  // export namespace ImGui
 
 export using ::ImGuiIO;
 export using ::ImGuiWindowFlags;
+export using ::ImGuiViewport;
+export using ::ImGuiDockNodeFlags;
+export using ::ImTextureID;
+export using ::ImVec2;
+export using ::ImVec4;

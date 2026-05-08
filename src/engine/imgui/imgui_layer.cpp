@@ -142,15 +142,37 @@ void ImGuiLayer::OnAttach() {
                                     static_cast<VkCommandBuffer>(cmd));
   });
 
+  // Track color_target lifetime: rebind the viewport descriptor every time
+  // the renderer (re)creates it. Fires once now for the initial target.
+  renderer.SetColorTargetCallback([this] { RebindViewportTexture(); });
+
   ck::log::info("ImGuiLayer attached (dynamic rendering, format={}, dpi={})",
                 static_cast<int>(color_format), dpi);
+}
+
+void ImGuiLayer::RebindViewportTexture() {
+  if (viewport_tex_) {
+    ImGui_ImplVulkan_RemoveTexture(reinterpret_cast<VkDescriptorSet>(viewport_tex_));
+    viewport_tex_ = 0;
+  }
+  vk::ImageView view = Application::Get().GetRenderer().color_target_view();
+  if (!view) return;
+  VkDescriptorSet set = ImGui_ImplVulkan_AddTexture(
+      static_cast<VkImageView>(view),
+      static_cast<VkImageLayout>(vk::ImageLayout::eShaderReadOnlyOptimal));
+  viewport_tex_ = reinterpret_cast<ImTextureID>(set);
 }
 
 void ImGuiLayer::OnDetach() {
   Renderer& renderer = Application::Get().GetRenderer();
   renderer.SetImGuiRenderCallback({});
+  renderer.SetColorTargetCallback({});
   renderer.context().device().waitIdle();
 
+  if (viewport_tex_) {
+    ImGui_ImplVulkan_RemoveTexture(reinterpret_cast<VkDescriptorSet>(viewport_tex_));
+    viewport_tex_ = 0;
+  }
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();

@@ -16,6 +16,19 @@ public:
   }
 
   void OnImGuiRender() override {
+    // Full-window dockspace: panels can dock into edges of the main viewport.
+    // Explicit args sidestep the cross-module default-argument risk called
+    // out in phase-6-plan.md.
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0, nullptr);
+
+    // Viewport panel — samples the engine's offscreen color_target as
+    // ImTextureID. Image stretches to whatever size the panel currently is;
+    // panel-driven camera resize is the next sub-step (6.A.3.5).
+    ImGui::Begin("Viewport");
+    ImTextureID tex = Application::Get().GetImGuiLayer().viewport_texture_id();
+    if (tex) ImGui::Image(tex, ImGui::GetContentRegionAvail());
+    ImGui::End();
+
     ImGui::Begin("Stats");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     auto s = Renderer2D::stats();

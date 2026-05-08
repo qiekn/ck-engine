@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 #include "core/layer.h"
 #include "events/event.h"
 
@@ -31,8 +33,17 @@ public:
   // handled so they don't bubble down to gameplay layers.
   void BlockEvents(bool block) { block_events_ = block; }
 
+  // ImTextureID for the engine's offscreen color_target_, suitable for
+  // ImGui::Image inside a ViewportPanel. Backed by a descriptor set
+  // returned by ImGui_ImplVulkan_AddTexture; refreshed automatically when
+  // the renderer recreates color_target (e.g. on window resize).
+  ImTextureID viewport_texture_id() const { return viewport_tex_; }
+
 private:
+  void RebindViewportTexture();
+
   bool block_events_ = true;
+  ImTextureID viewport_tex_ = 0;
 };
 
 }  // namespace ck
